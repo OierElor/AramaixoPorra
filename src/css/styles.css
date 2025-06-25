@@ -1,0 +1,276 @@
+/* Karrera bakoitzaren koloreak */
+h2.giro { color: #e754a6; }
+a.giro{ background: #e754a6; }
+
+h2.vuelta{ color: #e53935; }
+a.vuelta{ background: #e53935; }
+
+h2.tour{ color: #ffd600; }
+a.tour{ background: #ffd600; }
+
+h2.klasikak{ color: #4fc3f7; }
+a.klasikak{ background: #4fc3f7; }
+
+/* Beste CSS estiloak */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f7f7fa;
+    color: #222;
+}
+
+header {
+    background: #222c36;
+    color: #fff;
+    padding: 24px 0 10px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+}
+
+header h1 {
+    margin: 0 0 10px 32px;
+    font-size: 2.2em;
+    letter-spacing: 2px;
+    flex: 1;
+    text-align: left;
+}
+
+/* Karrera aukeratzeko estiloak */
+
+nav.karrerak {
+    margin-right: 32px;
+}
+
+nav.karrerak ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    align-items: center;
+}
+
+nav.karrerak li {
+    display: inline;
+}
+
+nav.karrerak a {
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+}
+
+/* Etapa eta urteak aukeratzeko estiloak */
+
+.etapa-navegazioa {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    background: #f5f5f5;
+    padding: 12px 0;
+    font-size: 1.2em;
+    margin-bottom: 24px;
+}
+
+.etapa-info {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.etapa-info.giro {
+    color: #e754a6;
+}
+
+.etapa-info.vuelta {
+    color: #e53935;
+}
+
+.etapa-info.tour {
+    color: #ffd600;
+}
+
+.etapa-info.klasikak {
+    color: #4fc3f7;
+}
+
+.etapa-arrow {
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 1.3em;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.etapa-arrow.giro {
+    background: #e754a6;
+}
+
+.etapa-arrow.vuelta {
+    background: #e53935;
+}
+
+.etapa-arrow.tour {
+    background: #ffd600;
+}
+
+.etapa-arrow.klasikak {
+    background: #4fc3f7;
+}
+
+.etapa-arrow.giro:hover {
+    background: #b8006e;
+}
+
+.etapa-arrow.vuelta:hover {
+    background: #b71c1c;
+}
+
+.etapa-arrow.tour:hover {
+    background: #c79100;
+}
+
+.etapa-arrow.klasikak:hover {
+    background: #0288d1;
+}
+
+/*Beste estiloak */
+
+main {
+    max-width: 700px;
+    margin: 32px auto;
+    padding: 24px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    flex: 2;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+p {
+    line-height: 1.7;
+    margin-bottom: 1.5em;
+}
+
+.container {
+    display: flex;
+    margin: 32px auto;
+    gap: 32px;
+    justify-content: flex-end; 
+}
+
+/* Etapa eta urteen menuaren estiloak */
+
+.etapak-menu {
+    flex: 0 0 220px;
+    align-self: flex-start;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 16px 20px;
+    min-width: 180px;
+    max-width: 240px;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-right: 20px;
+    margin-left: 0; 
+}
+
+.etapak-menu h3 {
+    margin-top: 0;
+    font-size: 1.1em;
+    margin-bottom: 12px;
+}
+
+.etapak-menu.giro h3{
+    color: #e754a6;
+}
+
+.etapak-menu.vuelta h3{
+    color: #e53935;
+}
+
+.etapak-menu.tour h3{
+    color: #ffd600;
+}
+
+.etapak-menu.klasikak h3{
+    color: #4fc3f7;
+}
+
+.etapak-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.etapak-menu li {
+    margin-bottom: 8px;
+}
+
+.etapak-menu a {
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.etapak-menu.giro a {
+    color: #e754a6;
+}
+
+.etapak-menu.vuelta a {
+    color: #e53935;
+}
+
+.etapak-menu.tour a {
+    color: #ffd600;
+}
+
+.etapak-menu.klasikak a {
+    color: #4fc3f7;
+}
+
+.etapak-menu.giro a:hover {
+    color: #b8006e;
+}
+
+.etapak-menu.vuelta a:hover {
+    color: #b71c1c;
+}
+
+.etapak-menu.tour a:hover {
+    color: #c79100;
+}
+
+.etapak-menu.klasikak a:hover {
+    color: #0288d1;
+}
+
+.etapak-menu a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+    .container {
+        flex-direction: column;
+        gap: 0;
+    }
+    .etapak-menu {
+        margin-top: 24px;
+        max-width: 100%;
+    }
+}

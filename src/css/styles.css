@@ -148,7 +148,7 @@ nav.karrerak a {
 /*Beste estiloak */
 
 main {
-    max-width: 700px;
+    max-width: 1400px;
     margin: 32px auto;
     padding: 24px;
     background: #fff;
@@ -262,6 +262,103 @@ p {
 
 .etapak-menu a:hover {
     text-decoration: underline;
+}
+
+/* Taulak ondoan jartzeko estiloak */
+.tables-container {
+    display: flex;
+    gap: 32px;
+    margin-top: 24px;
+    width: 100%;
+}
+
+.table-wrapper {
+    flex: 1;
+    min-width: 600px;
+    max-height: 600px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: relative;
+}
+
+.table-content {
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: auto;
+    width: 100%;
+}
+
+.table-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.table-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.table-content::-webkit-scrollbar-corner {
+    background: #f1f1f1;
+}
+
+/* Horizontal scrollbar styling */
+.table-content::-webkit-scrollbar:horizontal {
+    height: 8px;
+}
+
+.table-content::-webkit-scrollbar-thumb:horizontal {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-content::-webkit-scrollbar-thumb:horizontal:hover {
+    background: #555;
+}
+
+/* Responsive taula kontainerrak */
+@media (max-width: 1400px) {
+    main {
+        max-width: 1200px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .tables-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .table-wrapper {
+        max-height: 400px;
+        min-width: auto;
+    }
+    
+    main {
+        max-width: 900px;
+    }
+}
+
+@media (max-width: 900px) {
+    main {
+        max-width: 700px;
+    }
 }
 
 @media (max-width: 900px) {

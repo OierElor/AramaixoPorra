@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aramaioko Porra</title>
+    <title>Aramaioko Porra - Tour 2025</title>
     <link rel="stylesheet" href="../../css/styles.css">
+    <script src="../../js/standings-loader.js"></script>
 </head>
 
 <body>
@@ -26,41 +27,89 @@
     <div class="etapa-navegazioa tour">
         <button class="etapa-arrow tour" disabled style="opacity:0.4; cursor:default;">&#8592;</button>
         <span class="etapa-info tour">2025</span>
-        <button class="etapa-arrow tour" disabled style="opacity:0.4; cursor:default;">&#8594;</button>
+        <a href="2026.html" class="etapa-arrow tour"
+            style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">&#8594;</a>
     </div>
     <div class="container">
         <main>
             <section>
-                <h2 class="tour">Tour de France</h2>
+                <h2 class="tour">Tour de France 2025</h2>
+
+                <div class="download-section" style="text-align: center; margin-bottom: 20px;">
+                    <a href="../../data/tour/tour 25/Porra Tour 2025 porra denak.pdf" class="download-button"
+                        target="_blank"
+                        style="display: inline-block; padding: 10px 20px; background-color: #ffd600; color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        JAITSI PORRALARIAK (PDF)
+                    </a>
+                </div>
+
+                <div class="tables-container" style="display: flex; flex-direction: column; gap: 40px;">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="tour" style="text-align: center;">PORRA SAILKAPENA</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table tour" id="porra-table"
+                                style="width: 100%; min-width: 800px;">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">Pos</th>
+                                        <th rowspan="2">Id</th>
+                                        <th rowspan="2">Porralaria</th>
+                                        <th rowspan="2">Puntuak</th>
+                                        <th colspan="6" style="border-bottom: 2px solid #000;">Etapetako sailkapena</th>
+                                        <th rowspan="2">Saria</th>
+                                    </tr>
+                                    <tr>
+                                        <th>1.</th>
+                                        <th>2.</th>
+                                        <th>3.</th>
+                                        <th>4.</th>
+                                        <th>5.</th>
+                                        <th>6.</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="tour" style="text-align: center;">TXIRRINDULARIAK</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table tour" id="txirrindulari-table"
+                                style="width: 100%; min-width: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Dortsala</th>
+                                        <th>Txirrindularia</th>
+                                        <th>Zenbatek?</th>
+                                        <th>Etapetan</th>
+                                        <th>Mendia</th>
+                                        <th>Sailkapena</th>
+                                        <th>Guztira</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </section>
         </main>
-        <aside class="etapak-menu tour">
-            <h3>Etapak</h3>
-            <ul>
-                <li><a href="2025/etapa1.html">1. etapa</a></li>
-                <li><a href="2025/etapa2.html">2. etapa</a></li>
-                <li><a href="2025/etapa3.html">3. etapa</a></li>
-                <li><a href="2025/etapa4.html">4. etapa</a></li>
-                <li><a href="2025/etapa5.html">5. etapa</a></li>
-                <li><a href="2025/etapa6.html">6. etapa</a></li>
-                <li><a href="2025/etapa7.html">7. etapa</a></li>
-                <li><a href="2025/etapa8.html">8. etapa</a></li>
-                <li><a href="2025/etapa9.html">9. etapa</a></li>
-                <li><a href="2025/etapa10.html">10. etapa</a></li>
-                <li><a href="2025/etapa11.html">11. etapa</a></li>
-                <li><a href="2025/etapa12.html">12. etapa</a></li>
-                <li><a href="2025/etapa13.html">13. etapa</a></li>
-                <li><a href="2025/etapa14.html">14. etapa</a></li>
-                <li><a href="2025/etapa15.html">15. etapa</a></li>
-                <li><a href="2025/etapa16.html">16. etapa</a></li>
-                <li><a href="2025/etapa17.html">17. etapa</a></li>
-                <li><a href="2025/etapa18.html">18. etapa</a></li>
-                <li><a href="2025/etapa19.html">19. etapa</a></li>
-                <li><a href="2025/etapa20.html">20. etapa</a></li>
-                <li><a href="2025/etapa21.html">21. etapa</a></li>
-            </ul>
-        </aside>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // CSVs for Tour 25. "Porren sailkapena.csv" is the name for standings.
+            window.standingsLoader.loadPorra('../../data/tour/tour%2025/Porren%20sailkapena.csv', 'porra-table');
+            window.standingsLoader.loadCyclists('../../data/tour/tour%2025/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+        });
+    </script>
 </body>
 
 </html>

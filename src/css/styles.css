@@ -1,15 +1,35 @@
 /* Karrera bakoitzaren koloreak */
-h2.giro { color: #e754a6; }
-a.giro{ background: #e754a6; }
+h2.giro {
+    color: #e754a6;
+}
 
-h2.vuelta{ color: #e53935; }
-a.vuelta{ background: #e53935; }
+a.giro {
+    background: #e754a6;
+}
 
-h2.tour{ color: #ffd600; }
-a.tour{ background: #ffd600; }
+h2.vuelta {
+    color: #e53935;
+}
 
-h2.klasikak{ color: #4fc3f7; }
-a.klasikak{ background: #4fc3f7; }
+a.vuelta {
+    background: #e53935;
+}
+
+h2.tour {
+    color: #ffd600;
+}
+
+a.tour {
+    background: #ffd600;
+}
+
+h2.klasikak {
+    color: #4fc3f7;
+}
+
+a.klasikak {
+    background: #4fc3f7;
+}
 
 /* Beste CSS estiloak */
 body {
@@ -24,7 +44,7 @@ header {
     background: #222c36;
     color: #fff;
     padding: 24px 0 10px 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -153,7 +173,7 @@ main {
     padding: 24px;
     background: #fff;
     border-radius: 8px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
     flex: 2;
 }
 
@@ -173,7 +193,7 @@ p {
     display: flex;
     margin: 32px auto;
     gap: 32px;
-    justify-content: flex-end; 
+    justify-content: flex-end;
 }
 
 /* Etapa eta urteen menuaren estiloak */
@@ -183,14 +203,14 @@ p {
     align-self: flex-start;
     background: #fff;
     border-radius: 8px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
     padding: 16px 20px;
     min-width: 180px;
     max-width: 240px;
     max-height: 400px;
     overflow-y: auto;
     margin-right: 20px;
-    margin-left: 0; 
+    margin-left: 0;
 }
 
 .etapak-menu h3 {
@@ -199,19 +219,19 @@ p {
     margin-bottom: 12px;
 }
 
-.etapak-menu.giro h3{
+.etapak-menu.giro h3 {
     color: #e754a6;
 }
 
-.etapak-menu.vuelta h3{
+.etapak-menu.vuelta h3 {
     color: #e53935;
 }
 
-.etapak-menu.tour h3{
+.etapak-menu.tour h3 {
     color: #ffd600;
 }
 
-.etapak-menu.klasikak h3{
+.etapak-menu.klasikak h3 {
     color: #4fc3f7;
 }
 
@@ -282,7 +302,7 @@ p {
     border: 1px solid #ddd;
     border-radius: 8px;
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     position: relative;
 }
 
@@ -311,12 +331,12 @@ p {
         flex-direction: column;
         gap: 16px;
     }
-    
+
     .table-wrapper {
         max-height: 400px;
         min-width: auto;
     }
-    
+
     main {
         max-width: 900px;
     }
@@ -333,6 +353,7 @@ p {
         flex-direction: column;
         gap: 0;
     }
+
     .etapak-menu {
         margin-top: 24px;
         max-width: 100%;
@@ -360,6 +381,14 @@ p {
     padding: 8px;
     border: 1px solid #000;
     text-align: center;
+}
+
+/* Vuelta Estiloa */
+.sailkapena-table.vuelta th,
+.sailkapena-table.vuelta .etapa-header {
+    background: #e53935;
+    color: #fff;
+    border: 1px solid #b71c1c;
 }
 
 .sailkapena-table .etapa-header {
@@ -420,4 +449,38 @@ p {
 
 .sailkapena-table .neutral {
     color: #000;
+}
+
+.sailkapena-table.giro th {
+    background: #e754a6;
+    color: white;
+}
+
+h3.giro {
+    color: #e754a6;
+    margin-bottom: 15px;
+}
+
+/* Tour Estiloa */
+.sailkapena-table.tour th {
+    background: #ffd600;
+    color: #000;
+    border: 1px solid #c79100;
+}
+
+h3.tour {
+    color: #ffd600;
+    margin-bottom: 15px;
+}
+
+/* Klasikak Estiloa */
+.sailkapena-table.klasikak th {
+    background: #4fc3f7;
+    color: #000;
+    border: 1px solid #0288d1;
+}
+
+h3.klasikak {
+    color: #4fc3f7;
+    margin-bottom: 15px;
 }

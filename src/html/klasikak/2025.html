@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aramaioko Porra</title>
+    <title>Aramaioko Porra - Klasikak 2025</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <script src="../../js/standings-loader.js"></script>
 </head>
@@ -24,34 +24,27 @@
             </ul>
         </nav>
     </header>
-    <div class="etapa-navegazioa giro">
-        <a href="2024.html" class="etapa-arrow giro"
+    <div class="etapa-navegazioa klasikak">
+        <a href="2024.html" class="etapa-arrow klasikak"
             style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">&#8592;</a>
-        <span class="etapa-info giro">2025</span>
-        <a href="2026.html" class="etapa-arrow giro"
+        <span class="etapa-info klasikak">2025</span>
+        <a href="2026.html" class="etapa-arrow klasikak"
             style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">&#8594;</a>
     </div>
     <div class="container">
         <main>
             <section>
-                <h2 class="giro">Giro d'Italia 2025</h2>
-
-                <div class="download-section" style="text-align: center; margin-bottom: 20px;">
-                    <a href="../../data/giro/Giro 25/Porra Giro 2025 porra denak.pdf" class="download-button"
-                        target="_blank"
-                        style="display: inline-block; padding: 10px 20px; background-color: #e91e63; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                        JAITSI PORRALARIAK (PDF)
-                    </a>
-                </div>
+                <h2 class="klasikak">Klasikak 2025</h2>
 
                 <div class="tables-container" style="display: flex; flex-direction: column; gap: 40px;">
                     <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
-                        <h3 class="giro" style="text-align: center;">PORRA SAILKAPENA</h3>
+                        <h3 class="klasikak" style="text-align: center;">PORRA SAILKAPENA</h3>
                         <div class="table-content">
-                            <table class="sailkapena-table giro" id="porra-table"
+                            <table class="sailkapena-table klasikak" id="porra-table"
                                 style="width: 100%; min-width: 600px;">
                                 <thead>
                                     <tr>
+                                        <!-- Simple breakdown for Klasikak -->
                                         <th>Pos</th>
                                         <th>Id</th>
                                         <th>Porreroa</th>
@@ -67,9 +60,9 @@
                     </div>
 
                     <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
-                        <h3 class="giro" style="text-align: center;">TXIRRINDULARIAK</h3>
+                        <h3 class="klasikak" style="text-align: center;">TXIRRINDULARIAK</h3>
                         <div class="table-content">
-                            <table class="sailkapena-table giro" id="txirrindulari-table"
+                            <table class="sailkapena-table klasikak" id="txirrindulari-table"
                                 style="width: 100%; min-width: 600px;">
                                 <thead>
                                     <tr>
@@ -94,9 +87,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Giro 25 data
-            window.standingsLoader.loadPorra('../../data/giro/Giro%2025/Porra%20sailkapena.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('../../data/giro/Giro%2025/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+            // CSVs for Klasikak 25
+            window.standingsLoader.loadPorra('../../data/klasikak/Klasikak%2025/Porra%20sailkapena.csv', 'porra-table');
+            window.standingsLoader.loadCyclists('../../data/klasikak/Klasikak%2025/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
         });
     </script>
 </body>

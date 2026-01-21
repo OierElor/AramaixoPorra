@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaioko Porra</title>
     <link rel="stylesheet" href="../../css/styles.css">
-    <script src="../../js/csv-loader.js"></script>
+    <script src="../../js/standings-loader.js"></script>
 </head>
 
 <body>
@@ -25,89 +25,97 @@
         </nav>
     </header>
     <div class="etapa-navegazioa vuelta">
-        <button class="etapa-arrow vuelta" disabled style="opacity:0.4; cursor:default;">&#8592;</button>
+        <a href="2024.html" class="etapa-arrow vuelta"
+            style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">&#8592;</a>
         <span class="etapa-info vuelta">2025</span>
-        <button class="etapa-arrow vuelta" disabled style="opacity:0.4; cursor:default;">&#8594;</button>
+        <a href="2026.html" class="etapa-arrow vuelta"
+            style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">&#8594;</a>
     </div>
     <div class="container">
         <main>
             <section>
-                <h2 class="vuelta">Vuelta a España</h2>
+                <h2 class="vuelta">Vuelta a España 2025</h2>
 
-                <div class="table-wrapper">
-                    <div class="table-content">
-                        <table class="sailkapena-table" id="sailkapena-table">
-                            <thead>
-                                <tr>
-                                    <th colspan="4" class="etapa-header">Etapa: 23</th>
-                                    <th colspan="1" class="etapa-header">Madrid</th>
-                                    <th colspan="3" class="etapa-header">Eguna: 25/09/14</th>
-                                </tr>
-                                <tr>
-                                    <th colspan="8" class="main-title">SAILKAPENA</th>
-                                </tr>
-                                <tr>
-                                    <th rowspan="2">Posizioa</th>
-                                    <th rowspan="2">Porreoa</th>
-                                    <th colspan="2">Puntuak</th>
-                                    <th rowspan="2">Posizioa</th>
-                                    <th rowspan="2">Porreoa</th>
-                                    <th colspan="2">Puntuak</th>
-                                </tr>
-                                <tr>
-                                    <th>Gaur</th>
-                                    <th>Guztira</th>
-                                    <th>Gaur</th>
-                                    <th>Guztira</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data will be loaded from CSV -->
-                            </tbody>
-                        </table>
+                <div class="download-section" style="text-align: center; margin-bottom: 20px;">
+                    <a href="../../data/vuelta/vuelta25/Porra Vuelta 2025 porra denak.pdf" class="download-button"
+                        target="_blank"
+                        style="display: inline-block; padding: 10px 20px; background-color: #d10000; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        JAITSI PORRALARIAK (PDF)
+                    </a>
+                </div>
+
+                <div class="tables-container" style="display: flex; flex-direction: column; gap: 40px;">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="vuelta" style="text-align: center;">PORRA SAILKAPENA</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table vuelta" id="porra-table"
+                                style="width: 100%; min-width: 800px;">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">Pos</th>
+                                        <th rowspan="2">Id</th>
+                                        <th rowspan="2">Porralaria</th>
+                                        <th rowspan="2">Puntuak</th>
+                                        <th colspan="6" style="border-bottom: 2px solid #fff;">Etapetako sailkapena</th>
+                                        <th rowspan="2">Saria</th>
+                                    </tr>
+                                    <tr>
+                                        <th>1.</th>
+                                        <th>2.</th>
+                                        <th>3.</th>
+                                        <th>4.</th>
+                                        <th>5.</th>
+                                        <th>6.</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto; max-width: 100%; margin: 0 auto;">
+                        <h3 class="vuelta" style="text-align: center;">TXIRRINDULARIAK</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table vuelta" id="txirrindulari-table"
+                                style="width: 100%; min-width: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Dortsala</th>
+                                        <th>Txirrindularia</th>
+                                        <th>Zenbatek?</th>
+                                        <th>Etapetan</th>
+                                        <th>Mendia</th>
+                                        <th>Sailkapena</th>
+                                        <th>Guztira</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
         </main>
-        <aside class="etapak-menu vuelta">
-            <h3>Etapak</h3>
-            <ul>
-                <li><a href="2025/etapa1.html">1. etapa</a></li>
-                <li><a href="2025/etapa2.html">2. etapa</a></li>
-                <li><a href="2025/etapa3.html">3. etapa</a></li>
-                <li><a href="2025/etapa4.html">4. etapa</a></li>
-                <li><a href="2025/etapa5.html">5. etapa</a></li>
-                <li><a href="2025/etapa6.html">6. etapa</a></li>
-                <li><a href="2025/etapa7.html">7. etapa</a></li>
-                <li><a href="2025/etapa8.html">8. etapa</a></li>
-                <li><a href="2025/etapa9.html">9. etapa</a></li>
-                <li><a href="2025/etapa10.html">10. etapa</a></li>
-                <li><a href="2025/etapa11.html">11. etapa</a></li>
-                <li><a href="2025/etapa12.html">12. etapa</a></li>
-                <li><a href="2025/etapa13.html">13. etapa</a></li>
-                <li><a href="2025/etapa14.html">14. etapa</a></li>
-                <li><a href="2025/etapa15.html">15. etapa</a></li>
-                <li><a href="2025/etapa16.html">16. etapa</a></li>
-                <li><a href="2025/etapa17.html">17. etapa</a></li>
-                <li><a href="2025/etapa18.html">18. etapa</a></li>
-                <li><a href="2025/etapa19.html">19. etapa</a></li>
-                <li><a href="2025/etapa20.html">20. etapa</a></li>
-                <li><a href="2025/etapa21.html">21. etapa</a></li>
-            </ul>
-        </aside>
     </div>
 
     <script>
         // Load CSV data when page loads
         window.addEventListener('DOMContentLoaded', function () {
-            const csvPath = '../../data/vuelta/2025_etapa_21.csv';
-            const metadata = {
-                etapa: '21',
-                tokia: 'Madrid',
-                data: '25/09/14'
-            };
+            const porraCsvPath = '../../data/vuelta/vuelta25/Porra sailkapena.csv';
+            const txirrindulariCsvPath = '../../data/vuelta/vuelta25/Txirrindulari sailkapena.csv';
 
-            window.csvLoader.loadAndPopulate(csvPath, 'sailkapena-table', metadata);
+            // Note: csvLoader might need to be capable of handling simple CSVs without specialized metadata if the structure is different.
+            // Assuming csvLoader.loadAndPopulate can handle generic CSVs or we need to check csv-loader.js to see how it handles headers.
+            // If the CSVs have headers, we might rely on the loader to generate them or set them up manually.
+
+            // For now, attempting to load using the existing loader.
+            window.standingsLoader.loadPorra(porraCsvPath, 'porra-table');
+            window.standingsLoader.loadCyclists(txirrindulariCsvPath, 'txirrindulari-table');
         });
     </script>
 </body>

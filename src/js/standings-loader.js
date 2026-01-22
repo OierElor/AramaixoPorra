@@ -71,7 +71,9 @@ class StandingsLoader {
                     row['Id'] = parts[1];
                     row['Name'] = parts[2];
                     row['Pts'] = parts[3];
-                    row['Saria'] = parts[4] || ''; // Saria might be the last one
+                    if (parts.length > 4) {
+                        row['Saria'] = parts[4]; // Only set if column exists
+                    }
                     row['isDetailed'] = false;
                 }
 
@@ -164,7 +166,9 @@ class StandingsLoader {
             row.appendChild(this.createCell(item['6th']));
         }
 
-        row.appendChild(this.createCell(item.Saria));
+        if (item.Saria !== undefined) {
+            row.appendChild(this.createCell(item.Saria));
+        }
     }
 
     appendCyclistColumns(row, item) {

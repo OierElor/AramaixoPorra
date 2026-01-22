@@ -126,11 +126,31 @@ nav.karrerak a {
     color: #fff;
     border: none;
     border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 1.3em;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    font-family: inherit;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    line-height: 0;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+.etapa-arrow:hover {
+    transform: scale(1.1);
+}
+
+.etapa-arrow.disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
 }
 
 .etapa-arrow.giro {
@@ -295,6 +315,11 @@ p {
     width: 100%;
 }
 
+.tables-container.stacked {
+    flex-direction: column;
+    gap: 40px;
+}
+
 .table-wrapper {
     flex: 1;
     min-width: 600px;
@@ -375,7 +400,7 @@ p {
 }
 
 .sailkapena-table th {
-    background: #ffd700;
+    background: #ffd600;
     color: #000;
     font-weight: bold;
     padding: 8px;
@@ -483,4 +508,51 @@ h3.tour {
 h3.klasikak {
     color: #4fc3f7;
     margin-bottom: 15px;
+}
+
+/* Download Button Estiloak */
+.download-section {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.download-button {
+    display: inline-block;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s, opacity 0.3s;
+    border: none;
+    /* In case it's a button element */
+    cursor: pointer;
+}
+
+.download-button:hover {
+    opacity: 0.9;
+    text-decoration: none;
+}
+
+/* Tour Button */
+.download-button.tour {
+    background-color: #ffd600;
+    color: black;
+}
+
+/* Giro Button */
+.download-button.giro {
+    background-color: #e754a6;
+    color: white;
+}
+
+/* Vuelta Button */
+.download-button.vuelta {
+    background-color: #e53935;
+    color: white;
+}
+
+/* Klasikak Button (badaezpada) */
+.download-button.klasikak {
+    background-color: #4fc3f7;
+    color: black;
 }

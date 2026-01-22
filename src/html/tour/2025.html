@@ -25,7 +25,8 @@
         </nav>
     </header>
     <div class="etapa-navegazioa tour">
-        <button class="etapa-arrow tour" disabled style="opacity:0.4; cursor:default;">&#8592;</button>
+        <a href="2024.html" class="etapa-arrow tour"
+            style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">&#8592;</a>
         <span class="etapa-info tour">2025</span>
         <a href="2026.html" class="etapa-arrow tour"
             style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">&#8594;</a>
@@ -36,7 +37,7 @@
                 <h2 class="tour">Tour de France 2025</h2>
 
                 <div class="download-section" style="text-align: center; margin-bottom: 20px;">
-                    <a href="../../data/tour/tour 25/Porra Tour 2025 porra denak.pdf" class="download-button"
+                    <a href="../../data/tour/tour25/Porra Tour 2025 porra denak.pdf" class="download-button"
                         target="_blank"
                         style="display: inline-block; padding: 10px 20px; background-color: #ffd600; color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
                         JAITSI PORRALARIAK (PDF)
@@ -106,8 +107,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // CSVs for Tour 25. "Porren sailkapena.csv" is the name for standings.
-            window.standingsLoader.loadPorra('../../data/tour/tour%2025/Porren%20sailkapena.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('../../data/tour/tour%2025/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+            window.standingsLoader.loadPorra('../../data/tour/tour25/Porren%20sailkapena.csv', 'porra-table');
+            window.standingsLoader.loadCyclists('../../data/tour/tour25/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
         });
     </script>
 </body>

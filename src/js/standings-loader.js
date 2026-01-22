@@ -89,6 +89,14 @@ class StandingsLoader {
                     row['GCPts'] = parts[6];
                     row['Total'] = parts[7];
                     row['isDetailed'] = true;
+                } else if (parts.length === 6) {
+                    // Klasikak 2024 (6 cols): Pos, Bib, Name, Count, Total, Extra
+                    row['Pos'] = parts[0];
+                    row['Bib'] = parts[1];
+                    row['Name'] = parts[2];
+                    row['Count'] = parts[3];
+                    row['Total'] = parts[4];
+                    row['isDetailed'] = false;
                 } else if (parts.length === 5) {
                     // Standard Simple (5 cols): Pos, Bib, Name, Count, Total
                     row['Pos'] = parts[0];

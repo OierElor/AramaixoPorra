@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aramaioko Porra - Klasikak 2024</title>
+    <title>Aramaioko Porra</title>
     <link rel="stylesheet" href="../../css/styles.css">
+    <script src="../../js/standings-loader.js"></script>
 </head>
 
 <body>
@@ -32,10 +33,71 @@
     <div class="container">
         <main>
             <section>
-                <h2 class="klasikak">Klasikak 2024</h2>
+                <h2 class="klasikak">Klasikoen Porra 2024</h2>
+
+                <div class="download-section" style="text-align: center; margin-bottom: 20px;">
+                    <a href="../../data/klasikak/klasikak24/Klasikoen porra denak.pdf" class="download-button"
+                        target="_blank"
+                        style="display: inline-block; padding: 10px 20px; background-color: #4caf50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        JAITSI PORRALARIAK (PDF)
+                    </a>
+                </div>
+
+                <div class="tables-container" style="display: flex; flex-direction: column; gap: 40px;">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="klasikak" style="text-align: center;">PORRA SAILKAPENA</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table klasikak" id="porra-table"
+                                style="width: 100%; min-width: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Id</th>
+                                        <th>Porralaria</th>
+                                        <th>Puntuak</th>
+                                        <th>Saria</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="klasikak" style="text-align: center;">TXIRRINDULARIAK</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table klasikak" id="txirrindulari-table"
+                                style="width: 100%; min-width: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Zbkia</th>
+                                        <th>Txirrindularia</th>
+                                        <th>Zenbatek?</th>
+                                        <th>Puntuak</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </section>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Loading Klasikak 24 data
+            window.standingsLoader.loadPorra('../../data/klasikak/klasikak24/porra%20sailkapena.csv', 'porra-table');
+            window.standingsLoader.loadCyclists('../../data/klasikak/klasikak24/txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+        });
+    </script>
 </body>
 
 </html>

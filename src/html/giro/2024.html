@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaioko Porra</title>
     <link rel="stylesheet" href="../../css/styles.css">
+    <script src="../../js/standings-loader.js"></script>
 </head>
 
 <body>
@@ -33,9 +34,69 @@
         <main>
             <section>
                 <h2 class="giro">Giro d'Italia 2024</h2>
+
+                <div class="download-section" style="text-align: center; margin-bottom: 20px;">
+                    <a href="../../data/giro/giro24/Porra denak Giro 2024.pdf" class="download-button" target="_blank"
+                        style="display: inline-block; padding: 10px 20px; background-color: #e91e63; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        JAITSI PORRALARIAK (PDF)
+                    </a>
+                </div>
+
+                <div class="tables-container" style="display: flex; flex-direction: column; gap: 40px;">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="giro" style="text-align: center;">PORRA SAILKAPENA</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table giro" id="porra-table"
+                                style="width: 100%; min-width: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Id</th>
+                                        <th>Porralaria</th>
+                                        <th>Puntuak</th>
+                                        <th>Saria</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="giro" style="text-align: center;">TXIRRINDULARIAK</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table giro" id="txirrindulari-table"
+                                style="width: 100%; min-width: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Dortsala</th>
+                                        <th>Txirrindularia</th>
+                                        <th>Zenbatek?</th>
+                                        <th>Puntuak</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </section>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Loading Giro 24 data
+            window.standingsLoader.loadPorra('../../data/giro/giro24/porra%20sailkapena%20giro%2024.csv', 'porra-table');
+            window.standingsLoader.loadCyclists('../../data/giro/giro24/Txirrindulari%20sailkapena%20giro%2024.csv', 'txirrindulari-table');
+        });
+    </script>
 </body>
 
 </html>

@@ -1,0 +1,102 @@
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaioko Porra</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <script src="../../js/standings-loader.js"></script>
+</head>
+
+<body>
+    <header>
+        <h1>
+            <a href="../index.html" style="color: inherit; text-decoration: none;">
+                Aramaioko Porra
+            </a>
+        </h1>
+        <nav class="karrerak">
+            <ul>
+                <li><a class="tour" href="../tour.html">Tour</a></li>
+                <li><a class="giro" href="../giro.html">Giro</a></li>
+                <li><a class="vuelta" href="../vuelta.html">Vuelta</a></li>
+                <li><a class="klasikak" href="../klasikak.html">Klasikak</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="etapa-navegazioa tour">
+        <button class="etapa-arrow tour" disabled style="opacity:0.4; cursor:default;">&#8592;</button>
+        <span class="etapa-info tour">2024</span>
+        <a href="2025.html" class="etapa-arrow tour"
+            style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">&#8594;</a>
+    </div>
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="tour">Tour de France 2024</h2>
+
+                <div class="download-section" style="text-align: center; margin-bottom: 20px;">
+                    <a href="../../data/tour/tour24/tour 2024 porra denak.pdf" class="download-button" target="_blank"
+                        style="display: inline-block; padding: 10px 20px; background-color: #ffeb3b; color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        JAITSI PORRALARIAK (PDF)
+                    </a>
+                </div>
+
+                <div class="tables-container" style="display: flex; flex-direction: column; gap: 40px;">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="tour" style="text-align: center;">PORRA SAILKAPENA</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table tour" id="porra-table"
+                                style="width: 100%; min-width: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Id</th>
+                                        <th>Porralaria</th>
+                                        <th>Puntuak</th>
+                                        <th>Saria</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="tour" style="text-align: center;">TXIRRINDULARIAK</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table tour" id="txirrindulari-table"
+                                style="width: 100%; min-width: 600px;">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Dortsala</th>
+                                        <th>Txirrindularia</th>
+                                        <th>Zenbatek?</th>
+                                        <th>Puntuak</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded from CSV -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Loading Tour 24 data
+            window.standingsLoader.loadPorra('../../data/tour/tour24/porra%20sailkapena%20tour%2024.csv', 'porra-table');
+            window.standingsLoader.loadCyclists('../../data/tour/tour24/Txirrindulari%20sailkapena%20tour%2024.csv', 'txirrindulari-table');
+        });
+    </script>
+</body>
+
+</html>

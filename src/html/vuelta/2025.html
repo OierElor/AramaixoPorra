@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aramaioko Porra</title>
+    <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <script src="../../js/standings-loader.js"></script>
 </head>
@@ -12,7 +12,7 @@
     <header>
         <h1>
             <a href="../index.html" style="color: inherit; text-decoration: none;">
-                Aramaioko Porra
+                Aramaixo Porra
             </a>
         </h1>
         <nav class="karrerak">
@@ -35,7 +35,7 @@
                 <h2 class="vuelta">Vuelta a España 2025</h2>
 
                 <div class="download-section">
-                    <a href="../../data/vuelta/vuelta25/Porra Vuelta 2025 porra denak.pdf"
+                    <a href="../../data/CSV/vuelta/vuelta25/Porra Vuelta 2025 porra denak.pdf"
                         class="download-button vuelta" target="_blank">
                         JAITSI PORRALARIAK (PDF)
                     </a>
@@ -103,8 +103,8 @@
     <script>
         // Load CSV data when page loads
         window.addEventListener('DOMContentLoaded', function () {
-            const porraCsvPath = '../../data/vuelta/vuelta25/Porra sailkapena.csv';
-            const txirrindulariCsvPath = '../../data/vuelta/vuelta25/Txirrindulari sailkapena.csv';
+            const porraCsvPath = '../../data/CSV/vuelta/vuelta25/Porra sailkapena.csv';
+            const txirrindulariCsvPath = '../../data/CSV/vuelta/vuelta25/Txirrindulari sailkapena.csv';
 
             // Note: csvLoader might need to be capable of handling simple CSVs without specialized metadata if the structure is different.
             // Assuming csvLoader.loadAndPopulate can handle generic CSVs or we need to check csv-loader.js to see how it handles headers.

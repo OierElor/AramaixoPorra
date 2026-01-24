@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aramaioko Porra</title>
+    <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="../../../css/styles.css">
     <script src="../../../js/csv-loader.js"></script>
 </head>
@@ -13,7 +13,7 @@
     <header>
         <h1>
             <a href="../../index.html" style="color: inherit; text-decoration: none;">
-                Aramaioko Porra
+                Aramaixo Porra
             </a>
         </h1>
         <nav class="karrerak">
@@ -26,8 +26,8 @@
         </nav>
     </header>
     <div class="etapa-navegazioa vuelta">
-        <button onclick="window.location.href='etapa20.html'" aria-label="Aurrekoa"
-            class="etapa-arrow vuelta">&#8592;</button>
+        <button onclick="window.location.href='etapa20.html'" aria-label='Aurrekoa'
+            class='etapa-arrow vuelta'>&#8592;</button>
         <span class="etapa-info vuelta">Etapa 21</span>
         <button class="etapa-arrow vuelta disabled" disabled>&#8594;</button>
     </div>
@@ -37,12 +37,12 @@
 
             <div class="table-wrapper">
                 <div class="table-content">
-                    <table class="sailkapena-table" id="sailkapena-table">
+                    <table class="sailkapena-table vuelta" id="sailkapena-table">
                         <thead>
                             <tr>
                                 <th colspan="4" class="etapa-header">Etapa: 21</th>
-                                <th colspan="1" class="etapa-header">Madrid</th>
-                                <th colspan="3" class="etapa-header">Eguna: 25/09/14</th>
+                                <th colspan="1" class="etapa-header">...</th>
+                                <th colspan="3" class="etapa-header">Eguna: ...</th>
                             </tr>
                             <tr>
                                 <th colspan="8" class="main-title">SAILKAPENA</th>
@@ -73,11 +73,20 @@
     <script>
         // Load CSV data when page loads
         window.addEventListener('DOMContentLoaded', function () {
-            const csvPath = '../../../data/vuelta/vuelta25/2025_etapa_21.csv';
+            const csvPath = '../../../data/CSV/vuelta/vuelta26/2026_etapa_21.csv';
+            const profileImagePath = '../../../data/Etapen Profila/vuelta/vuelta26/Etapa21.jpg';
+
+            // For etapa 19 it's .png
+            let imagePath = profileImagePath;
+            if (21 === 19) {
+                imagePath = '../../../data/Etapen Profila/vuelta/vuelta26/Etapa19.png';
+            }
+
             const metadata = {
                 etapa: '21',
-                tokia: 'Madrid',
-                data: '25/09/14'
+                tokia: '',
+                data: '',
+                profileImagePath: imagePath
             };
 
             window.csvLoader.loadAndPopulate(csvPath, 'sailkapena-table', metadata);

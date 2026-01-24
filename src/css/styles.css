@@ -510,6 +510,33 @@ h3.klasikak {
     margin-bottom: 15px;
 }
 
+h3.vuelta {
+    color: #e53935;
+    margin-bottom: 15px;
+}
+
+/* Profile display improvements */
+.profile-container {
+    text-align: center;
+    padding: 0;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.profile-container img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.table-wrapper.no-box {
+    border: none;
+    box-shadow: none;
+    max-height: none;
+    background: transparent;
+}
+
 /* Download Button Estiloak */
 .download-section {
     text-align: center;

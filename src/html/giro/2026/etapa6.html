@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="eu">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aramaioko Porra</title>
+    <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="../../../css/styles.css">
+    <script src="../../../js/csv-loader.js"></script>
 </head>
+
 <body>
     <header>
         <h1>
             <a href="../../index.html" style="color: inherit; text-decoration: none;">
-            Aramaioko Porra
+                Aramaixo Porra
             </a>
         </h1>
         <nav class="karrerak">
@@ -23,14 +26,65 @@
         </nav>
     </header>
     <div class="etapa-navegazioa giro">
-        <button onclick="window.location.href='etapa5.html'" aria-label="Aurrekoa" class="etapa-arrow giro">&#8592;</button>
+        <button onclick="window.location.href='etapa5.html'" aria-label='Aurrekoa' class='etapa-arrow giro'>&#8592;</button>
         <span class="etapa-info giro">Etapa 6</span>
-        <button onclick="window.location.href='etapa7.html'" aria-label="Hurrengoa" class="etapa-arrow giro">&#8594;</button>
+        <button onclick="window.location.href='etapa7.html'" aria-label='Hurrengoa' class='etapa-arrow giro'>&#8594;</button>
     </div>
     <main>
         <section>
-            <h2 class="giro">Giro d'Italia Etapa 6</h2>
+            <h2 class="giro">Giro Etapa 6</h2>
+
+            <div class="table-wrapper">
+                <div class="table-content">
+                    <table class="sailkapena-table giro" id="sailkapena-table">
+                        <thead>
+                            <tr>
+                                <th colspan="4" class="etapa-header">Etapa: 6</th>
+                                <th colspan="1" class="etapa-header">...</th>
+                                <th colspan="3" class="etapa-header">Eguna: ...</th>
+                            </tr>
+                            <tr>
+                                <th colspan="8" class="main-title">SAILKAPENA</th>
+                            </tr>
+                            <tr>
+                                <th rowspan="2">Posizioa</th>
+                                <th rowspan="2">Porreoa</th>
+                                <th colspan="2">Puntuak</th>
+                                <th rowspan="2">Posizioa</th>
+                                <th rowspan="2">Porreoa</th>
+                                <th colspan="2">Puntuak</th>
+                            </tr>
+                            <tr>
+                                <th>Gaur</th>
+                                <th>Guztira</th>
+                                <th>Gaur</th>
+                                <th>Guztira</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded from CSV -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </section>
     </main>
+    <script>
+        // Load CSV data when page loads
+        window.addEventListener('DOMContentLoaded', function () {
+            const csvPath = '../../../data/CSV/' + 'giro' + '/' + 'giro' + '26/2026_etapa_' + '6' + '.csv';
+            const profileImagePath = '../../../data/Etapen Profila/' + 'giro' + '/' + 'giro' + '26/Etapa' + '6' + '.jpg';
+            
+            const metadata = {
+                etapa: '6',
+                tokia: '',
+                data: '',
+                profileImagePath: profileImagePath
+            };
+
+            window.csvLoader.loadAndPopulate(csvPath, 'sailkapena-table', metadata);
+        });
+    </script>
 </body>
+
 </html>

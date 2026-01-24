@@ -24,6 +24,10 @@ class CSVLoader {
             // Fetch CSV file
             const response = await fetch(csvPath);
             if (!response.ok) {
+                if (metadata.profileImagePath) {
+                    this.showProfileImage(table, metadata.profileImagePath);
+                    return;
+                }
                 throw new Error(`Failed to load CSV: ${response.statusText}`);
             }
 
@@ -40,8 +44,33 @@ class CSVLoader {
 
         } catch (error) {
             console.error('Error loading CSV:', error);
-            this.showError(table, `Error kargatzean: ${error.message}`);
+            if (metadata.profileImagePath) {
+                this.showProfileImage(table, metadata.profileImagePath);
+            } else {
+                this.showError(table, `Error kargatzean: ${error.message}`);
+            }
         }
+    }
+
+    /**
+     * Show stage profile image instead of table
+     * @param {HTMLElement} table - Table element
+     * @param {string} imagePath - Path to profile image
+     */
+    showProfileImage(table, imagePath) {
+        const wrapper = table.closest('.table-wrapper');
+        const container = wrapper || table.parentElement;
+        const raceClass = Array.from(table.classList).find(cls => ['giro', 'tour', 'vuelta', 'klasikak'].includes(cls)) || '';
+
+        if (wrapper) {
+            wrapper.classList.add('no-box');
+        }
+
+        container.innerHTML = `
+            <div class="profile-container">
+                <img src="${imagePath}" alt="Etaparen profila">
+            </div>
+        `;
     }
 
     /**

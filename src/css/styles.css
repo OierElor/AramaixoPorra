@@ -556,3 +556,172 @@ h3.klasikak {
     background-color: #4fc3f7;
     color: black;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        padding: 24px 16px;
+        text-align: center;
+        justify-content: center;
+    }
+
+    header h1 {
+        margin: 0 0 20px 0;
+        font-size: 1.6rem;
+        letter-spacing: 1px;
+        text-align: center;
+        width: 100%;
+    }
+
+    nav.karrerak {
+        margin-right: 0;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+    }
+
+    nav.karrerak ul {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    nav.karrerak li {
+        display: block;
+        margin: 0;
+    }
+
+    nav.karrerak a {
+        display: block;
+        padding: 10px 5px;
+        font-size: 0.9rem;
+        text-align: center;
+        width: auto;
+    }
+
+    main {
+        margin: 12px 0;
+        /* Remove side margins on mobile */
+        padding: 12px 4px;
+        /* Minimal side padding */
+        border-radius: 0;
+        /* Square edges to gain space */
+    }
+
+    h2 {
+        font-size: 1.5rem !important;
+        margin: 1rem 0;
+        word-wrap: break-word;
+        padding: 0 10px;
+    }
+
+    .container {
+        flex-direction: column;
+        gap: 16px;
+        margin: 16px 0;
+        padding: 0;
+    }
+
+    .etapak-menu {
+        flex: none;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 0 16px 0;
+        max-height: 250px;
+        box-sizing: border-box;
+    }
+
+    .table-wrapper {
+        min-width: 0;
+        width: 100%;
+        overflow-x: auto;
+        margin: 0;
+        padding: 0;
+        /* Ensure no padding cuts off the table */
+        border: none;
+        /* Remove border to gain 2px more space */
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-content table {
+        width: 100%;
+        min-width: 320px;
+        /* Base minimum for content */
+        font-size: 0.8rem;
+        table-layout: auto;
+    }
+
+    .sailkapena-table .pos-col {
+        width: 30px;
+        text-align: center;
+        padding: 6px 1px;
+    }
+
+    .sailkapena-table .id-col {
+        width: 35px;
+        text-align: center;
+        padding: 6px 1px;
+    }
+
+    .sailkapena-table .name-col {
+        text-align: left;
+        padding-left: 4px;
+        max-width: 120px;
+        /* Constrain the Porralaria column */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sailkapena-table .points-col {
+        width: 45px;
+        text-align: center;
+        padding: 6px 1px;
+    }
+
+    /* Extra tight for very small screens */
+    @media (max-width: 320px) {
+        main {
+            padding: 8px 1px;
+        }
+
+        .table-content table {
+            font-size: 0.75rem;
+        }
+
+        .sailkapena-table .name-col {
+            max-width: 90px;
+        }
+    }
+
+    .etapa-navegazioa {
+        gap: 8px;
+        padding: 8px 4px;
+        font-size: 0.9rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .etapa-arrow {
+        width: 34px;
+        height: 34px;
+        font-size: 18px;
+    }
+
+    .download-section {
+        margin-top: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    header h1 {
+        font-size: 1.4rem;
+    }
+
+    nav.karrerak a {
+        font-size: 0.8rem;
+    }
+}

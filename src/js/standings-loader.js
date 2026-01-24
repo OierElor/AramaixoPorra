@@ -111,7 +111,6 @@ class StandingsLoader {
                     // Klasikak Simple (4 cols): Pos, Name, Count, Total
                     // No Bib column
                     row['Pos'] = parts[0];
-                    row['Bib'] = ''; // No Bib
                     row['Name'] = parts[1];
                     row['Count'] = parts[2];
                     row['Total'] = parts[3];
@@ -119,7 +118,6 @@ class StandingsLoader {
                 } else {
                     // Fallback using available columns if length mismatch but roughly matches
                     row['Pos'] = parts[0];
-                    row['Bib'] = '';
                     row['Name'] = parts[1] || '';
                     row['Count'] = parts[2] || '';
                     row['Total'] = parts[3] || '';
@@ -152,10 +150,10 @@ class StandingsLoader {
     }
 
     appendPorraColumns(row, item) {
-        row.appendChild(this.createCell(item.Pos));
-        row.appendChild(this.createCell(item.Id));
+        row.appendChild(this.createCell(item.Pos, 'pos-col'));
+        row.appendChild(this.createCell(item.Id, 'id-col'));
         row.appendChild(this.createCell(item.Name, 'name-col'));
-        row.appendChild(this.createCell(item.Pts));
+        row.appendChild(this.createCell(item.Pts, 'points-col'));
 
         if (item.isDetailed) {
             row.appendChild(this.createCell(item['1st']));
@@ -172,8 +170,10 @@ class StandingsLoader {
     }
 
     appendCyclistColumns(row, item) {
-        row.appendChild(this.createCell(item.Pos));
-        row.appendChild(this.createCell(item.Bib));
+        row.appendChild(this.createCell(item.Pos, 'pos-col'));
+        if (item.Bib !== undefined) {
+            row.appendChild(this.createCell(item.Bib, 'id-col'));
+        }
         row.appendChild(this.createCell(item.Name, 'name-col'));
         row.appendChild(this.createCell(item.Count));
 
@@ -183,7 +183,7 @@ class StandingsLoader {
             row.appendChild(this.createCell(item.GCPts));
         }
 
-        row.appendChild(this.createCell(item.Total));
+        row.appendChild(this.createCell(item.Total, 'points-col'));
     }
 
     createCell(text) {

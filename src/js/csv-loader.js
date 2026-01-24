@@ -68,7 +68,7 @@ class CSVLoader {
 
         container.innerHTML = `
             <div class="profile-container">
-                <img src="${imagePath}" alt="Etaparen profila">
+                <img src="${imagePath}" alt="Etaparen profila" onerror="this.parentNode.innerHTML='<div class=&quot;profile-notice ${raceClass}&quot;>Etaparen profila oraindik ez dago argitaratuta</div>'">
             </div>
         `;
     }

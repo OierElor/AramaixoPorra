@@ -537,6 +537,38 @@ h3.vuelta {
     background: transparent;
 }
 
+.profile-notice {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin: 20px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+}
+
+.profile-notice.giro {
+    color: #e754a6;
+    border-color: #e754a6;
+}
+
+.profile-notice.tour {
+    color: #fbc02d;
+    border-color: #fbc02d;
+}
+
+.profile-notice.vuelta {
+    color: #e53935;
+    border-color: #e53935;
+}
+
+.profile-notice.klasikak {
+    color: #0288d1;
+    border-color: #0288d1;
+}
+
 /* Download Button Estiloak */
 .download-section {
     text-align: center;

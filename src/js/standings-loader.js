@@ -47,87 +47,69 @@ class StandingsLoader {
             const parts = lines[i].split(',').map(v => v.trim());
 
             if (type === 'porra') {
-                // Check if detailed (Vuelta) or simple (Giro)
-                // Detailed: Pos, Id, Name, Pts, 1st, 2nd, 3rd, 4th, 5th, 6th, Saria (11+ cols)
-                // Simple: Pos, Id, Name, Pts, Saria (5 cols)
-
-                if (parts.length >= 10) {
-                    // Detailed
-                    row['Pos'] = parts[0];
-                    row['Id'] = parts[1];
-                    row['Name'] = parts[2];
-                    row['Pts'] = parts[3];
-                    row['1st'] = parts[4];
-                    row['2nd'] = parts[5];
-                    row['3rd'] = parts[6];
-                    row['4th'] = parts[7];
-                    row['5th'] = parts[8];
-                    row['6th'] = parts[9];
-                    row['Saria'] = parts.slice(10).join(',');
-                    row['isDetailed'] = true;
-                } else {
-                    // Simple
-                    row['Pos'] = parts[0];
-                    row['Id'] = parts[1];
-                    row['Name'] = parts[2];
-                    row['Pts'] = parts[3];
-                    if (parts.length > 4) {
-                        row['Saria'] = parts[4]; // Only set if column exists
-                    }
-                    row['isDetailed'] = false;
+                // Determine layout by checking for 'lerroa' or column count
+                let offset = 0;
+                if (headers[2] && headers[2].toLowerCase() === 'lerroa') {
+                    offset = 1;
                 }
 
-            } else if (type === 'cyclist') {
-                // Detailed: Pos, Bib, Name, Count, StagePts, MtnPts, GCPts, Total (8 cols)
-                // Simple: Pos, Bib, Name, Count, Total (5 cols)
+                row['Pos'] = parts[0];
+                row['Id'] = parts[1];
+                row['Name'] = parts[2 + offset];
+                row['Pts'] = parts[3 + offset];
 
-                if (parts.length >= 8) {
-                    row['Pos'] = parts[0];
-                    row['Bib'] = parts[1];
-                    row['Name'] = parts[2];
-                    row['Count'] = parts[3];
-                    row['StagePts'] = parts[4];
-                    row['MtnPts'] = parts[5];
-                    row['GCPts'] = parts[6];
-                    row['Total'] = parts[7];
+                if (parts.length >= (10 + offset)) {
+                    // Detailed (Stages 1-6 + maybe Mendia/Orokorra + Saria)
                     row['isDetailed'] = true;
-                } else if (parts.length === 6) {
-                    // Klasikak 2024 (6 cols): Pos, Bib, Name, Count, Total, Extra
-                    row['Pos'] = parts[0];
+                    row['stages'] = [
+                        parts[4 + offset], parts[5 + offset], parts[6 + offset],
+                        parts[7 + offset], parts[8 + offset], parts[9 + offset]
+                    ];
+
+                    // Mendia and Orokorra typically follow stages
+                    if (parts.length >= (13 + offset)) {
+                        row['Mendia'] = parts[10 + offset];
+                        row['Orokorra'] = parts[11 + offset];
+                        row['Saria'] = parts[12 + offset];
+                    } else if (parts.length >= (11 + offset)) {
+                        row['Saria'] = parts[parts.length - 1];
+                    }
+                } else {
+                    // Simple
+                    row['isDetailed'] = false;
+                    if (parts.length > (4 + offset)) {
+                        row['Saria'] = parts[4 + offset];
+                    }
+                }
+            } else if (type === 'cyclist') {
+                row['Pos'] = parts[0];
+                if (parts.length >= 5) {
                     row['Bib'] = parts[1];
                     row['Name'] = parts[2];
-                    row['Count'] = parts[3];
-                    row['Total'] = parts[4];
-                    row['isDetailed'] = false;
-                } else if (parts.length === 5) {
-                    // Standard Simple (5 cols): Pos, Bib, Name, Count, Total
-                    row['Pos'] = parts[0];
-                    row['Bib'] = parts[1];
-                    row['Name'] = parts[2];
-                    row['Count'] = parts[3];
-                    row['Total'] = parts[4];
-                    row['isDetailed'] = false;
+
+                    let cyclistOffset = 0;
+                    if (parts.length > 5 && (parts[3] === '' || parts[3] === undefined)) {
+                        cyclistOffset = 1;
+                    }
+
+                    row['Count'] = parts[3 + cyclistOffset];
+                    row['Total'] = parts[4 + cyclistOffset];
+
+                    if (parts.length >= (8 + cyclistOffset)) {
+                        row['isDetailed'] = true;
+                        row['StagePts'] = parts[4 + cyclistOffset];
+                        row['MtnPts'] = parts[5 + cyclistOffset];
+                        row['GCPts'] = parts[6 + cyclistOffset];
+                        row['Total'] = parts[7 + cyclistOffset];
+                    } else {
+                        row['isDetailed'] = false;
+                    }
                 } else if (parts.length === 4) {
-                    // Klasikak Simple (4 cols): Pos, Name, Count, Total
-                    // No Bib column
-                    row['Pos'] = parts[0];
                     row['Name'] = parts[1];
                     row['Count'] = parts[2];
                     row['Total'] = parts[3];
                     row['isDetailed'] = false;
-                } else {
-                    // Fallback using available columns if length mismatch but roughly matches
-                    row['Pos'] = parts[0];
-                    row['Name'] = parts[1] || '';
-                    row['Count'] = parts[2] || '';
-                    row['Total'] = parts[3] || '';
-                    row['isDetailed'] = false;
                 }
-            } else {
-                // Fallback standard parsing
-                headers.forEach((header, index) => {
-                    row[header || index] = parts[index];
-                });
             }
             data.push(row);
         }
@@ -136,6 +118,7 @@ class StandingsLoader {
 
     populateTable(table, data, type) {
         const tbody = table.querySelector('tbody');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         data.forEach(item => {
@@ -155,13 +138,10 @@ class StandingsLoader {
         row.appendChild(this.createCell(item.Name, 'name-col'));
         row.appendChild(this.createCell(item.Pts, 'points-col'));
 
-        if (item.isDetailed) {
-            row.appendChild(this.createCell(item['1st']));
-            row.appendChild(this.createCell(item['2nd']));
-            row.appendChild(this.createCell(item['3rd']));
-            row.appendChild(this.createCell(item['4th']));
-            row.appendChild(this.createCell(item['5th']));
-            row.appendChild(this.createCell(item['6th']));
+        if (item.isDetailed && item.stages) {
+            item.stages.forEach(val => row.appendChild(this.createCell(val)));
+            if (item.Mendia !== undefined) row.appendChild(this.createCell(item.Mendia));
+            if (item.Orokorra !== undefined) row.appendChild(this.createCell(item.Orokorra));
         }
 
         if (item.Saria !== undefined) {

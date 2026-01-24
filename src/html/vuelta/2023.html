@@ -25,14 +25,14 @@
         </nav>
     </header>
     <div class="etapa-navegazioa vuelta">
-        <a href="2023.html" class="etapa-arrow vuelta">&#8592;</a>
-        <span class="etapa-info vuelta">2024</span>
-        <a href="2025.html" class="etapa-arrow vuelta">&#8594;</a>
+        <a href="2022.html" class="etapa-arrow vuelta">&#8592;</a>
+        <span class="etapa-info vuelta">2023</span>
+        <a href="2024.html" class="etapa-arrow vuelta">&#8594;</a>
     </div>
     <div class="container">
         <main>
             <section>
-                <h2 class="vuelta">Vuelta a España 2024</h2>
+                <h2 class="vuelta">Vuelta a España 2023</h2>
 
                 <div class="tables-container stacked">
                     <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
@@ -41,11 +41,22 @@
                             <table class="sailkapena-table vuelta" id="porra-table" style="width: 100%; ">
                                 <thead>
                                     <tr>
-                                        <th>Pos</th>
-                                        <th>Id</th>
-                                        <th>Porralaria</th>
-                                        <th>Puntuak</th>
-                                        <th>Saria</th>
+                                        <th rowspan="2">Pos</th>
+                                        <th rowspan="2">Id</th>
+                                        <th rowspan="2">Porralaria</th>
+                                        <th rowspan="2">Puntuak</th>
+                                        <th colspan="6" style="border-bottom: 2px solid #fff;">Etapetako sailkapena</th>
+                                        <th rowspan="2">Mendia</th>
+                                        <th rowspan="2">Orokorra</th>
+                                        <th rowspan="2">Saria</th>
+                                    </tr>
+                                    <tr>
+                                        <th>1.</th>
+                                        <th>2.</th>
+                                        <th>3.</th>
+                                        <th>4.</th>
+                                        <th>5.</th>
+                                        <th>6.</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -82,9 +93,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Vuelta 24 data
-            window.standingsLoader.loadPorra('../../data/CSV/vuelta/vuelta24/porra%20sailkapena%20vuelta%2024.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('../../data/CSV/vuelta/vuelta24/txirrindulari%20sailkapena%20vuelta%2024.csv', 'txirrindulari-table');
+            // Loading Vuelta 23 data
+            window.standingsLoader.loadPorra('../../data/CSV/vuelta/vuelta23/porra%20sailkapena.csv', 'porra-table');
+            window.standingsLoader.loadCyclists('../../data/CSV/vuelta/vuelta23/txirrindulari%20sailkapena.csv', 'txirrindulari-table');
         });
     </script>
 </body>

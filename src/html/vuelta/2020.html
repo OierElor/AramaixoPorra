@@ -25,14 +25,14 @@
         </nav>
     </header>
     <div class="etapa-navegazioa vuelta">
-        <a href="2023.html" class="etapa-arrow vuelta">&#8592;</a>
-        <span class="etapa-info vuelta">2024</span>
-        <a href="2025.html" class="etapa-arrow vuelta">&#8594;</a>
+        <button class="etapa-arrow vuelta disabled" disabled>&#8592;</button>
+        <span class="etapa-info vuelta">2020</span>
+        <a href="2021.html" class="etapa-arrow vuelta">&#8594;</a>
     </div>
     <div class="container">
         <main>
             <section>
-                <h2 class="vuelta">Vuelta a España 2024</h2>
+                <h2 class="vuelta">Vuelta a España 2020</h2>
 
                 <div class="tables-container stacked">
                     <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
@@ -45,7 +45,6 @@
                                         <th>Id</th>
                                         <th>Porralaria</th>
                                         <th>Puntuak</th>
-                                        <th>Saria</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -82,9 +81,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Vuelta 24 data
-            window.standingsLoader.loadPorra('../../data/CSV/vuelta/vuelta24/porra%20sailkapena%20vuelta%2024.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('../../data/CSV/vuelta/vuelta24/txirrindulari%20sailkapena%20vuelta%2024.csv', 'txirrindulari-table');
+            // Loading Vuelta 20 data
+            window.standingsLoader.loadPorra('../../data/CSV/vuelta/vuelta20/porra%20sailkapena%20vuelta%2020.csv', 'porra-table');
+            window.standingsLoader.loadCyclists('../../data/CSV/vuelta/vuelta20/txirrindulari%20sailkapena%20vuelta%2020.csv', 'txirrindulari-table');
         });
     </script>
 </body>

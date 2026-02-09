@@ -499,16 +499,41 @@ h3.tour {
 }
 
 /* Klasikak Estiloa */
+.sailkapena-table.klasikak {
+    border: 1px solid #ddd;
+}
+
 .sailkapena-table.klasikak th {
     background: #4fc3f7;
-    color: #000;
+    color: #fff;
     border: 1px solid #0288d1;
+    padding: 10px 8px;
+    font-size: 0.9em;
+}
+
+.sailkapena-table.klasikak th:last-child {
+    border-right: none;
+}
+
+.sailkapena-table.klasikak td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.sailkapena-table.klasikak td:last-child {
+    border-right: none;
+}
+
+.sailkapena-table.klasikak tr:last-child td {
+    border-bottom: none;
 }
 
 h3.klasikak {
-    color: #4fc3f7;
+    color: #333;
     margin-bottom: 15px;
+    font-weight: bold;
 }
+
 
 h3.vuelta {
     color: #e53935;
@@ -529,6 +554,7 @@ h3.vuelta {
     display: block;
     margin: 0 auto;
 }
+
 
 .table-wrapper.no-box {
     border: none;

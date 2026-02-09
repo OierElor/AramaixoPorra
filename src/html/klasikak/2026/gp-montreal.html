@@ -26,9 +26,11 @@
         </nav>
     </header>
     <div class="etapa-navegazioa">
-        <button onclick="window.location.href='gp-quebec.html'" aria-label="Aurrekoa" class="etapa-arrow klasikak">&#8592;</button>
+        <button onclick="window.location.href='gp-quebec.html'" aria-label="Aurrekoa"
+            class="etapa-arrow klasikak">&#8592;</button>
         <span class="etapa-info klasikak">Grand Prix Cycliste de Montréal</span>
-        <button onclick="window.location.href='world-championship.html'" aria-label="Hurrengoa" class="etapa-arrow klasikak">&#8594;</button>
+        <button onclick="window.location.href='world-championship.html'" aria-label="Hurrengoa"
+            class="etapa-arrow klasikak">&#8594;</button>
     </div>
 
     <main>
@@ -39,7 +41,18 @@
                 <strong>UCI Kategoria:</strong> <span
                     style="background-color: #d4f1d4; padding: 4px 12px; border-radius: 4px; font-weight: bold;">4</span>
             </p>
+            <div class="table-wrapper no-box" style="margin-top: 30px; text-align: center;">
+                <h3 class="klasikak">PUNTUAZIO SISTEMA</h3>
+                <div id="scoring-table-container"></div>
+            </div>
+            <script src="../../../js/scoring-loader.js"></script>
+            <script>
+                window.addEventListener('DOMContentLoaded', () => {
+                    scoringLoader.loadScoringTable('../../../data/CSV/klasikak/PuntuazioEredua/laukoak.csv', 'scoring-table-container');
+                });
+            </script>
         </section>
+
     </main>
 </body>
 

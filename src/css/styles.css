@@ -185,6 +185,65 @@ nav.karrerak a {
     background: #0288d1;
 }
 
+.etapa-back-btn {
+    background-color: #555;
+    color: white;
+    padding: 6px 15px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.etapa-back-btn:hover {
+    background-color: #333;
+    color: white;
+}
+
+.etapa-back-btn.tour {
+    background-color: #ffd600;
+    color: #000;
+}
+
+.etapa-back-btn.giro {
+    background-color: #e754a6;
+    color: #fff;
+}
+
+.etapa-back-btn.vuelta {
+    background-color: #e53935;
+    color: #fff;
+}
+
+.etapa-back-btn.klasikak {
+    background-color: #4fc3f7;
+    color: #fff;
+}
+
+.etapa-back-btn.tour:hover {
+    background-color: #c79100;
+    color: #000;
+}
+
+.etapa-back-btn.giro:hover {
+    background-color: #b8006e;
+    color: #fff;
+}
+
+.etapa-back-btn.vuelta:hover {
+    background-color: #b71c1c;
+    color: #fff;
+}
+
+.etapa-back-btn.klasikak:hover {
+    background-color: #0288d1;
+    color: #fff;
+}
+
 /*Beste estiloak */
 
 main {
@@ -669,7 +728,7 @@ h3.vuelta {
     nav.karrerak ul {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        gap: 15px;
         padding: 0;
         justify-content: center;
     }
@@ -783,11 +842,24 @@ h3.vuelta {
     }
 
     .etapa-navegazioa {
-        gap: 8px;
-        padding: 8px 4px;
-        font-size: 0.9rem;
+        display: flex;
         flex-wrap: wrap;
         justify-content: center;
+        align-items: center;
+        column-gap: 15px;
+        row-gap: 12px;
+        padding: 12px 8px;
+        font-size: 0.9rem;
+    }
+
+    .etapa-info {
+        flex-basis: 100%;
+        order: 10;
+        /* Ensures it stays below the buttons */
+        text-align: center;
+        font-size: 1.1rem;
+        margin-top: 4px;
+        color: inherit;
     }
 
     .etapa-arrow {
@@ -797,6 +869,10 @@ h3.vuelta {
     }
 
     .download-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
         margin-top: 10px;
     }
 }

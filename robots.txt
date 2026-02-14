@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aramaixoporra.eus/src/sitemap.xml

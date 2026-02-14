@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <link rel="icon" type="image/png" href="../../../data/Portadak/favicon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - World Championship</title>
+    <link rel="stylesheet" href="../../../css/styles.css">
+    <script src="../../../js/klasikak-results-loader.js"></script>
+</head>
+
+<body>
+    <header>
+        <h1>
+            <a href="../../index.html" style="color: inherit; text-decoration: none;">
+                Aramaixo Porra
+            </a>
+        </h1>
+        <nav class="karrerak">
+            <ul>
+                <li><a class="tour" href="../../tour.html">Tour</a></li>
+                <li><a class="giro" href="../../giro.html">Giro</a></li>
+                <li><a class="vuelta" href="../../vuelta.html">Vuelta</a></li>
+                <li><a class="klasikak" href="../../klasikak.html">Klasikak</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="etapa-navegazioa">
+        <a href="../2024.html" class="etapa-back-btn klasikak">2024</a>
+        <button onclick="window.location.href='gp-montreal.html'" aria-label="Aurrekoa"
+            class="etapa-arrow klasikak">&#8592;</button>
+        
+        <span class="etapa-info klasikak">World Championship</span>
+        <button onclick="window.location.href='il-lombardia.html'" aria-label="Hurrengoa"
+            class="etapa-arrow klasikak">&#8594;</button>
+    </div>
+
+    <main>
+        <section>
+            <h2 class="klasikak">World Championship</h2>
+            <p style="text-align: center; font-size: 1.2em; margin: -10px 0 20px 0;">
+                <strong>Data:</strong> 2024/09/29 |
+                <strong>UCI Kategoria:</strong> <span
+                    style="background-color: #ffd700; padding: 4px 12px; border-radius: 4px; font-weight: bold;">1</span>
+            </p>
+            <div class="table-wrapper" style="margin-top: 30px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                <h3 class="klasikak" style="text-align: center;">EMAITZAK</h3>
+                <div class="table-content">
+                    <table class="sailkapena-table klasikak" id="emaitzak-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Txirrindularia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                                    <!-- CSV-tik kargatuko da -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            window.klasikakResults.load(
+                '../../../data/CSV/klasikak/klasikak24/Klasika%20bakoitzaren%20emaitza.csv',
+                'emaitzak-table',
+                19
+            );
+        });
+    </script>
+</body>
+
+</html>

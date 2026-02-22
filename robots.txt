@@ -1,5 +1,11 @@
 User-agent: *
 Allow: /$
-Disallow: /
+Disallow: /tour/
+Disallow: /giro/
+Disallow: /vuelta/
+Disallow: /klasikak/
+Disallow: /data/
+Disallow: /js/
+Disallow: /css/
 
 Sitemap: https://aramaixoporra.eus/sitemap.xml

@@ -42,23 +42,78 @@
 
     <main>
         <section>
-            <h2 class="klasikak">Omloop Nieuwsblad</h2>
+            <h2 class="klasikak" style="text-align: center;">Omloop Nieuwsblad</h2>
             <p style="text-align: center; font-size: 1.2em; margin: -10px 0 20px 0;">
                 <strong>Data:</strong> 2026/02/28 |
-                <strong>UCI Kategoria:</strong> <span id="kategoria-badge" style="background-color: #e0e0e0; padding: 4px 12px; border-radius: 4px; font-weight: bold;">...</span>
+                <strong>UCI Kategoria:</strong> <span id="kategoria-badge"
+                    style="background-color: #e0e0e0; padding: 4px 12px; border-radius: 4px; font-weight: bold;">...</span>
             </p>
             <div class="profile-container">
                 <img src="/data/Etapen Profila/klasikak/klasikak26/Omloop%20Nieuwsblad.png"
                     alt="Omloop Nieuwsblad 2026 Ibilbidea">
             </div>
             <div class="table-wrapper no-box" style="margin-top: 30px; text-align: center;">
-                <h3 class="klasikak">PUNTUAZIO SISTEMA</h3>
+                <h3 class="klasikak" style="text-align: center;">PUNTUAZIO SISTEMA</h3>
                 <div id="scoring-table-container"></div>
             </div>
+
+            <!-- Omloop Nieuwsblad Emaitzak -->
+            <div class="table-wrapper no-box" style="margin-top: 30px; text-align: center;">
+                <h3 class="klasikak" style="text-align: center;">SAILKAPENA</h3>
+                <div class="table-content">
+                    <table class="sailkapena-table klasikak" id="omloop-emaitzak"
+                        style="width: 100%; max-width: 900px; margin: 0 auto;">
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Dortsala</th>
+                                <th>Txirrindularia</th>
+                                <th>Puntuak</th>
+                                <th>Zenbatek</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding:20px;">Kargatzen...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <script src="/js/scoring-loader.js"></script>
             <script>
+                // ── Omloop Emaitzak loader ───────────────────────────────────────────────
+                async function loadOmloopEmaitzak() {
+                    try {
+                        const resp = await fetch('/data/CSV/klasikak/klasikak26/omloop%20sailkapena%20k26.csv');
+                        const text = await resp.text();
+                        // Lehenengo lerroa metadatua, bigarrena zutabe-izenburuak, gainerakoak datuak
+                        const lines = text.trim().split('\n').slice(2);
+                        const tbody = document.querySelector('#omloop-emaitzak tbody');
+                        tbody.innerHTML = '';
+                        lines.forEach((line, i) => {
+                            const parts = line.split(',').map(s => s.trim());
+                            if (!parts[0]) return;
+                            const tr = document.createElement('tr');
+                            if (i === 0) { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
+                            else if (i === 1) { tr.style.backgroundColor = '#f0f0f0'; }
+                            else if (i === 2) { tr.style.backgroundColor = '#fde8d0'; }
+                            [parts[0], parts[1], parts[2], parts[3], parts[4]].forEach(val => {
+                                const td = document.createElement('td');
+                                td.textContent = val ?? '';
+                                tr.appendChild(td);
+                            });
+                            tbody.appendChild(tr);
+                        });
+                    } catch (error) {
+                        console.error('Errorea Omloop emaitzak kargatzean:', error);
+                    }
+                }
+
                 window.addEventListener('DOMContentLoaded', () => {
                     scoringLoader.loadFromKategoria('omloop-nieuwsblad', 'scoring-table-container', 'kategoria-badge');
+                    loadOmloopEmaitzak();
                 });
             </script>
         </section>

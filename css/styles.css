@@ -382,7 +382,6 @@ p {
 .table-wrapper {
     flex: 1;
     min-width: 600px;
-    max-height: 600px;
     border: 1px solid #ddd;
     border-radius: 8px;
     background: #fff;

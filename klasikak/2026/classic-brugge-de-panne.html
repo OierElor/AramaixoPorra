@@ -46,8 +46,7 @@
             <h2 class="klasikak">Classic Brugge-De Panne</h2>
             <p style="text-align: center; font-size: 1.2em; margin: -10px 0 20px 0;">
                 <strong>Data:</strong> 2026/03/25 |
-                <strong>UCI Kategoria:</strong> <span
-                    style="background-color: #cce5ff; padding: 4px 12px; border-radius: 4px; font-weight: bold;">5</span>
+                <strong>UCI Kategoria:</strong> <span id="kategoria-badge" style="background-color: #e0e0e0; padding: 4px 12px; border-radius: 4px; font-weight: bold;">...</span>
             </p>
             <div class="profile-container">
                 <img src="/data/Etapen Profila/klasikak/klasikak26/Brugge-De%20Panne.png"
@@ -60,7 +59,7 @@
             <script src="/js/scoring-loader.js"></script>
             <script>
                 window.addEventListener('DOMContentLoaded', () => {
-                    scoringLoader.loadScoringTable('/data/CSV/klasikak/PuntuazioEredua/bostekoak.csv', 'scoring-table-container');
+                    scoringLoader.loadFromKategoria('classic-brugge-de-panne', 'scoring-table-container', 'kategoria-badge');
                 });
             </script>
         </section>

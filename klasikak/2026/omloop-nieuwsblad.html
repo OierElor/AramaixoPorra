@@ -34,7 +34,7 @@
     <div class="etapa-navegazioa">
         <a href="../2026/" class="etapa-back-btn klasikak">2026</a>
         <button class="etapa-arrow klasikak disabled" disabled>&#8592;</button>
-        
+
         <span class="etapa-info klasikak">Omloop Nieuwsblad</span>
         <button onclick="window.location.href='strade-bianche.html'" aria-label="Hurrengoa"
             class="etapa-arrow klasikak">&#8594;</button>
@@ -45,8 +45,7 @@
             <h2 class="klasikak">Omloop Nieuwsblad</h2>
             <p style="text-align: center; font-size: 1.2em; margin: -10px 0 20px 0;">
                 <strong>Data:</strong> 2026/02/28 |
-                <strong>UCI Kategoria:</strong> <span
-                    style="background-color: #d4f1d4; padding: 4px 12px; border-radius: 4px; font-weight: bold;">4</span>
+                <strong>UCI Kategoria:</strong> <span id="kategoria-badge" style="background-color: #e0e0e0; padding: 4px 12px; border-radius: 4px; font-weight: bold;">...</span>
             </p>
             <div class="profile-container">
                 <img src="/data/Etapen Profila/klasikak/klasikak26/Omloop%20Nieuwsblad.png"
@@ -59,7 +58,7 @@
             <script src="/js/scoring-loader.js"></script>
             <script>
                 window.addEventListener('DOMContentLoaded', () => {
-                    scoringLoader.loadScoringTable('/data/CSV/klasikak/PuntuazioEredua/laukoak.csv', 'scoring-table-container');
+                    scoringLoader.loadFromKategoria('omloop-nieuwsblad', 'scoring-table-container', 'kategoria-badge');
                 });
             </script>
         </section>

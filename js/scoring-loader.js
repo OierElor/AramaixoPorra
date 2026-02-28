@@ -4,8 +4,82 @@
  */
 
 class ScoringLoader {
+
+    // Kategoria → CSV path mapa
+    kategoriaToCsv(kategoria) {
+        const mapa = {
+            'Monumentua': '/data/CSV/klasikak/PuntuazioEredua/monumentuak.csv',
+            '4': '/data/CSV/klasikak/PuntuazioEredua/laukoak.csv',
+            '5': '/data/CSV/klasikak/PuntuazioEredua/bostekoak.csv',
+            'Proseries': '/data/CSV/klasikak/PuntuazioEredua/proseries.csv',
+            'Berezia': '/data/CSV/klasikak/PuntuazioEredua/txapelketa.csv',
+        };
+        return mapa[kategoria] || null;
+    }
+
+    // Kategoria → badge kolorea
+    kategoriaToColor(kategoria) {
+        const koloreak = {
+            'Monumentua': '#f5c6cb',
+            '4': '#d4f1d4',
+            '5': '#cce5ff',
+            'Proseries': '#fff3cd',
+            'Berezia': '#e2d9f3',
+        };
+        return koloreak[kategoria] || '#e0e0e0';
+    }
+
     /**
-     * Load scoring data by category and populate container
+     * Load category from kategoriak.csv and populate scoring table + badge
+     * @param {string} karreraSlug - e.g. 'omloop-nieuwsblad'
+     * @param {string} containerId - ID of the scoring table container
+     * @param {string} badgeId     - ID of the <span> for the category badge
+     */
+    async loadFromKategoria(karreraSlug, containerId, badgeId) {
+        try {
+            const response = await fetch('/data/CSV/klasikak/kategoriak.csv');
+            if (!response.ok) throw new Error('kategoriak.csv kargatu ezin');
+
+            const csvText = await response.text();
+            const kategoria = this.parseKategoriak(csvText, karreraSlug);
+
+            if (!kategoria) {
+                console.warn(`'${karreraSlug}' ez da kategoriak.csv-n aurkitu`);
+                return;
+            }
+
+            // Badge eguneratu
+            const badge = document.getElementById(badgeId);
+            if (badge) {
+                badge.textContent = kategoria;
+                badge.style.backgroundColor = this.kategoriaToColor(kategoria);
+            }
+
+            // Puntuazio taula kargatu
+            const csvPath = this.kategoriaToCsv(kategoria);
+            if (csvPath) {
+                await this.loadScoringTable(csvPath, containerId);
+            }
+
+        } catch (error) {
+            console.error('Errorea kategoria kargatzen:', error);
+        }
+    }
+
+    /**
+     * Parse kategoriak.csv and return category for given slug
+     */
+    parseKategoriak(csvText, slug) {
+        const lines = csvText.trim().split('\n');
+        for (let i = 1; i < lines.length; i++) {
+            const [karrera, kategoria] = lines[i].split(',').map(s => s.trim());
+            if (karrera === slug) return kategoria;
+        }
+        return null;
+    }
+
+    /**
+     * Load scoring data by CSV path and populate container
      * @param {string} csvPath - Path to the scoring CSV file
      * @param {string} containerId - ID of the container element
      */

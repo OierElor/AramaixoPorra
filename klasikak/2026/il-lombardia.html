@@ -46,8 +46,7 @@
             <h2 class="klasikak">Il Lombardia</h2>
             <p style="text-align: center; font-size: 1.2em; margin: -10px 0 20px 0;">
                 <strong>Data:</strong> 2026/10/10 |
-                <strong>UCI Kategoria:</strong> <span
-                    style="background-color: #ffcc99; padding: 4px 12px; border-radius: 4px; font-weight: bold;">3</span>
+                <strong>UCI Kategoria:</strong> <span id="kategoria-badge" style="background-color: #e0e0e0; padding: 4px 12px; border-radius: 4px; font-weight: bold;">...</span>
             </p>
             <div class="table-wrapper no-box" style="margin-top: 30px; text-align: center;">
                 <h3 class="klasikak">PUNTUAZIO SISTEMA</h3>
@@ -56,7 +55,7 @@
             <script src="/js/scoring-loader.js"></script>
             <script>
                 window.addEventListener('DOMContentLoaded', () => {
-                    scoringLoader.loadScoringTable('/data/CSV/klasikak/PuntuazioEredua/monumentuak.csv', 'scoring-table-container');
+                    scoringLoader.loadFromKategoria('il-lombardia', 'scoring-table-container', 'kategoria-badge');
                 });
             </script>
         </section>

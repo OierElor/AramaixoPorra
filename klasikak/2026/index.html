@@ -67,7 +67,7 @@
                                     <tr>
                                         <th rowspan="2">Pos</th>
                                         <th rowspan="2">Zbk</th>
-                                        <th rowspan="2">Porreroa</th>
+                                        <th rowspan="2">Porralaria</th>
                                         <th colspan="2">Puntuak</th>
                                         <th rowspan="2">Eboluzioa</th>
                                     </tr>
@@ -147,9 +147,27 @@
     </div>
 
     <script>
+        async function getLatestRaceFolder() {
+            let latest = 1;
+            for (let i = 1; i <= 30; i++) {
+                try {
+                    const resp = await fetch(`/data/CSV/klasikak/klasikak26/${i}/Sailkapen nagusia K26.csv`, { method: 'HEAD' });
+                    if (resp.ok) {
+                        latest = i;
+                    } else {
+                        break;
+                    }
+                } catch (e) {
+                    break;
+                }
+            }
+            return latest;
+        }
+
         // ── Sailkapen Nagusia (porralariena) loader ──────────────────────────────
-        async function loadSailkapenNagusia() {
-            const resp = await fetch('/data/CSV/klasikak/klasikak26/Sailkapen%20nagusia%20K26.csv');
+        async function loadSailkapenNagusia(folderNum) {
+            const resp = await fetch(`/data/CSV/klasikak/klasikak26/${folderNum}/Sailkapen%20nagusia%20K26.csv`);
+            if (!resp.ok) return;
             const text = await resp.text();
             const lines = text.trim().split('\n').slice(1); // lerro-izenburua salto
             const tbody = document.querySelector('#sailkapen-nagusia tbody');
@@ -162,9 +180,26 @@
                 else if (i === 1) { tr.style.backgroundColor = '#f0f0f0'; }
                 else if (i === 2) { tr.style.backgroundColor = '#fde8d0'; }
                 // Pos, Zbk, Izena, Gaur, Guztira, Eboluzioa
-                [parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]].forEach(val => {
+                [parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]].forEach((val, colIndex) => {
                     const td = document.createElement('td');
-                    td.textContent = val ?? '';
+                    if (colIndex === 5 && val !== undefined && val !== "") {
+                        const evo = parseInt(val, 10);
+                        if (!isNaN(evo)) {
+                            let arrow = '';
+                            if (evo > 0) {
+                                arrow = ' <span style="color: green;">&#9650;</span>'; // Berdea gorantz
+                            } else if (evo < 0) {
+                                arrow = ' <span style="color: red;">&#9660;</span>'; // Gorria beherantz
+                            } else {
+                                arrow = ' <span style="color: #cca900;">&#9654;</span>'; // Horia eskuinerantz
+                            }
+                            td.innerHTML = val + arrow;
+                        } else {
+                            td.textContent = val ?? '';
+                        }
+                    } else {
+                        td.textContent = val ?? '';
+                    }
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
@@ -172,8 +207,9 @@
         }
 
         // ── Tx Sailkapena (txirrindulariak) loader ───────────────────────────────
-        async function loadTxSailkapena() {
-            const resp = await fetch('/data/CSV/klasikak/klasikak26/Tx%20sailkapena%20K26.csv');
+        async function loadTxSailkapena(folderNum) {
+            const resp = await fetch(`/data/CSV/klasikak/klasikak26/${folderNum}/Tx%20sailkapena%20K26.csv`);
+            if (!resp.ok) return;
             const text = await resp.text();
             // Lehenengo lerroa izenburua, bigarrena zutabe-izenburuak, gainerakoak datuak
             const lines = text.trim().split('\n').slice(2);
@@ -195,12 +231,10 @@
             });
         }
 
-
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadSailkapenNagusia();
-            loadTxSailkapena();
-
+        window.addEventListener('DOMContentLoaded', async () => {
+            const latestFolder = await getLatestRaceFolder();
+            await loadSailkapenNagusia(latestFolder);
+            await loadTxSailkapena(latestFolder);
         });
     </script>
 </body>

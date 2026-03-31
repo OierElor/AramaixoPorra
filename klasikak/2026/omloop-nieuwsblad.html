@@ -86,7 +86,7 @@
                 // ── Omloop Emaitzak loader ───────────────────────────────────────────────
                 async function loadOmloopEmaitzak() {
                     try {
-                        const resp = await fetch('/data/CSV/klasikak/klasikak26/omloop%20sailkapena%20k26.csv');
+                        const resp = await fetch('/data/CSV/klasikak/klasikak26/1/omloop%20sailkapena%20k26.csv');
                         const text = await resp.text();
                         // Lehenengo lerroa metadatua, bigarrena zutabe-izenburuak, gainerakoak datuak
                         const lines = text.trim().split('\n').slice(2);

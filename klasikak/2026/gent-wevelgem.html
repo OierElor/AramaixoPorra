@@ -52,10 +52,68 @@
                 <h3 class="klasikak" style="text-align: center;">PUNTUAZIO SISTEMA</h3>
                 <div id="scoring-table-container"></div>
             </div>
+            <!-- Emaitzak -->
+            <div class="table-wrapper no-box" style="margin-top: 30px; text-align: center;">
+                <h3 class="klasikak" style="text-align: center;">SAILKAPENA</h3>
+                <div class="table-content">
+                    <table class="sailkapena-table klasikak" id="karrera-emaitzak"
+                        style="width: 100%; max-width: 900px; margin: 0 auto;">
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Dortsala</th>
+                                <th>Txirrindularia</th>
+                                <th>Puntuak</th>
+                                <th>Zenbatek</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding:20px;">Kargatzen...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <script src="/js/scoring-loader.js"></script>
             <script>
+                // ── Emaitzak loader ───────────────────────────────────────────────
+                async function loadEmaitzak() {
+                    try {
+                        const resp = await fetch('/data/CSV/klasikak/klasikak26/7/sailkapena.csv');
+                        if (!resp.ok) {
+                            document.querySelector('#karrera-emaitzak tbody').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Emaitzak ez daude prest</td></tr>';
+                            return;
+                        }
+                        const text = await resp.text();
+                        // Lehenengo lerroa metadatua, bigarrena zutabe-izenburuak, gainerakoak datuak
+                        const lines = text.trim().split('\n').slice(2);
+                        const tbody = document.querySelector('#karrera-emaitzak tbody');
+                        tbody.innerHTML = '';
+                        lines.forEach((line, i) => {
+                            const parts = line.split(',').map(s => s.trim());
+                            if (!parts[0]) return;
+                            const tr = document.createElement('tr');
+                            if (i === 0) { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
+                            else if (i === 1) { tr.style.backgroundColor = '#f0f0f0'; }
+                            else if (i === 2) { tr.style.backgroundColor = '#fde8d0'; }
+                            [parts[0], parts[1], parts[2], parts[3], parts[4]].forEach(val => {
+                                const td = document.createElement('td');
+                                td.textContent = val ?? '';
+                                tr.appendChild(td);
+                            });
+                            tbody.appendChild(tr);
+                        });
+                    } catch (error) {
+                        console.error('Errorea emaitzak kargatzean:', error);
+                        document.querySelector('#karrera-emaitzak tbody').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Emaitzak ez daude prest</td></tr>';
+                    }
+                }
+
                 window.addEventListener('DOMContentLoaded', () => {
                     scoringLoader.loadFromKategoria('gent-wevelgem', 'scoring-table-container', 'kategoria-badge');
+                    loadEmaitzak();
                 });
             </script>
         </section>

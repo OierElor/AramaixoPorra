@@ -84,7 +84,7 @@
                 // ── Emaitzak loader ───────────────────────────────────────────────
                 async function loadEmaitzak() {
                     try {
-                        const resp = await fetch('/data/CSV/klasikak/klasikak26/6/sailkapena.csv');
+                        const resp = await fetch('/data/CSV/klasikak/klasikak26/6/E3%20sailkapena%20k26.csv');
                         if (!resp.ok) {
                             document.querySelector('#karrera-emaitzak tbody').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Emaitzak ez daude prest</td></tr>';
                             return;

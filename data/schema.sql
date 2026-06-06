@@ -25,9 +25,10 @@ CREATE TABLE IF NOT EXISTS "Karrerak" (
 );
 
 CREATE TABLE IF NOT EXISTS "Porralariak" (
-    "Porralaria_ID" INTEGER NOT NULL UNIQUE,
-    "Izena" TEXT NOT NULL UNIQUE,
-    PRIMARY KEY("Porralaria_ID" AUTOINCREMENT)
+	"Porralaria_ID"	INTEGER NOT NULL UNIQUE,
+	"Izena"	TEXT NOT NULL UNIQUE,
+	"Zenbat Porra"	INTEGER DEFAULT 1,
+	PRIMARY KEY("Porralaria_ID" AUTOINCREMENT)
 );
 
 CREATE TABLE IF NOT EXISTS "Txirrindulariak" (
@@ -51,7 +52,7 @@ CREATE TABLE IF NOT EXISTS "TxapelketaSailkapenaPorralariak" (
     "Porralaria_ID" INTEGER NOT NULL,
     "Azken_Karrera_ID" INTEGER NOT NULL,
     "Puntuak_Totalean" INTEGER NOT NULL,
-    "Puntuak_Azken_Karrera" INTEGER,
+    "Puntuak_Azken_Karrera" INTEGER NOT NULL,
    	"Puntuazio_Finala"	INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY("Txapelketa_ID", "Porralaria_ID", "Azken_Karrera_ID"),
     FOREIGN KEY("Azken_Karrera_ID") REFERENCES "Karrerak"("Karrerak_ID"),
@@ -67,12 +68,51 @@ CREATE TABLE IF NOT EXISTS "TxapelketaSailkapenaTxirrindulariak" (
     "Puntuak_Azken_Karrera" INTEGER NOT NULL,
     "Puntuak_Sailkapen nagusia" INTEGER,
     "Puntuak_Mendian" INTEGER,
-    "Eboluzioa" INTEGER NOT NULL DEFAULT 0
-	"Puntuazio_Finala"	INTEGER NOT NULL DEFAULT 0,
+    "Eboluzioa" INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY("Txapelketa_ID", "Txirrindularia_ID", "Azken_Karrera_ID"),
     FOREIGN KEY("Azken_Karrera_ID") REFERENCES "Karrerak"("Karrerak_ID"),
     FOREIGN KEY("Txapelketa_ID") REFERENCES "Txapelketak"("Txapelketa_ID"),
     FOREIGN KEY("Txirrindularia_ID") REFERENCES "Txirrindulariak"("Txirrindularia_ID")
+);
+
+CREATE TABLE IF NOT EXISTS "TxapelketaEmaitzaPorralariak" (
+    "Txapelketa_ID"   INTEGER NOT NULL,
+    "Porralaria_ID"   INTEGER NOT NULL,
+    "Posizioa"        INTEGER NOT NULL,
+    "Puntuak"         INTEGER NOT NULL,
+    PRIMARY KEY("Txapelketa_ID", "Porralaria_ID"),
+    FOREIGN KEY("Txapelketa_ID") REFERENCES "Txapelketak"("Txapelketa_ID"),
+    FOREIGN KEY("Porralaria_ID") REFERENCES "Porralariak"("Porralaria_ID")
+);
+
+CREATE TABLE IF NOT EXISTS "TxapelketaEmaitzaTxirrindulariak" (
+    "Txapelketa_ID"          INTEGER NOT NULL,
+    "Txirrindularia_ID"      INTEGER NOT NULL,
+    "Posizioa"               INTEGER NOT NULL,
+    "Puntuak"                INTEGER NOT NULL,
+    "Puntuak_Sailkapen_Nag"  INTEGER,
+    "Puntuak_Mendian"        INTEGER,
+    PRIMARY KEY("Txapelketa_ID", "Txirrindularia_ID"),
+    FOREIGN KEY("Txapelketa_ID")    REFERENCES "Txapelketak"("Txapelketa_ID"),
+    FOREIGN KEY("Txirrindularia_ID") REFERENCES "Txirrindulariak"("Txirrindularia_ID")
+);
+
+CREATE TABLE IF NOT EXISTS "PorraApustuak" (
+    "Txapelketa_ID"     INTEGER NOT NULL,
+    "Porralaria_ID"     INTEGER NOT NULL,
+    "Txirrindularia_ID" INTEGER NOT NULL,
+    PRIMARY KEY("Txapelketa_ID", "Porralaria_ID", "Txirrindularia_ID"),
+    FOREIGN KEY("Txapelketa_ID")     REFERENCES "Txapelketak"("Txapelketa_ID"),
+    FOREIGN KEY("Porralaria_ID")     REFERENCES "Porralariak"("Porralaria_ID"),
+    FOREIGN KEY("Txirrindularia_ID") REFERENCES "Txirrindulariak"("Txirrindularia_ID")
+);
+
+CREATE TABLE IF NOT EXISTS "Sariak" (
+    "Txapelketa_ID"  INTEGER NOT NULL,
+    "Posizioa"       INTEGER NOT NULL,
+    "Saria"          TEXT NOT NULL,
+    PRIMARY KEY("Txapelketa_ID", "Posizioa"),
+    FOREIGN KEY("Txapelketa_ID") REFERENCES "Txapelketak"("Txapelketa_ID")
 );
 
 CREATE INDEX IF NOT EXISTS "KarreraSailkapenIndizea" ON "KarreraSailkapena" (

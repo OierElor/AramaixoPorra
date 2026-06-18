@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -126,9 +126,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Klasikak 24 data
-            window.standingsLoader.loadPorra('/data/CSV/klasikak/klasikak24/porra%20sailkapena.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/klasikak/klasikak24/txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+            // Klasikak 2024 — Txapelketa_ID=13
+            window.dbLoader.loadPorra(13, 'porra-table');
+            window.dbLoader.loadCyclists(13, 'txirrindulari-table');
         });
     </script>
 </body>

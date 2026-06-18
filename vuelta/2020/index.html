@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -98,9 +98,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Vuelta 20 data
-            window.standingsLoader.loadPorra('/data/CSV/vuelta/vuelta20/porra%20sailkapena%20vuelta%2020.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/vuelta/vuelta20/txirrindulari%20sailkapena%20vuelta%2020.csv', 'txirrindulari-table');
+            // Vuelta a España 2020 — Txapelketa_ID=7
+            window.dbLoader.loadPorra(7, 'porra-table');
+            window.dbLoader.loadCyclists(7, 'txirrindulari-table');
         });
     </script>
 </body>

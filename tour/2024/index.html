@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -104,9 +104,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Tour 24 data
-            window.standingsLoader.loadPorra('/data/CSV/tour/tour24/porra%20sailkapena%20tour%2024.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/tour/tour24/Txirrindulari%20sailkapena%20tour%2024.csv', 'txirrindulari-table');
+            // Tour de France 2024 — Txapelketa_ID=5
+            window.dbLoader.loadPorra(5, 'porra-table');
+            window.dbLoader.loadCyclists(5, 'txirrindulari-table');
         });
     </script>
 </body>

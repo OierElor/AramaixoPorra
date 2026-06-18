@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Tour 2025</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -116,9 +116,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // CSVs for Tour 25. "Porren sailkapena.csv" is the name for standings.
-            window.standingsLoader.loadPorra('/data/CSV/tour/tour25/Porren%20sailkapena.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/tour/tour25/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+            // Tour de France 2025 — Txapelketa_ID=6
+            window.dbLoader.loadPorra(6, 'porra-table');
+            window.dbLoader.loadCyclists(6, 'txirrindulari-table');
         });
     </script>
 </body>

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -104,9 +104,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Giro 24 data
-            window.standingsLoader.loadPorra('/data/CSV/giro/giro24/porra%20sailkapena%20giro%2024.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/giro/giro24/Txirrindulari%20sailkapena%20giro%2024.csv', 'txirrindulari-table');
+            // Giro D'Italia 2024 — Txapelketa_ID=2
+            window.dbLoader.loadPorra(2, 'porra-table');
+            window.dbLoader.loadCyclists(2, 'txirrindulari-table');
         });
     </script>
 </body>

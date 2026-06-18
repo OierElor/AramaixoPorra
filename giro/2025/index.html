@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -100,9 +100,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Giro 25 data
-            window.standingsLoader.loadPorra('/data/CSV/giro/giro25/Porra%20sailkapena.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/giro/giro25/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+            // Giro D'Italia 2025 — Txapelketa_ID=3
+            window.dbLoader.loadPorra(3, 'porra-table');
+            window.dbLoader.loadCyclists(3, 'txirrindulari-table');
         });
     </script>
 </body>

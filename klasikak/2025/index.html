@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Klasikak 2025</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -132,9 +132,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // CSVs for Klasikak 25
-            window.standingsLoader.loadPorra('/data/CSV/klasikak/klasikak25/Porra%20sailkapena.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/klasikak/klasikak25/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+            // Klasikak 2025 — Txapelketa_ID=14
+            window.dbLoader.loadPorra(14, 'porra-table');
+            window.dbLoader.loadCyclists(14, 'txirrindulari-table');
         });
     </script>
 </body>

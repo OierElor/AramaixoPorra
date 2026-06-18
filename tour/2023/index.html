@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -110,9 +110,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Tour 23 data
-            window.standingsLoader.loadPorra('/data/CSV/tour/tour23/porra%20sailkapena%20tour%2023.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/tour/tour23/Txirrindulari%20sailkapena%20tour%2023.csv', 'txirrindulari-table');
+            // Tour de France 2023 — Txapelketa_ID=4
+            window.dbLoader.loadPorra(4, 'porra-table');
+            window.dbLoader.loadCyclists(4, 'txirrindulari-table');
         });
     </script>
 </body>

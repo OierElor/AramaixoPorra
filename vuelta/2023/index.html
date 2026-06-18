@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -110,9 +110,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Vuelta 23 data
-            window.standingsLoader.loadPorra('/data/CSV/vuelta/vuelta23/porra%20sailkapena.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/vuelta/vuelta23/txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+            // Vuelta a España 2023 — Txapelketa_ID=10
+            window.dbLoader.loadPorra(10, 'porra-table');
+            window.dbLoader.loadCyclists(10, 'txirrindulari-table');
         });
     </script>
 </body>

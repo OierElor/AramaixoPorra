@@ -137,6 +137,54 @@ class DBLoader {
         }
     }
 
+    /**
+     * Klasika baten emaitzak kargatu DB-tik (KarreraSailkapena) eta taula bete.
+     * EMAITZAK taula: Pos + Txirrindularia (podium koloreekin).
+     */
+    async loadKlasikaResults(karreraId, tableId) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        this._showLoading(table);
+
+        try {
+            const sql = `
+                SELECT
+                    ks.Sailkapena AS Posizioa,
+                    t.Izena       AS Txirrindularia
+                FROM "KarreraSailkapena" ks
+                JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
+                WHERE ks.Karrera_ID = ?
+                ORDER BY ks.Sailkapena
+            `;
+
+            const rows = await this._query(sql, [karreraId]);
+
+            if (rows.length === 0) {
+                this._showMissing(table, 'Ez dago daturik.', karreraId);
+                return;
+            }
+
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                const pos = row.Posizioa;
+                if (pos === 1)      { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
+                else if (pos === 2) { tr.style.backgroundColor = '#f0f0f0'; }
+                else if (pos === 3) { tr.style.backgroundColor = '#fde8d0'; }
+                tr.appendChild(this._td(pos));
+                tr.appendChild(this._td(row.Txirrindularia));
+                tbody.appendChild(tr);
+            });
+
+        } catch (err) {
+            console.error(err);
+            this._showError(table, err.message);
+        }
+    }
+
     // ── Barne laguntzaileak ────────────────────────────────────────────────────
 
     _hasData(value) {

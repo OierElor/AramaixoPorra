@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Omloop Nieuwsblad</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/klasikak-results-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -60,7 +60,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                                    <!-- CSV-tik kargatuko da -->
+                                    <!-- DB-tik kargatuko da -->
                         </tbody>
                     </table>
                 </div>
@@ -71,11 +71,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            window.klasikakResults.load(
-                '/data/CSV/klasikak/klasikak24/Klasika%20bakoitzaren%20emaitza.csv',
-                'emaitzak-table',
-                1
-            );
+            window.dbLoader.loadKlasikaResults(8, 'emaitzak-table');
         });
     </script>
 </body>

@@ -339,9 +339,40 @@ MANUAL_MAP_NAMES = {
     "ODD CHRISTIAN EIKING": 314,          # Christian Odd
     "JOSEPH LLOYD DOMBROWSKI": 323,       # Lloyd Joseph
     "LECERF William Junior": 398,         # Lecerf Junior
+    # Klasiketako izen-formatu osoa ("Izena Erdikoa ABIZENA")
+    "Adam Richard YATES": 146,            # Yates Adam
+    "Andreas Lorentz KRON": 328,          # Andreas Kron
+    "Isaac DEL TORO ROMERO": 119,         # Del Toro Isaac
+    "Joao Pedro GONÇALVES ALMEIDA": 6,    # João Almeida
+    "Jonas VINGEGAARD HANSEN": 167,       # Vingegaard Jonas
+    "Juan AYUSO PESQUERA": 134,           # Ayuso Juan
+    "Kaden Alexander GROVES": 8,          # Groves Kaden
+    "Ion IZAGUIRRE INSAUSTI": 185,        # Izagirre Ion
+    "Jhonatan Manuel NARVAEZ PRADO": 82,  # Narváez Jhonatan
+    "Juan Sebastian MOLANO BENAVIDES": 92,  # Molano Juan Sebastián
+    "Alexander ARANBURU DEVA": 222,       # Aranburu Alex (alex != alexander)
+    "Pello BILBAO LOPEZ DE ARMENTIA": 170,  # Bilbao Pello (+3 token)
 }
 
 
 def manual_map_by_key():
     """MANUAL_MAP_NAMES match_key bidez indexatuta."""
     return {match_key(n): i for n, i in MANUAL_MAP_NAMES.items()}
+
+
+def klasikak_dorsals(path):
+    """Klasiketako 'TX zerrenda' orritik: [(dortsala_int, izena)].
+
+    Orria 3 zutabe-paretan dago (Dortsala|Izena). Talde-lerroak (2 digitu)
+    baztertu; txirrindulariek 4 digituko kodea dute (talde+txirrindulari),
+    sailkapen nagusiko 'Zbkia' zutabe berbera.
+    """
+    rows = sheet_rows(path, "TX zerrenda")
+    out = []
+    for r in rows[1:]:
+        for base in (0, 3, 6):
+            d = _col(r, base)
+            nm = _col(r, base + 1)
+            if nm and d.isdigit() and len(d) >= 4:
+                out.append((int(d), nm))
+    return out

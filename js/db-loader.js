@@ -159,7 +159,8 @@ class DBLoader {
             const sql = `
                 SELECT
                     ks.Sailkapena AS Posizioa,
-                    t.Izena       AS Txirrindularia
+                    t.Izena       AS Txirrindularia,
+                    ks.Puntuak    AS Puntuak
                 FROM "KarreraSailkapena" ks
                 JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
                 WHERE ks.Karrera_ID = ?
@@ -173,6 +174,16 @@ class DBLoader {
                 return;
             }
 
+            const hasPuntuak = rows.some(r => this._hasData(r.Puntuak));
+
+            const thead = table.querySelector('thead');
+            if (thead) {
+                let h = '<tr><th>Pos</th><th>Txirrindularia</th>';
+                if (hasPuntuak) h += '<th>Puntuak</th>';
+                h += '</tr>';
+                thead.innerHTML = h;
+            }
+
             const tbody = table.querySelector('tbody');
             if (!tbody) return;
             tbody.innerHTML = '';
@@ -183,8 +194,9 @@ class DBLoader {
                 if (pos === 1)      { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
                 else if (pos === 2) { tr.style.backgroundColor = '#f0f0f0'; }
                 else if (pos === 3) { tr.style.backgroundColor = '#fde8d0'; }
-                tr.appendChild(this._td(pos));
-                tr.appendChild(this._td(row.Txirrindularia));
+                tr.appendChild(this._td(pos, 'pos-col'));
+                tr.appendChild(this._td(row.Txirrindularia, 'name-col'));
+                if (hasPuntuak) tr.appendChild(this._td(row.Puntuak, 'points-col'));
                 tbody.appendChild(tr);
             });
 

@@ -309,24 +309,29 @@ class DBLoader {
      * emaitza-taula (Pos, Dortsala, Txirrindularia, Puntuak, Zenbatek).
      * @param {?number} karreraId  - null bada, "daturik ez" + kategoria '—'.
      */
-    async loadKlasikaRace(karreraId, txapelketaId, tableId, badgeId) {
+    async loadKlasikaRace(karreraId, txapelketaId, tableId, badgeId, kategoria = null) {
         const KAT_KOLORE = {
             'Monumentua': '#f5c6cb', '3': '#ffcc99', '4': '#d4f1d4',
             '5': '#cce5ff', 'Proseries': '#fff3cd', 'Berezia': '#e2d9f3',
         };
         const badge = document.getElementById(badgeId);
         const table = document.getElementById(tableId);
+        const setBadge = (kat) => {
+            if (!badge) return;
+            badge.textContent = this._hasData(kat) ? kat : '—';
+            if (KAT_KOLORE[kat]) badge.style.backgroundColor = KAT_KOLORE[kat];
+        };
         if (karreraId == null) {
-            if (badge) badge.textContent = '—';
+            setBadge(kategoria);  // korritu gabeko lasterketa: kategoria ezaguna (parametroz)
             if (table) this._showMissing(table, 'Ez dago daturik oraindik.', txapelketaId);
             return;
         }
         try {
-            const kr = await this._query("SELECT Kategoria FROM \"Karrerak\" WHERE Karrerak_ID = ?", [karreraId]);
-            if (badge && kr.length) {
-                const kat = kr[0].Kategoria;
-                badge.textContent = this._hasData(kat) ? kat : '—';
-                if (KAT_KOLORE[kat]) badge.style.backgroundColor = KAT_KOLORE[kat];
+            if (kategoria != null) {
+                setBadge(kategoria);
+            } else {
+                const kr = await this._query("SELECT Kategoria FROM \"Karrerak\" WHERE Karrerak_ID = ?", [karreraId]);
+                if (kr.length) setBadge(kr[0].Kategoria);
             }
             const sql = `
                 SELECT ks.Sailkapena AS Posizioa, h.Dortsala AS Dortsala,

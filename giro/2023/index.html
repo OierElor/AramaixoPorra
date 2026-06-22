@@ -93,6 +93,12 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="giro" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -102,6 +108,7 @@
             // Giro D'Italia 2023 — Txapelketa_ID=1
             window.dbLoader.loadPorra(1, 'porra-table');
             window.dbLoader.loadCyclists(1, 'txirrindulari-table');
+            window.dbLoader.loadStages(1, 'etapak-container', 'giro');
         });
     </script>
 </body>

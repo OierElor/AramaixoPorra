@@ -98,6 +98,12 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="giro" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -107,6 +113,7 @@
             // Giro D'Italia 2024 — Txapelketa_ID=2
             window.dbLoader.loadPorra(2, 'porra-table');
             window.dbLoader.loadCyclists(2, 'txirrindulari-table');
+            window.dbLoader.loadStages(2, 'etapak-container', 'giro');
         });
     </script>
 </body>

@@ -92,6 +92,12 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="vuelta" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -101,6 +107,7 @@
             // Vuelta a España 2021 — Txapelketa_ID=8
             window.dbLoader.loadPorra(8, 'porra-table');
             window.dbLoader.loadCyclists(8, 'txirrindulari-table');
+            window.dbLoader.loadStages(8, 'etapak-container', 'vuelta');
         });
     </script>
 </body>

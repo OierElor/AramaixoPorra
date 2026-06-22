@@ -98,6 +98,12 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="tour" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -107,6 +113,7 @@
             // Tour de France 2024 — Txapelketa_ID=5
             window.dbLoader.loadPorra(5, 'porra-table');
             window.dbLoader.loadCyclists(5, 'txirrindulari-table');
+            window.dbLoader.loadStages(5, 'etapak-container', 'tour');
         });
     </script>
 </body>

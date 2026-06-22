@@ -111,13 +111,22 @@ class DBLoader {
             const sql = `
                 SELECT
                     te.Posizioa,
+                    h.Dortsala,
                     t.Izena   AS Txirrindularia,
                     te.Puntuak,
-                    te."Zenbatek?"        AS Zenbatek,
+                    COALESCE(
+                        te."Zenbatek?",
+                        (SELECT COUNT(*) FROM "PorraApustuak" pa
+                          WHERE pa.Txapelketa_ID = te.Txapelketa_ID
+                            AND pa.Txirrindularia_ID = te.Txirrindularia_ID)
+                    ) AS Zenbatek,
                     te.Puntuak_Sailkapen_Nag,
                     te.Puntuak_Mendian
                 FROM "TxapelketaEmaitzaTxirrindulariak" te
                 JOIN "Txirrindulariak" t ON te.Txirrindularia_ID = t.Txirrindularia_ID
+                LEFT JOIN "TxirrindulariakTxapleketanParteHartzea" h
+                    ON h.TxapelketaID = te.Txapelketa_ID
+                    AND h.TxirrindulariaID = te.Txirrindularia_ID
                 WHERE te.Txapelketa_ID = ?
                 ORDER BY te.Posizioa
             `;
@@ -185,7 +194,99 @@ class DBLoader {
         }
     }
 
+    /**
+     * Hiru handietako etapaz etapako emaitzak kargatu (KarreraSailkapena) eta
+     * akordeoi gisa erakutsi: etapa bakoitza zabaltzean puntuatu duten
+     * txirrindulariak (Pos, Txirrindularia, Puntuak).
+     * @param {number} txapelketaId
+     * @param {string} containerId  - etapen edukiontziaren ID-a
+     * @param {string} colorClass   - 'vuelta' | 'giro' | 'tour' (estiloetarako)
+     */
+    async loadStages(txapelketaId, containerId, colorClass = '') {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '<p style="text-align:center;opacity:.6;padding:16px;">Etapak kargatzen...</p>';
+
+        try {
+            const stages = await this._query(`
+                SELECT k.Karrerak_ID AS id, k.Izena AS izena
+                FROM "Karrerak" k
+                WHERE k.Txapelketa_ID = ? AND k.Kategoria = 'Etapa'
+                ORDER BY k.Karrerak_ID
+            `, [txapelketaId]);
+
+            if (stages.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center;padding:24px;">
+                        <span style="font-size:1.4em;">⚠️</span><br>
+                        <strong>Ez dago etapa daturik oraindik</strong>
+                    </div>`;
+                return;
+            }
+
+            const results = await this._query(`
+                SELECT ks.Karrera_ID AS kid, ks.Sailkapena AS pos,
+                       t.Izena AS izena, ks.Puntuak AS puntuak
+                FROM "KarreraSailkapena" ks
+                JOIN "Karrerak" k ON k.Karrerak_ID = ks.Karrera_ID
+                JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
+                WHERE k.Txapelketa_ID = ? AND k.Kategoria = 'Etapa'
+                ORDER BY ks.Karrera_ID, ks.Sailkapena
+            `, [txapelketaId]);
+
+            const byStage = {};
+            results.forEach(r => { (byStage[r.kid] = byStage[r.kid] || []).push(r); });
+
+            const cls = colorClass ? ' ' + colorClass : '';
+            let html = '<div class="etapak-accordion">';
+            stages.forEach(s => {
+                const label = String(s.izena).split(' - ').pop();  // "1. etapa (Helmuga)"
+                const riders = byStage[s.id] || [];
+                const rowsHtml = riders.map(r =>
+                    `<tr><td class="pos-col">${r.pos}</td>` +
+                    `<td class="name-col">${this._esc(r.izena)}</td>` +
+                    `<td class="points-col">${r.puntuak}</td></tr>`
+                ).join('');
+                html += `
+                    <div class="etapa-item">
+                        <button type="button" class="etapa-toggle${cls}">
+                            <span>${this._esc(label)}</span>
+                            <span class="etapa-chevron">▾</span>
+                        </button>
+                        <div class="etapa-panel" hidden>
+                            <table class="sailkapena-table${cls}" style="margin:0;">
+                                <thead><tr><th>Pos</th><th>Txirrindularia</th><th>Puntuak</th></tr></thead>
+                                <tbody>${rowsHtml ||
+                                    '<tr><td colspan="3" style="opacity:.6;">Daturik ez</td></tr>'}</tbody>
+                            </table>
+                        </div>
+                    </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+
+            container.querySelectorAll('.etapa-toggle').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const panel = btn.nextElementSibling;
+                    const wasOpen = !panel.hidden;
+                    panel.hidden = wasOpen;
+                    btn.classList.toggle('open', !wasOpen);
+                });
+            });
+
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = `<p style="color:#c00;text-align:center;padding:16px;">Errorea etapak kargatzen: ${err.message}</p>`;
+        }
+    }
+
     // ── Barne laguntzaileak ────────────────────────────────────────────────────
+
+    _esc(s) {
+        const div = document.createElement('div');
+        div.textContent = s == null ? '' : String(s);
+        return div.innerHTML;
+    }
 
     _hasData(value) {
         return value != null && String(value).trim() !== '';
@@ -215,11 +316,12 @@ class DBLoader {
     }
 
     _fillCyclistTable(table, rows) {
+        const hasDortsala  = rows.some(r => this._hasData(r.Dortsala));
         const hasZenbatek  = rows.some(r => this._hasData(r.Zenbatek));
         const hasSailkNag  = rows.some(r => this._hasData(r.Puntuak_Sailkapen_Nag));
         const hasMendia    = rows.some(r => this._hasData(r.Puntuak_Mendian));
 
-        this._updateCyclistThead(table, hasZenbatek, hasSailkNag, hasMendia);
+        this._updateCyclistThead(table, hasDortsala, hasZenbatek, hasSailkNag, hasMendia);
 
         const tbody = table.querySelector('tbody');
         if (!tbody) return;
@@ -228,6 +330,7 @@ class DBLoader {
         rows.forEach(row => {
             const tr = document.createElement('tr');
             tr.appendChild(this._td(row.Posizioa, 'pos-col'));
+            if (hasDortsala) tr.appendChild(this._td(row.Dortsala ?? '—'));
             tr.appendChild(this._td(row.Txirrindularia, 'name-col'));
             tr.appendChild(this._td(row.Puntuak, 'points-col'));
             if (hasZenbatek) tr.appendChild(this._td(row.Zenbatek ?? '—'));
@@ -253,12 +356,13 @@ class DBLoader {
         thead.innerHTML = html;
     }
 
-    _updateCyclistThead(table, hasZenbatek, hasSailkNag, hasMendia) {
+    _updateCyclistThead(table, hasDortsala, hasZenbatek, hasSailkNag, hasMendia) {
         const thead = table.querySelector('thead');
         if (!thead) return;
 
         let html = '<tr>';
         html += '<th>Pos</th>';
+        if (hasDortsala) html += '<th>Dortsala</th>';
         html += '<th>Txirrindularia</th>';
         html += '<th>Puntuak</th>';
         if (hasZenbatek) html += '<th>Zenbatek?</th>';

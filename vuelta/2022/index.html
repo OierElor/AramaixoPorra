@@ -93,6 +93,12 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="vuelta" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -102,6 +108,7 @@
             // Vuelta a España 2022 — Txapelketa_ID=9
             window.dbLoader.loadPorra(9, 'porra-table');
             window.dbLoader.loadCyclists(9, 'txirrindulari-table');
+            window.dbLoader.loadStages(9, 'etapak-container', 'vuelta');
         });
     </script>
 </body>

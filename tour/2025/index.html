@@ -110,6 +110,12 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="tour" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -119,6 +125,7 @@
             // Tour de France 2025 — Txapelketa_ID=6
             window.dbLoader.loadPorra(6, 'porra-table');
             window.dbLoader.loadCyclists(6, 'txirrindulari-table');
+            window.dbLoader.loadStages(6, 'etapak-container', 'tour');
         });
     </script>
 </body>

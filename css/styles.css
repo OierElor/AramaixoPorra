@@ -885,3 +885,54 @@ h3.vuelta {
         font-size: 0.8rem;
     }
 }
+
+/* ── Etapaz etapako akordeoia (hiru handiak) ──────────────────────────────── */
+.etapak-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.etapa-item {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.etapa-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    background: #4fc3f7;
+    color: #fff;
+    transition: background 0.2s;
+}
+
+.etapa-toggle.vuelta { background: #e53935; }
+.etapa-toggle.giro   { background: #e754a6; }
+.etapa-toggle.tour   { background: #ffd600; color: #000; }
+
+.etapa-toggle:hover            { filter: brightness(0.92); }
+.etapa-chevron {
+    transition: transform 0.2s;
+    font-size: 0.9em;
+}
+.etapa-toggle.open .etapa-chevron { transform: rotate(180deg); }
+
+.etapa-panel {
+    padding: 4px 8px 10px;
+    background: #fff;
+    overflow-x: auto;
+}
+
+.etapa-panel .sailkapena-table {
+    font-size: 0.85em;
+}

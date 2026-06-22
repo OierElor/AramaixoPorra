@@ -104,6 +104,12 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="tour" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -113,6 +119,7 @@
             // Tour de France 2023 — Txapelketa_ID=4
             window.dbLoader.loadPorra(4, 'porra-table');
             window.dbLoader.loadCyclists(4, 'txirrindulari-table');
+            window.dbLoader.loadStages(4, 'etapak-container', 'tour');
         });
     </script>
 </body>

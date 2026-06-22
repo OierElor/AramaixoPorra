@@ -104,6 +104,12 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="vuelta" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -113,6 +119,7 @@
             // Vuelta a España 2023 — Txapelketa_ID=10
             window.dbLoader.loadPorra(10, 'porra-table');
             window.dbLoader.loadCyclists(10, 'txirrindulari-table');
+            window.dbLoader.loadStages(10, 'etapak-container', 'vuelta');
         });
     </script>
 </body>

@@ -117,7 +117,7 @@ def main():
         izcols = [i for i, c in enumerate(rows[hi]) if c.strip().lower().startswith("txizen")]
 
         ez_by_norm = {norm_ez(e): i for i, e in cur.execute(
-            "SELECT Ezizen_ID, Ezizena FROM PorralariEzizenak WHERE Txapelketa_ID=?", (tid,))}
+            "SELECT Ezizen_ID, Ezizena FROM PorraEzizenak WHERE Txapelketa_ID=?", (tid,))}
 
         for r in rows[hi + 1:]:
             if not (len(r) > 1 and r[0].strip().isdigit() and r[1].strip()):
@@ -133,7 +133,7 @@ def main():
             ez_id = ez_by_norm.get(norm_ez(db_ez_name) if db_ez_name else nz)
             if ez_id is None:
                 # benetako porra berria (erabiltzaileak berretsita): sortu
-                cur.execute("INSERT INTO PorralariEzizenak (Txapelketa_ID, Ezizena) "
+                cur.execute("INSERT INTO PorraEzizenak (Txapelketa_ID, Ezizena) "
                             "VALUES (?, ?)", (tid, ez))
                 ez_id = cur.lastrowid
                 ez_by_norm[nz] = ez_id

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Porralari fitxa</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/erreminta-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1><a href="/" style="color: inherit; text-decoration: none;">Aramaixo Porra</a></h1>
+        <nav class="karrerak">
+            <ul>
+                <li><a class="tour" href="/tour/">Tour</a></li>
+                <li><a class="giro" href="/giro/">Giro</a></li>
+                <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
+                <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
+                <li><a class="grafikoak" href="/erremintak/">Erremintak</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Porralari fitxa</h2>
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="porralari-input">Porralaria (bilatu)</label>
+                        <input id="porralari-input" list="porralari-datalist" placeholder="Idatzi izena..."
+                            autocomplete="off" style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
+                        <datalist id="porralari-datalist"></datalist>
+                    </div>
+                </div>
+                <div id="fitxa-edukia"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const state = { guztiak: [] };
+
+        async function init() {
+            state.guztiak = await Erreminta.q(
+                "SELECT Porralaria_ID AS id, Izena AS izena FROM Porralariak ORDER BY Izena");
+            document.getElementById('porralari-datalist').innerHTML =
+                state.guztiak.map(p => `<option value="${p.izena}">`).join('');
+            document.getElementById('porralari-input').addEventListener('change', onPick);
+        }
+
+        function onPick() {
+            const val = document.getElementById('porralari-input').value.trim().toLowerCase();
+            const p = state.guztiak.find(x => x.izena.toLowerCase() === val);
+            if (p) renderFitxa(p);
+        }
+
+        // Porralari baten porrak (PorralariTaldeenEzizenak bidez), ezizen-IDarekin.
+        async function porrak(porralariId) {
+            return Erreminta.q(
+                "SELECT pe.Ezizen_ID AS ezid, tx.Izena AS txap, tx.Urtea AS urtea, pe.Ezizena AS ezizena, " +
+                " e.Posizioa AS pos, e.Puntuak AS pts, " +
+                " (SELECT COUNT(*) FROM PorraEzizenak WHERE Txapelketa_ID = pe.Txapelketa_ID) AS np " +
+                "FROM PorralariTaldeenEzizenak te " +
+                "JOIN PorraEzizenak pe ON pe.Ezizen_ID = te.Ezizen_ID " +
+                "JOIN Txapelketak tx ON tx.Txapelketa_ID = pe.Txapelketa_ID " +
+                "LEFT JOIN TxapelketaEmaitzaPorralariak e ON e.Ezizen_ID = pe.Ezizen_ID AND e.Txapelketa_ID = pe.Txapelketa_ID " +
+                "WHERE te.Porralaria_ID = ? ORDER BY tx.Urtea DESC, tx.Izena", [porralariId]);
+        }
+
+        // Ezizen bakoitzeko taldekideak (porralari hau kenduta).
+        async function taldekideak(ezids, porralariId) {
+            if (!ezids.length) return new Map();
+            const ph = ezids.map(() => '?').join(',');
+            const rows = await Erreminta.q(
+                "SELECT te.Ezizen_ID AS ezid, GROUP_CONCAT(p.Izena, ', ') AS kideak " +
+                "FROM PorralariTaldeenEzizenak te JOIN Porralariak p ON p.Porralaria_ID = te.Porralaria_ID " +
+                "WHERE te.Ezizen_ID IN (" + ph + ") AND te.Porralaria_ID <> ? " +
+                "GROUP BY te.Ezizen_ID", [...ezids, porralariId]);
+            return new Map(rows.map(r => [r.ezid, r.kideak]));
+        }
+
+        async function renderFitxa(p) {
+            const cont = document.getElementById('fitxa-edukia');
+            cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
+
+            const lerroak = await porrak(p.id);
+            const kideMap = await taldekideak(lerroak.map(r => r.ezid), p.id);
+            const baderaTalde = [...kideMap.keys()].length > 0;
+
+            const posizioak = lerroak.filter(r => r.pos != null).map(r => r.pos);
+            const onena = posizioak.length ? Math.min(...posizioak) : null;
+            const bataz = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+            const klasika = r => /klasik/i.test(r.txap);
+            const mediaItzuli = bataz(lerroak.filter(r => r.pts != null && !klasika(r)).map(r => r.pts));
+            const mediaKlasika = bataz(lerroak.filter(r => r.pts != null && klasika(r)).map(r => r.pts));
+
+            const body = lerroak.map(r => {
+                const pos = r.pos != null ? `${r.pos}. <span style="opacity:.5;">/ ${r.np}</span>`
+                    : '<span style="opacity:.5;">martxan</span>';
+                const kide = kideMap.get(r.ezid);
+                return `<tr><td class="name-col">${r.txap}</td><td>${r.ezizena}</td>` +
+                    `<td>${pos}</td><td class="points-col">${r.pts ?? '—'}</td>` +
+                    (baderaTalde ? `<td style="color:#43a047;">${kide ? '👥 ' + kide : '—'}</td>` : '') + `</tr>`;
+            }).join('');
+
+            const taula = `<table class="sailkapena-table klasikak"><thead><tr>` +
+                `<th>Txapelketa</th><th>Porra</th><th>Postua</th><th>Puntuak</th>` +
+                (baderaTalde ? '<th>Taldekideak</th>' : '') +
+                `</tr></thead><tbody>${body}</tbody></table>`;
+
+            cont.innerHTML = `
+                <div class="grafiko-oihala" style="text-align:center;">
+                    <h3 class="grafikoak" style="margin:4px 0;">${p.izena}</h3>
+                    <div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;margin:8px 0;">
+                        <div><div style="font-size:1.6em;font-weight:bold;">${lerroak.length}</div><div style="opacity:.6;">Porrak</div></div>
+                        <div><div style="font-size:1.6em;font-weight:bold;">${onena != null ? onena + '.' : '—'}</div><div style="opacity:.6;">Postu onena</div></div>
+                        <div><div style="font-size:1.6em;font-weight:bold;">${mediaItzuli ?? '—'}</div><div style="opacity:.6;">Media (itzuli h.)</div></div>
+                        <div><div style="font-size:1.6em;font-weight:bold;">${mediaKlasika ?? '—'}</div><div style="opacity:.6;">Media (klasikak)</div></div>
+                    </div>
+                </div>
+                <div class="table-wrapper" style="max-width:820px;margin:14px auto;overflow-x:auto;">
+                    <h3 class="grafikoak" style="text-align:center;">PORRAK</h3>
+                    <div class="table-content">${taula}</div>
+                </div>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

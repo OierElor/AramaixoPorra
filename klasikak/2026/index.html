@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
@@ -24,10 +25,11 @@
         </h1>
         <nav class="karrerak">
             <ul>
-                <li><a class="tour" href="../../tour/">Tour</a></li>
-                <li><a class="giro" href="../../giro/">Giro</a></li>
-                <li><a class="vuelta" href="../../vuelta/">Vuelta</a></li>
-                <li><a class="klasikak" href="../../klasikak/">Klasikak</a></li>
+                <li><a class="tour" href="/tour/">Tour</a></li>
+                <li><a class="giro" href="/giro/">Giro</a></li>
+                <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
+                <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
+                <li><a class="grafikoak" href="/erremintak/">Erremintak</a></li>
             </ul>
         </nav>
     </header>
@@ -147,94 +149,11 @@
     </div>
 
     <script>
-        async function getLatestRaceFolder() {
-            let latest = 1;
-            for (let i = 1; i <= 30; i++) {
-                try {
-                    const resp = await fetch(`/data/CSV/klasikak/klasikak26/${i}/Sailkapen nagusia K26.csv`, { method: 'HEAD' });
-                    if (resp.ok) {
-                        latest = i;
-                    } else {
-                        break;
-                    }
-                } catch (e) {
-                    break;
-                }
-            }
-            return latest;
-        }
-
-        // ── Sailkapen Nagusia (porralariena) loader ──────────────────────────────
-        async function loadSailkapenNagusia(folderNum) {
-            const resp = await fetch(`/data/CSV/klasikak/klasikak26/${folderNum}/Sailkapen%20nagusia%20K26.csv`);
-            if (!resp.ok) return;
-            const text = await resp.text();
-            const lines = text.trim().split('\n').slice(1); // lerro-izenburua salto
-            const tbody = document.querySelector('#sailkapen-nagusia tbody');
-            tbody.innerHTML = '';
-            lines.forEach((line, i) => {
-                const parts = line.split(',').map(s => s.trim());
-                if (!parts[0]) return;
-                const tr = document.createElement('tr');
-                if (i === 0) { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
-                else if (i === 1) { tr.style.backgroundColor = '#f0f0f0'; }
-                else if (i === 2) { tr.style.backgroundColor = '#fde8d0'; }
-                // Pos, Zbk, Izena, Gaur, Guztira, Eboluzioa
-                [parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]].forEach((val, colIndex) => {
-                    const td = document.createElement('td');
-                    if (colIndex === 5 && val !== undefined && val !== "") {
-                        const evo = parseInt(val, 10);
-                        if (!isNaN(evo)) {
-                            let arrow = '';
-                            if (evo > 0) {
-                                arrow = ' <span style="color: green;">&#9650;</span>'; // Berdea gorantz
-                            } else if (evo < 0) {
-                                arrow = ' <span style="color: red;">&#9660;</span>'; // Gorria beherantz
-                            } else {
-                                arrow = ' <span style="color: #cca900;">&#9654;</span>'; // Horia eskuinerantz
-                            }
-                            td.innerHTML = val + arrow;
-                        } else {
-                            td.textContent = val ?? '';
-                        }
-                    } else {
-                        td.textContent = val ?? '';
-                    }
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
-
-        // ── Tx Sailkapena (txirrindulariak) loader ───────────────────────────────
-        async function loadTxSailkapena(folderNum) {
-            const resp = await fetch(`/data/CSV/klasikak/klasikak26/${folderNum}/Tx%20sailkapena%20K26.csv`);
-            if (!resp.ok) return;
-            const text = await resp.text();
-            // Lehenengo lerroa izenburua, bigarrena zutabe-izenburuak, gainerakoak datuak
-            const lines = text.trim().split('\n').slice(2);
-            const tbody = document.querySelector('#tx-sailkapena tbody');
-            tbody.innerHTML = '';
-            lines.forEach((line, i) => {
-                const parts = line.split(',').map(s => s.trim());
-                if (!parts[0]) return;
-                const tr = document.createElement('tr');
-                if (i === 0) { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
-                else if (i === 1) { tr.style.backgroundColor = '#f0f0f0'; }
-                else if (i === 2) { tr.style.backgroundColor = '#fde8d0'; }
-                [parts[0], parts[1], parts[2], parts[3], parts[4]].forEach(val => {
-                    const td = document.createElement('td');
-                    td.textContent = val ?? '';
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            const latestFolder = await getLatestRaceFolder();
-            await loadSailkapenNagusia(latestFolder);
-            await loadTxSailkapena(latestFolder);
+        // Klasikak 2026 — Txapelketa_ID=15. Emaitza ofizialik ez denez (denboraldia
+        // martxan), db-loader-ek azken sailkapena erakutsiko du bilakaeratik.
+        document.addEventListener('DOMContentLoaded', () => {
+            window.dbLoader.loadPorra(15, 'sailkapen-nagusia');
+            window.dbLoader.loadCyclists(15, 'tx-sailkapena');
         });
     </script>
 </body>

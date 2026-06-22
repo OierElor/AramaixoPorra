@@ -31,6 +31,205 @@ a.klasikak {
     background: #4fc3f7;
 }
 
+h2.grafikoak {
+    color: #43a047;
+}
+
+a.grafikoak {
+    background: #43a047;
+}
+
+/* ── Erremintak hub-a ─────────────────────────────────────────────────────── */
+.erreminta-sareta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    max-width: 1000px;
+    margin: 24px auto;
+}
+
+.erreminta-txartela {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: #fff;
+    border: 1px solid #e3e3e3;
+    border-top: 4px solid #43a047;
+    border-radius: 10px;
+    padding: 20px;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.erreminta-txartela:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.erreminta-ikonoa {
+    font-size: 2.2em;
+    margin-bottom: 6px;
+}
+
+.erreminta-txartela h3 {
+    margin: 6px 0;
+    color: #43a047;
+}
+
+.erreminta-txartela p {
+    margin: 0;
+    font-size: 0.9em;
+    opacity: 0.75;
+}
+
+/* ── Aukeren bero-mapa ────────────────────────────────────────────────────── */
+.bero-mapa {
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.bero-mapa th,
+.bero-mapa td {
+    border: 1px solid #eee;
+}
+
+.bero-mapa thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f0f0f0;
+    height: 26px;
+}
+
+.bero-mapa .bm-zut {
+    width: 16px;
+    min-width: 16px;
+    font-size: 9px;
+    color: #888;
+    padding: 0;
+}
+
+.bero-mapa .bm-izena {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #fff;
+    text-align: left;
+    padding: 2px 8px;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bero-mapa thead .bm-izena,
+.bero-mapa thead .bm-n {
+    z-index: 3;
+}
+
+.bero-mapa .bm-n {
+    position: sticky;
+    left: 160px;
+    z-index: 1;
+    background: #fafafa;
+    width: 26px;
+    text-align: center;
+    color: #666;
+}
+
+.bero-mapa .bm-cell {
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0;
+    background: #fbfbfb;
+}
+
+.bero-mapa .bm-cell.on {
+    background: #43a047;
+}
+
+.bero-mapa tbody tr:hover .bm-izena {
+    background: #e8f5e9;
+}
+
+/* ── Grafikoen atala ──────────────────────────────────────────────────────── */
+.grafiko-kontrolak {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+    justify-content: center;
+    margin: 16px auto;
+    max-width: 1000px;
+}
+
+.grafiko-kontrolak label {
+    display: block;
+    font-weight: bold;
+    font-size: 0.85em;
+    margin-bottom: 4px;
+}
+
+.grafiko-kontrolak select {
+    padding: 8px 10px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    font-size: 0.95em;
+    background: #fff;
+}
+
+.grafiko-mota {
+    display: inline-flex;
+    border: 1px solid #43a047;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.grafiko-mota button {
+    border: none;
+    background: #fff;
+    color: #43a047;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.grafiko-mota button.active {
+    background: #43a047;
+    color: #fff;
+}
+
+.grafiko-entitateak {
+    max-width: 1000px;
+    margin: 10px auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    justify-content: center;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.grafiko-entitateak label {
+    font-size: 0.85em;
+    font-weight: normal;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.grafiko-oihala {
+    max-width: 1000px;
+    margin: 16px auto;
+    padding: 12px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
 /* Beste CSS estiloak */
 body {
     font-family: 'Segoe UI', Arial, sans-serif;

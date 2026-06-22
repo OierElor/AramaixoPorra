@@ -2,7 +2,7 @@
 
 ODS guztiak irakurri eta sortu scripts/reports/ barruan:
   - cyclists_unmatched.csv: DB-n bat ez datozen txirrindulariak (eskuz berrikusteko).
-  - ezizen_unmatched.csv:   PorralariEzizenak-en aurkitu ez diren porra-ezizenak.
+  - ezizen_unmatched.csv:   PorraEzizenak-en aurkitu ez diren porra-ezizenak.
   - summary.txt:            txapelketa bakoitzeko laburpena.
 """
 
@@ -47,7 +47,7 @@ def main():
         # txapelketa honetako ezizenak DB-n
         if tid is not None:
             db_ez = {norm_ezizen(e): e for (e,) in
-                     con.execute("SELECT Ezizena FROM PorralariEzizenak WHERE Txapelketa_ID=?", (tid,))}
+                     con.execute("SELECT Ezizena FROM PorraEzizenak WHERE Txapelketa_ID=?", (tid,))}
         else:
             db_ez = {}
 

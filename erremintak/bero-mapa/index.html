@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Aukeren bero-mapa</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/erreminta-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1><a href="/" style="color: inherit; text-decoration: none;">Aramaixo Porra</a></h1>
+        <nav class="karrerak">
+            <ul>
+                <li><a class="tour" href="/tour/">Tour</a></li>
+                <li><a class="giro" href="/giro/">Giro</a></li>
+                <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
+                <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
+                <li><a class="grafikoak" href="/erremintak/">Erremintak</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Aukeren bero-mapa</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px;">
+                    Porra bakoitzak zein txirrindulari aukeratu zituen. Lerroak = txirrindulariak
+                    (ospearen arabera), zutabeak = porrak (postuaren arabera).
+                </p>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="txap-select">Txapelketa</label>
+                        <select id="txap-select"></select>
+                    </div>
+                    <div>
+                        <label for="min-select">Gutxieneko aukerak</label>
+                        <select id="min-select">
+                            <option value="1">Denak</option>
+                            <option value="2">≥ 2 porrak</option>
+                            <option value="5">≥ 5 porrak</option>
+                            <option value="10">≥ 10 porrak</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="bero-edukia" style="overflow:auto; max-height:70vh; margin-top:12px;"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const state = { txapId: null, minPicks: 1 };
+
+        async function init() {
+            const txs = await Erreminta.txapelketak();
+            const sel = document.getElementById('txap-select');
+            sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
+            state.txapId = txs.length ? txs[0].id : null;
+            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); render(); });
+            document.getElementById('min-select').addEventListener('change', e => {
+                state.minPicks = parseInt(e.target.value, 10); render();
+            });
+            await render();
+        }
+
+        async function render() {
+            const cont = document.getElementById('bero-edukia');
+            cont.innerHTML = '<p style="opacity:.6;padding:16px;">Kargatzen...</p>';
+            const tid = state.txapId;
+
+            const porrak = await Erreminta.porrak(tid);  // postuaren arabera ordenatua
+            const cyc = await Erreminta.q(
+                "SELECT t.Txirrindularia_ID AS id, t.Izena AS izena, COUNT(*) AS n " +
+                "FROM PorraApustuak pa JOIN Txirrindulariak t ON t.Txirrindularia_ID = pa.Txirrindularia_ID " +
+                "WHERE pa.Txapelketa_ID = ? GROUP BY pa.Txirrindularia_ID ORDER BY n DESC, t.Izena", [tid]);
+            const picks = await Erreminta.q(
+                "SELECT Ezizen_ID AS e, Txirrindularia_ID AS t FROM PorraApustuak WHERE Txapelketa_ID = ?", [tid]);
+
+            const pickSet = new Set(picks.map(p => p.e + '-' + p.t));
+            const rows = cyc.filter(c => c.n >= state.minPicks);
+            const np = porrak.length;
+
+            let html = '<table class="bero-mapa"><thead><tr>' +
+                '<th class="bm-izena">Txirrindularia</th><th class="bm-n">#</th>' +
+                porrak.map(p => `<th class="bm-zut" title="${p.pos}. ${p.izena} (${p.total})">${p.pos}</th>`).join('') +
+                '</tr></thead><tbody>';
+
+            rows.forEach(c => {
+                html += '<tr><td class="bm-izena">' + c.izena + '</td><td class="bm-n">' + c.n + '</td>';
+                for (let i = 0; i < np; i++) {
+                    const picked = pickSet.has(porrak[i].id + '-' + c.id);
+                    html += picked
+                        ? `<td class="bm-cell on" title="${porrak[i].izena} ✓ ${c.izena}"></td>`
+                        : '<td class="bm-cell"></td>';
+                }
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            cont.innerHTML = `<p style="opacity:.6;font-size:.85em;">${rows.length} txirrindulari × ${np} porra</p>` + html;
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

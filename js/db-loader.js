@@ -44,6 +44,13 @@ class DBLoader {
     }
 
     /**
+     * SQL kontsulta publikoa (grafikoetarako e.a.): array of objects itzuli.
+     */
+    async query(sql, params = []) {
+        return this._query(sql, params);
+    }
+
+    /**
      * SQL kontsulta exekutatu eta array of objects itzuli.
      */
     async _query(sql, params = []) {
@@ -76,7 +83,7 @@ class DBLoader {
                     te.Puntuak_Generala,
                     s.Saria
                 FROM "TxapelketaEmaitzaPorralariak" te
-                JOIN "PorralariEzizenak" ez ON te.Ezizen_ID = ez.Ezizen_ID
+                JOIN "PorraEzizenak" ez ON te.Ezizen_ID = ez.Ezizen_ID
                 LEFT JOIN "Sariak" s
                     ON s.Txapelketa_ID = te.Txapelketa_ID
                     AND s.Posizioa = te.Posizioa
@@ -84,7 +91,12 @@ class DBLoader {
                 ORDER BY te.Posizioa
             `;
 
-            const rows = await this._query(sql, [txapelketaId]);
+            let rows = await this._query(sql, [txapelketaId]);
+
+            // Emaitza ofizialik ezean, azken sailkapena erakutsi (bilakaeratik).
+            if (rows.length === 0) {
+                rows = await this._porraFallback(txapelketaId);
+            }
 
             if (rows.length === 0) {
                 this._showMissing(table, 'Ez dago daturik.', txapelketaId);
@@ -131,7 +143,12 @@ class DBLoader {
                 ORDER BY te.Posizioa
             `;
 
-            const rows = await this._query(sql, [txapelketaId]);
+            let rows = await this._query(sql, [txapelketaId]);
+
+            // Emaitza ofizialik ezean, azken sailkapena erakutsi (bilakaera / etapak).
+            if (rows.length === 0) {
+                rows = await this._cyclistFallback(txapelketaId);
+            }
 
             if (rows.length === 0) {
                 this._showMissing(table, 'Ez dago daturik.', txapelketaId);
@@ -144,6 +161,70 @@ class DBLoader {
             console.error(err);
             this._showError(table, err.message);
         }
+    }
+
+    /**
+     * Porra azken sailkapena (emaitza ofizialik ezean): bilakaera-taulako azken
+     * karrera arteko puntu metatuak. Posizioa JS-en kalkulatzen da.
+     */
+    async _porraFallback(txapelketaId) {
+        const sql = `
+            SELECT ez.Ezizena, sp.Puntuak_Totalean AS Puntuak
+            FROM "TxapelketaSailkapenaPorralariak" sp
+            JOIN "PorraEzizenak" ez ON ez.Ezizen_ID = sp.Ezizen_ID
+            WHERE sp.Txapelketa_ID = ?
+              AND sp.Azken_Karrera_ID = (
+                  SELECT MAX(Azken_Karrera_ID) FROM "TxapelketaSailkapenaPorralariak"
+                  WHERE Txapelketa_ID = ?)
+            ORDER BY sp.Puntuak_Totalean DESC, ez.Ezizena
+        `;
+        const rows = await this._query(sql, [txapelketaId, txapelketaId]);
+        rows.forEach((r, i) => { r.Posizioa = i + 1; });
+        return rows;
+    }
+
+    /**
+     * Txirrindulari azken sailkapena (emaitza ofizialik ezean): lehenik
+     * txirrindularien bilakaera-taula; hori ezean, KarreraSailkapena puntuen batura.
+     */
+    async _cyclistFallback(txapelketaId) {
+        const evoSql = `
+            SELECT t.Izena AS Txirrindularia, st.Puntuak_Totalean AS Puntuak, h.Dortsala,
+                   (SELECT COUNT(*) FROM "PorraApustuak" pa
+                     WHERE pa.Txapelketa_ID = st.Txapelketa_ID
+                       AND pa.Txirrindularia_ID = st.Txirrindularia_ID) AS Zenbatek
+            FROM "TxapelketaSailkapenaTxirrindulariak" st
+            JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = st.Txirrindularia_ID
+            LEFT JOIN "TxirrindulariakTxapleketanParteHartzea" h
+                ON h.TxapelketaID = st.Txapelketa_ID AND h.TxirrindulariaID = st.Txirrindularia_ID
+            WHERE st.Txapelketa_ID = ?
+              AND st.Azken_Karrera_ID = (
+                  SELECT MAX(Azken_Karrera_ID) FROM "TxapelketaSailkapenaTxirrindulariak"
+                  WHERE Txapelketa_ID = ?)
+            ORDER BY st.Puntuak_Totalean DESC, t.Izena
+        `;
+        let rows = await this._query(evoSql, [txapelketaId, txapelketaId]);
+
+        if (rows.length === 0) {
+            // KarreraSailkapena puntuen batura (etapak/lasterketak)
+            const sumSql = `
+                SELECT t.Izena AS Txirrindularia, SUM(ks.Puntuak) AS Puntuak, h.Dortsala,
+                       (SELECT COUNT(*) FROM "PorraApustuak" pa
+                         WHERE pa.Txapelketa_ID = k.Txapelketa_ID
+                           AND pa.Txirrindularia_ID = ks.Txirrindularia_ID) AS Zenbatek
+                FROM "KarreraSailkapena" ks
+                JOIN "Karrerak" k ON k.Karrerak_ID = ks.Karrera_ID
+                JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
+                LEFT JOIN "TxirrindulariakTxapleketanParteHartzea" h
+                    ON h.TxapelketaID = k.Txapelketa_ID AND h.TxirrindulariaID = ks.Txirrindularia_ID
+                WHERE k.Txapelketa_ID = ?
+                GROUP BY ks.Txirrindularia_ID
+                ORDER BY Puntuak DESC, t.Izena
+            `;
+            rows = await this._query(sumSql, [txapelketaId]);
+        }
+        rows.forEach((r, i) => { r.Posizioa = i + 1; });
+        return rows;
     }
 
     /**
@@ -204,6 +285,23 @@ class DBLoader {
             console.error(err);
             this._showError(table, err.message);
         }
+    }
+
+    /**
+     * Etapa baten emaitzak kargatu zenbakiaren arabera (etapa-orri indibidualetarako).
+     * Txapelketako N. benetako karrera aurkitu eta haren emaitzak erakutsi.
+     */
+    async loadStageByNumber(txapelketaId, n, tableId) {
+        const k = await this._query(
+            "SELECT Karrerak_ID AS id FROM Karrerak WHERE Txapelketa_ID = ? " +
+            "AND Kategoria IS NOT NULL AND Kategoria <> '' ORDER BY Karrerak_ID LIMIT 1 OFFSET ?",
+            [txapelketaId, n - 1]);
+        const table = document.getElementById(tableId);
+        if (!k.length) {
+            if (table) this._showMissing(table, 'Ez dago etapa honetako daturik oraindik.', txapelketaId);
+            return;
+        }
+        return this.loadKlasikaResults(k[0].id, tableId);
     }
 
     /**

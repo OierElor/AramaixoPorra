@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Porra fitxa</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/erreminta-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1><a href="/" style="color: inherit; text-decoration: none;">Aramaixo Porra</a></h1>
+        <nav class="karrerak">
+            <ul>
+                <li><a class="tour" href="/tour/">Tour</a></li>
+                <li><a class="giro" href="/giro/">Giro</a></li>
+                <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
+                <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
+                <li><a class="grafikoak" href="/erremintak/">Erremintak</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Porra fitxa</h2>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="txap-select">Txapelketa</label>
+                        <select id="txap-select"></select>
+                    </div>
+                    <div>
+                        <label for="porra-input">Porra (bilatu)</label>
+                        <input id="porra-input" list="porra-datalist" placeholder="Idatzi porra izena..."
+                            autocomplete="off" style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:220px;">
+                        <datalist id="porra-datalist"></datalist>
+                    </div>
+                </div>
+
+                <div id="fitxa-edukia"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const state = { txapId: null, porrak: [], karrerak: [], chart: null };
+
+        async function init() {
+            const txs = await Erreminta.txapelketak();
+            const sel = document.getElementById('txap-select');
+            sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
+            state.txapId = txs.length ? txs[0].id : null;
+            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); loadPorrak(); });
+            document.getElementById('porra-input').addEventListener('change', onPorraPick);
+            await loadPorrak();
+        }
+
+        async function loadPorrak() {
+            document.getElementById('fitxa-edukia').innerHTML = '';
+            document.getElementById('porra-input').value = '';
+            state.porrak = await Erreminta.porrak(state.txapId);
+            state.karrerak = await Erreminta.karrerak(state.txapId);
+            document.getElementById('porra-datalist').innerHTML =
+                state.porrak.map(p => `<option value="${p.izena}">`).join('');
+        }
+
+        function onPorraPick() {
+            const val = document.getElementById('porra-input').value.trim().toLowerCase();
+            const porra = state.porrak.find(p => p.izena.toLowerCase() === val);
+            if (porra) renderFitxa(porra);
+        }
+
+        async function renderFitxa(porra) {
+            const cont = document.getElementById('fitxa-edukia');
+            cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
+
+            const taldea = await Erreminta.taldea(state.txapId, porra.id);
+            const cum = await Erreminta.eboluzioa(state.txapId, porra.id, state.karrerak);
+            const etapaTot = cum.length ? cum[cum.length - 1] : 0;
+            const bonusa = (porra.total != null && porra.total > etapaTot) ? (porra.total - etapaTot) : 0;
+
+            const teamRows = taldea.map(r =>
+                `<tr><td class="name-col">${r.izena}</td>` +
+                `<td>${r.dortsala ?? '—'}</td>` +
+                `<td class="points-col">${r.pts}</td></tr>`).join('');
+
+            cont.innerHTML = `
+                <div class="grafiko-oihala" style="text-align:center;">
+                    <h3 class="grafikoak" style="margin:4px 0;">${porra.izena}</h3>
+                    <div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;margin:8px 0;">
+                        <div><div style="font-size:1.8em;font-weight:bold;">${porra.pos}.</div><div style="opacity:.6;">Postua</div></div>
+                        <div><div style="font-size:1.8em;font-weight:bold;">${porra.total}</div><div style="opacity:.6;">Puntuak</div></div>
+                    </div>
+                    ${bonusa ? `<p style="opacity:.6;font-size:.85em;">Etapetan: ${etapaTot} + sailkapen-bonusa: ${bonusa}</p>` : ''}
+                </div>
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="max-width:520px;margin:0 auto;">
+                        <h3 class="grafikoak" style="text-align:center;">TALDEA (etapetako puntuak)</h3>
+                        <div class="table-content">
+                            <table class="sailkapena-table klasikak">
+                                <thead><tr><th>Txirrindularia</th><th>Dortsala</th><th>Puntuak</th></tr></thead>
+                                <tbody>${teamRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="grafiko-oihala">
+                    <h3 class="grafikoak" style="text-align:center;">EBOLUZIOA</h3>
+                    <div style="position:relative;height:340px;"><canvas id="fitxa-grafikoa"></canvas></div>
+                </div>`;
+
+            if (state.chart) state.chart.destroy();
+            state.chart = Erreminta.lineChart(document.getElementById('fitxa-grafikoa'), state.karrerak, [{
+                label: porra.izena, data: cum,
+                borderColor: '#43a047', backgroundColor: '#43a047', borderWidth: 2, pointRadius: 2, tension: 0.15,
+            }]);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

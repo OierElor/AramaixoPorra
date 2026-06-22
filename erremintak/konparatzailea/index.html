@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Porra konparatzailea</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/erreminta-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1><a href="/" style="color: inherit; text-decoration: none;">Aramaixo Porra</a></h1>
+        <nav class="karrerak">
+            <ul>
+                <li><a class="tour" href="/tour/">Tour</a></li>
+                <li><a class="giro" href="/giro/">Giro</a></li>
+                <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
+                <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
+                <li><a class="grafikoak" href="/erremintak/">Erremintak</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Porra konparatzailea</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px;">
+                    Aukeratu 2-4 porra alderatzeko.
+                </p>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="txap-select">Txapelketa</label>
+                        <select id="txap-select"></select>
+                    </div>
+                    <div>
+                        <label>Erakutsi</label>
+                        <div class="grafiko-mota" id="iragazki-toggle">
+                            <button data-f="denak" class="active">Denak</button>
+                            <button data-f="komunak">Komunak</button>
+                            <button data-f="ezberdinak">Ezberdinak</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grafiko-entitateak" id="porra-zerrenda"><span style="opacity:.6;">Kargatzen...</span></div>
+
+                <div id="konp-edukia"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const MAX = 4;
+        const state = { txapId: null, porrak: [], karrerak: [], hautatuak: [], filter: 'denak', chart: null };
+
+        async function init() {
+            const txs = await Erreminta.txapelketak();
+            const sel = document.getElementById('txap-select');
+            sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
+            state.txapId = txs.length ? txs[0].id : null;
+            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); loadPorrak(); });
+            document.querySelectorAll('#iragazki-toggle button').forEach(b =>
+                b.addEventListener('click', () => {
+                    document.querySelectorAll('#iragazki-toggle button').forEach(x => x.classList.remove('active'));
+                    b.classList.add('active'); state.filter = b.dataset.f; renderKonp();
+                }));
+            await loadPorrak();
+        }
+
+        async function loadPorrak() {
+            state.hautatuak = [];
+            state.porrak = await Erreminta.porrak(state.txapId);
+            state.karrerak = await Erreminta.karrerak(state.txapId);
+            const box = document.getElementById('porra-zerrenda');
+            box.innerHTML = state.porrak.map(p =>
+                `<label><input type="checkbox" value="${p.id}"> ${p.pos}. ${p.izena} ` +
+                `<span style="opacity:.5;">(${p.total})</span></label>`).join('');
+            box.querySelectorAll('input').forEach(chk => chk.addEventListener('change', () => {
+                const id = parseInt(chk.value, 10);
+                if (chk.checked) {
+                    if (state.hautatuak.length >= MAX) { chk.checked = false; return; }
+                    state.hautatuak.push(id);
+                } else {
+                    state.hautatuak = state.hautatuak.filter(x => x !== id);
+                }
+                renderKonp();
+            }));
+            document.getElementById('konp-edukia').innerHTML =
+                '<p style="text-align:center;opacity:.6;">Aukeratu gutxienez 2 porra.</p>';
+        }
+
+        async function renderKonp() {
+            const cont = document.getElementById('konp-edukia');
+            const sel = state.hautatuak.map(id => state.porrak.find(p => p.id === id)).filter(Boolean);
+            if (sel.length < 2) {
+                cont.innerHTML = '<p style="text-align:center;opacity:.6;">Aukeratu gutxienez 2 porra.</p>';
+                if (state.chart) { state.chart.destroy(); state.chart = null; }
+                return;
+            }
+            cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
+
+            // taldeak + eboluzioa
+            const teams = await Promise.all(sel.map(p => Erreminta.taldea(state.txapId, p.id)));
+            const cums = await Promise.all(sel.map(p => Erreminta.eboluzioa(state.txapId, p.id, state.karrerak)));
+
+            // txirrindularien batuketa
+            const ptsByName = new Map();
+            const pickedSets = teams.map(t => {
+                const s = new Set();
+                t.forEach(r => { s.add(r.izena); ptsByName.set(r.izena, r.pts); });
+                return s;
+            });
+            let names = [...ptsByName.keys()];
+            const countPicks = n => pickedSets.reduce((a, s) => a + (s.has(n) ? 1 : 0), 0);
+            names = names.filter(n => {
+                const c = countPicks(n);
+                if (state.filter === 'komunak') return c === sel.length;
+                if (state.filter === 'ezberdinak') return c < sel.length;
+                return true;
+            });
+            names.sort((a, b) => countPicks(b) - countPicks(a) || ptsByName.get(b) - ptsByName.get(a));
+
+            const head = `<tr><th>Txirrindularia</th>${sel.map(p => `<th>${p.izena}</th>`).join('')}</tr>`;
+            const body = names.map(n => {
+                const common = countPicks(n) === sel.length;
+                const cells = pickedSets.map(s => s.has(n)
+                    ? `<td class="points-col" style="background:#e8f5e9;">${ptsByName.get(n)}</td>`
+                    : `<td style="opacity:.3;">·</td>`).join('');
+                return `<tr${common ? ' style="font-weight:bold;"' : ''}><td class="name-col">${n}</td>${cells}</tr>`;
+            }).join('');
+
+            const summary = sel.map((p, i) => {
+                const color = Erreminta.COLORS[i % Erreminta.COLORS.length];
+                return `<div style="text-align:center;">
+                    <div style="font-weight:bold;color:${color};">${p.izena}</div>
+                    <div>${p.pos}. postua · ${p.total} p.</div></div>`;
+            }).join('');
+
+            cont.innerHTML = `
+                <div class="grafiko-oihala" style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;">${summary}</div>
+                <div class="grafiko-oihala">
+                    <h3 class="grafikoak" style="text-align:center;">EBOLUZIOA</h3>
+                    <div style="position:relative;height:340px;"><canvas id="konp-grafikoa"></canvas></div>
+                </div>
+                <div class="table-wrapper" style="max-width:760px;margin:16px auto;overflow-x:auto;">
+                    <h3 class="grafikoak" style="text-align:center;">AUKERAK (etapetako puntuak)</h3>
+                    <div class="table-content">
+                        <table class="sailkapena-table klasikak">
+                            <thead>${head}</thead><tbody>${body}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+
+            const datasets = sel.map((p, i) => {
+                const color = Erreminta.COLORS[i % Erreminta.COLORS.length];
+                return {
+                    label: p.izena, data: cums[i],
+                    borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 2, tension: 0.15,
+                };
+            });
+            if (state.chart) state.chart.destroy();
+            state.chart = Erreminta.lineChart(document.getElementById('konp-grafikoa'), state.karrerak, datasets);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

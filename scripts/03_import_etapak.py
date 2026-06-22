@@ -116,7 +116,7 @@ def main():
 
         # --- 3) TXAPELKETASAILKAPENAPORRALARIAK: porren bilakaera metatua ---
         ez_by_norm = {norm_ez(e): i for i, e in cur.execute(
-            "SELECT Ezizen_ID, Ezizena FROM PorralariEzizenak WHERE Txapelketa_ID=?", (tid,))}
+            "SELECT Ezizen_ID, Ezizena FROM PorraEzizenak WHERE Txapelketa_ID=?", (tid,))}
         for ezizena, cums in o.porra_cumulative(path):
             ez_id = ez_by_norm.get(norm_ez(ezizena))
             if ez_id is None:

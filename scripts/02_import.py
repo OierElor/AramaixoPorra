@@ -99,7 +99,7 @@ def main():
 
         # ezizen mapa (norm -> id) eta DB-ko zerrenda (canon-erako)
         ez_rows = cur.execute(
-            "SELECT Ezizen_ID, Ezizena FROM PorralariEzizenak WHERE Txapelketa_ID=?", (tid,)).fetchall()
+            "SELECT Ezizen_ID, Ezizena FROM PorraEzizenak WHERE Txapelketa_ID=?", (tid,)).fetchall()
         ez_by_norm = {" ".join(e.lower().split()): i for i, e in ez_rows}
         ez_existing = [e for _, e in ez_rows]
 
@@ -110,7 +110,7 @@ def main():
             if ez_id is None:  # falta den ezizena: sortu
                 final = canon_ezizena(ezizena, ez_existing)
                 cur.execute(
-                    "INSERT INTO PorralariEzizenak (Txapelketa_ID, Ezizena) VALUES (?, ?)",
+                    "INSERT INTO PorraEzizenak (Txapelketa_ID, Ezizena) VALUES (?, ?)",
                     (tid, final))
                 ez_id = cur.lastrowid
                 ez_by_norm[nz] = ez_id

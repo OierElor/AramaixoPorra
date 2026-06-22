@@ -61,9 +61,20 @@
                     </div>
                 </div>
 
-                <div class="grafiko-entitateak" id="entitate-zerrenda">
-                    <span style="opacity:.6;">Kargatzen...</span>
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="entitate-input">Gehitu (bilatu izena)</label>
+                        <span style="display:inline-flex;gap:6px;">
+                            <input id="entitate-input" list="entitate-datalist" placeholder="Idatzi izena..."
+                                autocomplete="off"
+                                style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
+                            <datalist id="entitate-datalist"></datalist>
+                            <button id="gehitu-btn" type="button" class="gehitu-btn">+ Gehitu</button>
+                        </span>
+                    </div>
                 </div>
+
+                <div class="grafiko-chipak" id="chip-zerrenda"></div>
 
                 <div class="grafiko-oihala">
                     <div style="position:relative; height:440px;">
@@ -108,6 +119,8 @@
                 b.addEventListener('click', () => setToggle('mota-toggle', b, 'mota', b.dataset.mota, true)));
             document.querySelectorAll('#metrika-toggle button').forEach(b =>
                 b.addEventListener('click', () => setToggle('metrika-toggle', b, 'metrika', b.dataset.metrika, false)));
+            document.getElementById('gehitu-btn').addEventListener('click', addFromInput);
+            document.getElementById('entitate-input').addEventListener('change', addFromInput);
 
             await loadData();
         }
@@ -122,7 +135,7 @@
         async function loadData() {
             const tid = state.txapId;
             if (tid == null) return;
-            document.getElementById('entitate-zerrenda').innerHTML = '<span style="opacity:.6;">Kargatzen...</span>';
+            document.getElementById('chip-zerrenda').innerHTML = '<span style="opacity:.6;">Kargatzen...</span>';
 
             // 1) Karrerak ordenan (agregatu "Azken Karrera" baztertu: Kategoria hutsa)
             state.karrerak = await window.dbLoader.query(
@@ -174,29 +187,50 @@
             }
 
             state.entitateak = ents;
-            // lehenetsia: lehen 5ak
+            // datalist bete eta lehenetsia: lehen 5ak
+            document.getElementById('entitate-datalist').innerHTML =
+                ents.map(e => `<option value="${e.izena.replace(/"/g, '&quot;')}">`).join('');
+            document.getElementById('entitate-input').value = '';
             state.hautatuak = new Set(ents.slice(0, 5).map(e => e.id));
 
-            renderCheckboxes();
+            renderChips();
             renderChart();
         }
 
-        function renderCheckboxes() {
-            const box = document.getElementById('entitate-zerrenda');
+        function renderChips() {
+            const box = document.getElementById('chip-zerrenda');
             if (!state.entitateak.length) {
                 box.innerHTML = '<span style="opacity:.6;">Ez dago daturik txapelketa honetan.</span>';
                 return;
             }
-            box.innerHTML = state.entitateak.map(e =>
-                `<label><input type="checkbox" value="${e.id}" ${state.hautatuak.has(e.id) ? 'checked' : ''}> ` +
-                `${e.izena} <span style="opacity:.5;">(${e.total})</span></label>`
-            ).join('');
-            box.querySelectorAll('input').forEach(chk =>
-                chk.addEventListener('change', () => {
-                    const id = parseInt(chk.value, 10);
-                    if (chk.checked) state.hautatuak.add(id); else state.hautatuak.delete(id);
+            const sel = state.entitateak.filter(e => state.hautatuak.has(e.id));
+            box.innerHTML = sel.length
+                ? sel.map(e => {
+                    const color = COLORS[state.entitateak.indexOf(e) % COLORS.length];
+                    return `<button type="button" class="grafiko-chip" data-id="${e.id}" ` +
+                        `style="border-color:${color};color:${color};">${e.izena} ` +
+                        `<span style="opacity:.5;">(${e.total})</span> <span class="chip-x">×</span></button>`;
+                }).join('')
+                : '<span style="opacity:.6;">Gehitu izenak bilatzailetik.</span>';
+            box.querySelectorAll('.grafiko-chip').forEach(btn =>
+                btn.addEventListener('click', () => {
+                    state.hautatuak.delete(parseInt(btn.dataset.id, 10));
+                    renderChips();
                     renderChart();
                 }));
+        }
+
+        function addFromInput() {
+            const inp = document.getElementById('entitate-input');
+            const val = inp.value.trim().toLowerCase();
+            if (!val) return;
+            const e = state.entitateak.find(x => x.izena.toLowerCase() === val);
+            if (e && !state.hautatuak.has(e.id)) {
+                state.hautatuak.add(e.id);
+                renderChips();
+                renderChart();
+            }
+            inp.value = '';
         }
 
         function renderChart() {

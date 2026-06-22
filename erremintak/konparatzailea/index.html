@@ -54,7 +54,20 @@
                     </div>
                 </div>
 
-                <div class="grafiko-entitateak" id="porra-zerrenda"><span style="opacity:.6;">Kargatzen...</span></div>
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="porra-input">Gehitu porra (bilatu) — gehienez 4</label>
+                        <span style="display:inline-flex;gap:6px;">
+                            <input id="porra-input" list="porra-datalist" placeholder="Idatzi porra izena..."
+                                autocomplete="off"
+                                style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
+                            <datalist id="porra-datalist"></datalist>
+                            <button id="gehitu-btn" type="button" class="gehitu-btn">+ Gehitu</button>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grafiko-chipak" id="chip-zerrenda"></div>
 
                 <div id="konp-edukia"></div>
             </section>
@@ -76,6 +89,8 @@
                     document.querySelectorAll('#iragazki-toggle button').forEach(x => x.classList.remove('active'));
                     b.classList.add('active'); state.filter = b.dataset.f; renderKonp();
                 }));
+            document.getElementById('gehitu-btn').addEventListener('click', addFromInput);
+            document.getElementById('porra-input').addEventListener('change', addFromInput);
             await loadPorrak();
         }
 
@@ -83,22 +98,44 @@
             state.hautatuak = [];
             state.porrak = await Erreminta.porrak(state.txapId);
             state.karrerak = await Erreminta.karrerak(state.txapId);
-            const box = document.getElementById('porra-zerrenda');
-            box.innerHTML = state.porrak.map(p =>
-                `<label><input type="checkbox" value="${p.id}"> ${p.pos}. ${p.izena} ` +
-                `<span style="opacity:.5;">(${p.total})</span></label>`).join('');
-            box.querySelectorAll('input').forEach(chk => chk.addEventListener('change', () => {
-                const id = parseInt(chk.value, 10);
-                if (chk.checked) {
-                    if (state.hautatuak.length >= MAX) { chk.checked = false; return; }
-                    state.hautatuak.push(id);
-                } else {
-                    state.hautatuak = state.hautatuak.filter(x => x !== id);
-                }
-                renderKonp();
-            }));
+            document.getElementById('porra-datalist').innerHTML =
+                state.porrak.map(p => `<option value="${p.izena.replace(/"/g, '&quot;')}">`).join('');
+            document.getElementById('porra-input').value = '';
+            renderChips();
             document.getElementById('konp-edukia').innerHTML =
                 '<p style="text-align:center;opacity:.6;">Aukeratu gutxienez 2 porra.</p>';
+        }
+
+        function renderChips() {
+            const box = document.getElementById('chip-zerrenda');
+            const sel = state.hautatuak.map(id => state.porrak.find(p => p.id === id)).filter(Boolean);
+            box.innerHTML = sel.length
+                ? sel.map((p, i) => {
+                    const color = Erreminta.COLORS[i % Erreminta.COLORS.length];
+                    return `<button type="button" class="grafiko-chip" data-id="${p.id}" ` +
+                        `style="border-color:${color};color:${color};">${p.pos}. ${p.izena} ` +
+                        `<span class="chip-x">×</span></button>`;
+                }).join('')
+                : '<span style="opacity:.6;">Gehitu 2-4 porra bilatzailetik.</span>';
+            box.querySelectorAll('.grafiko-chip').forEach(btn =>
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.dataset.id, 10);
+                    state.hautatuak = state.hautatuak.filter(x => x !== id);
+                    renderChips();
+                    renderKonp();
+                }));
+        }
+
+        function addFromInput() {
+            const inp = document.getElementById('porra-input');
+            const val = inp.value.trim().toLowerCase();
+            inp.value = '';
+            if (!val) return;
+            const p = state.porrak.find(x => x.izena.toLowerCase() === val);
+            if (!p || state.hautatuak.includes(p.id) || state.hautatuak.length >= MAX) return;
+            state.hautatuak.push(p.id);
+            renderChips();
+            renderKonp();
         }
 
         async function renderKonp() {

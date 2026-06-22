@@ -305,6 +305,65 @@ class DBLoader {
     }
 
     /**
+     * Klasika baten orria bete: UCI kategoria badge-a (Karrerak.Kategoria) eta
+     * emaitza-taula (Pos, Dortsala, Txirrindularia, Puntuak, Zenbatek).
+     * @param {?number} karreraId  - null bada, "daturik ez" + kategoria '—'.
+     */
+    async loadKlasikaRace(karreraId, txapelketaId, tableId, badgeId) {
+        const KAT_KOLORE = {
+            'Monumentua': '#f5c6cb', '3': '#ffcc99', '4': '#d4f1d4',
+            '5': '#cce5ff', 'Proseries': '#fff3cd', 'Berezia': '#e2d9f3',
+        };
+        const badge = document.getElementById(badgeId);
+        const table = document.getElementById(tableId);
+        if (karreraId == null) {
+            if (badge) badge.textContent = '—';
+            if (table) this._showMissing(table, 'Ez dago daturik oraindik.', txapelketaId);
+            return;
+        }
+        try {
+            const kr = await this._query("SELECT Kategoria FROM \"Karrerak\" WHERE Karrerak_ID = ?", [karreraId]);
+            if (badge && kr.length) {
+                const kat = kr[0].Kategoria;
+                badge.textContent = this._hasData(kat) ? kat : '—';
+                if (KAT_KOLORE[kat]) badge.style.backgroundColor = KAT_KOLORE[kat];
+            }
+            const sql = `
+                SELECT ks.Sailkapena AS Posizioa, h.Dortsala AS Dortsala,
+                       t.Izena AS Txirrindularia, ks.Puntuak AS Puntuak,
+                       (SELECT COUNT(*) FROM "PorraApustuak" pa
+                         WHERE pa.Txapelketa_ID = ? AND pa.Txirrindularia_ID = ks.Txirrindularia_ID) AS Zenbatek
+                FROM "KarreraSailkapena" ks
+                JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
+                LEFT JOIN "TxirrindulariakTxapleketanParteHartzea" h
+                    ON h.TxapelketaID = ? AND h.TxirrindulariaID = ks.Txirrindularia_ID
+                WHERE ks.Karrera_ID = ? ORDER BY ks.Sailkapena`;
+            const rows = await this._query(sql, [txapelketaId, txapelketaId, karreraId]);
+            if (!table) return;
+            if (!rows.length) { this._showMissing(table, 'Ez dago daturik oraindik.', karreraId); return; }
+            const tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                const pos = row.Posizioa;
+                if (pos === 1)      { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
+                else if (pos === 2) { tr.style.backgroundColor = '#f0f0f0'; }
+                else if (pos === 3) { tr.style.backgroundColor = '#fde8d0'; }
+                tr.appendChild(this._td(pos, 'pos-col'));
+                tr.appendChild(this._td(row.Dortsala ?? '—'));
+                tr.appendChild(this._td(row.Txirrindularia, 'name-col'));
+                tr.appendChild(this._td(row.Puntuak, 'points-col'));
+                tr.appendChild(this._td(row.Zenbatek ?? '—'));
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            console.error(err);
+            if (table) this._showError(table, err.message);
+        }
+    }
+
+    /**
      * Hiru handietako etapaz etapako emaitzak kargatu (KarreraSailkapena) eta
      * akordeoi gisa erakutsi: etapa bakoitza zabaltzean puntuatu duten
      * txirrindulariak (Pos, Txirrindularia, Puntuak).

@@ -156,7 +156,7 @@
             rows.forEach(r => {
                 if (!map.has(r.id)) map.set(r.id, { id: r.id, izena: r.izena, pts: new Array(N).fill(0) });
                 const j = kidx.get(r.kid);
-                if (j != null) map.get(r.id).pts[j] = r.pts || 0;
+                if (j != null) map.get(r.id).pts[j] = Number(r.pts) || 0;
             });
             const ents = [...map.values()];
             ents.forEach(e => {

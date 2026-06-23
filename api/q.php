@@ -14,7 +14,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 // ───── KONFIGURAZIOA — bete zure datuekin ───────────────────────────────────
 $DB_HOST = 'localhost';
-$DB_NAME = 'Erabiltzaile';
+$DB_NAME = '6437239_aramaixoporra';
 $DB_USER = 'Erabiltzaile';   // SELECT-soilik baimenarekin, gomendatua
 $DB_PASS = 'erabiltzailePH';
 // ────────────────────────────────────────────────────────────────────────────

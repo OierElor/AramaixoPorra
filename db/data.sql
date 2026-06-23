@@ -2,6 +2,7 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- Txapelketak (16)
+TRUNCATE TABLE Txapelketak;
 INSERT INTO Txapelketak (Txapelketa_ID, Izena, Urtea) VALUES
 (1,'Giro D\'Italia 2023',2023),
 (2,'Giro D\'Italia 2024',2024),
@@ -21,6 +22,7 @@ INSERT INTO Txapelketak (Txapelketa_ID, Izena, Urtea) VALUES
 (16,'Giro D\'Italia 2026',2026);
 
 -- Porralariak (507)
+TRUNCATE TABLE Porralariak;
 INSERT INTO Porralariak (Porralaria_ID, Izena, Zenbat_Porra) VALUES
 (2,'Globulos Verdes',22),
 (5,'Jakes Pou Pou',1),
@@ -532,6 +534,7 @@ INSERT INTO Porralariak (Porralaria_ID, Izena, Zenbat_Porra) VALUES
 (607,'TXINI',1);
 
 -- Txirrindulariak (554)
+TRUNCATE TABLE Txirrindulariak;
 INSERT INTO Txirrindulariak (Txirrindularia_ID, Izena) VALUES
 (1,'Roglič Primož'),
 (2,'Pinot Thibaut'),
@@ -714,7 +717,7 @@ INSERT INTO Txirrindulariak (Txirrindularia_ID, Izena) VALUES
 (180,'Pidcock Tom'),
 (181,'Coquard Bryan'),
 (182,'Johannessen Tobias Halland'),
-(183,'Kwiatkowski Michal'),
+(183,'Kwiatkowski Michał'),
 (184,'Poels Wouter'),
 (185,'Izagirre Ion'),
 (186,'Martin Guillaume'),
@@ -732,7 +735,6 @@ INSERT INTO Txirrindulariak (Txirrindularia_ID, Izena) VALUES
 (199,'Neilands Krists'),
 (200,'Craddock Lawson'),
 (201,'Mozzato Luca'),
-(202,'Majka Rafal'),
 (203,'Chaves Esteban'),
 (204,'Shaw James'),
 (205,'Landa Mikel'),
@@ -750,7 +752,6 @@ INSERT INTO Txirrindulariak (Txirrindularia_ID, Izena) VALUES
 (217,'Turgis Anthony'),
 (218,'Mas Enric'),
 (219,'Vercher Mattéo'),
-(220,'Kwiatkowski Michał'),
 (221,'Pacher Quentin'),
 (222,'Aranburu Alex'),
 (223,'Rodríguez Cristián'),
@@ -1090,6 +1091,7 @@ INSERT INTO Txirrindulariak (Txirrindularia_ID, Izena) VALUES
 (945,'FROIDEVAUX Robin');
 
 -- Karrerak (343)
+TRUNCATE TABLE Karrerak;
 INSERT INTO Karrerak (Karrerak_ID, Txapelketa_ID, Izena, Urtea, Kategoria) VALUES
 (1,1,'Giro D\'Italia 2023 Azken Karrera',2023,NULL),
 (2,2,'Giro D\'Italia 2024 Azken Karrera',2024,NULL),
@@ -1436,6 +1438,7 @@ INSERT INTO Karrerak (Karrerak_ID, Txapelketa_ID, Izena, Urtea, Kategoria) VALUE
 (343,15,'Copenhagen Sprint',2026,'5');
 
 -- PorraEzizenak (1037)
+TRUNCATE TABLE PorraEzizenak;
 INSERT INTO PorraEzizenak (Ezizen_ID, Txapelketa_ID, Ezizena) VALUES
 (1,1,'Baketxe 1'),
 (2,1,'Globulos Verdes I'),
@@ -2478,6 +2481,7 @@ INSERT INTO PorraEzizenak (Ezizen_ID, Txapelketa_ID, Ezizena) VALUES
 (1082,15,'McNulty');
 
 -- PorralariTaldeenEzizenak (1032)
+TRUNCATE TABLE PorralariTaldeenEzizenak;
 INSERT INTO PorralariTaldeenEzizenak (Ezizen_ID, Porralaria_ID) VALUES
 (1,13),
 (2,2),
@@ -3515,6 +3519,7 @@ INSERT INTO PorralariTaldeenEzizenak (Ezizen_ID, Porralaria_ID) VALUES
 (997,607);
 
 -- PorraApustuak (16599)
+TRUNCATE TABLE PorraApustuak;
 INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (7,521,1),
 (7,521,851),
@@ -4592,7 +4597,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (8,565,122),
 (8,565,146),
 (8,565,310),
-(8,565,202),
+(8,565,118),
 (8,565,186),
 (8,565,205),
 (8,565,873),
@@ -4697,7 +4702,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (8,573,247),
 (8,573,127),
 (8,573,205),
-(8,573,202),
+(8,573,118),
 (8,573,332),
 (8,573,34),
 (8,573,304),
@@ -7635,7 +7640,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (4,279,7),
 (4,279,168),
 (4,279,80),
-(4,279,202),
+(4,279,118),
 (4,204,167),
 (4,204,126),
 (4,204,69),
@@ -7893,7 +7898,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (4,201,178),
 (4,278,167),
 (4,278,69),
-(4,278,202),
+(4,278,118),
 (4,278,172),
 (4,278,120),
 (4,278,196),
@@ -18180,7 +18185,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (14,892,234),
 (14,892,174),
 (14,892,209),
-(14,892,220),
+(14,892,183),
 (14,892,124),
 (14,892,5),
 (14,892,7),
@@ -18556,7 +18561,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (14,900,234),
 (14,900,174),
 (14,900,209),
-(14,900,220),
+(14,900,183),
 (14,900,99),
 (14,900,5),
 (14,900,7),
@@ -18726,7 +18731,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (14,916,214),
 (14,916,412),
 (14,916,75),
-(14,916,220),
+(14,916,183),
 (14,915,168),
 (14,915,234),
 (14,915,136),
@@ -18748,7 +18753,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (14,915,72),
 (14,915,174),
 (14,915,24),
-(14,915,220),
+(14,915,183),
 (14,915,51),
 (14,915,81),
 (14,915,21),
@@ -19000,7 +19005,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (14,910,412),
 (14,910,24),
 (14,910,366),
-(14,910,220),
+(14,910,183),
 (14,910,432),
 (14,910,413),
 (14,901,234),
@@ -19049,7 +19054,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (14,918,361),
 (14,918,412),
 (14,918,429),
-(14,918,220),
+(14,918,183),
 (14,918,170),
 (14,918,120),
 (14,918,235),
@@ -20158,6 +20163,7 @@ INSERT INTO PorraApustuak (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES
 (15,1082,483);
 
 -- KarreraSailkapena (2479)
+TRUNCATE TABLE KarreraSailkapena;
 INSERT INTO KarreraSailkapena (Karrera_ID, Txirrindularia_ID, Puntuak, Sailkapena) VALUES
 (8,102,400,1),
 (8,413,320,2),
@@ -21165,7 +21171,7 @@ INSERT INTO KarreraSailkapena (Karrera_ID, Txirrindularia_ID, Puntuak, Sailkapen
 (97,136,13,4),
 (97,312,9,5),
 (97,339,7,6),
-(98,202,31,1),
+(98,118,31,1),
 (98,313,23,2),
 (98,319,17,3),
 (98,146,13,4),
@@ -21907,7 +21913,7 @@ INSERT INTO KarreraSailkapena (Karrera_ID, Txirrindularia_ID, Puntuak, Sailkapen
 (226,186,7,6),
 (227,215,31,1),
 (227,219,23,2),
-(227,220,17,3),
+(227,183,17,3),
 (227,21,13,4),
 (227,226,9,5),
 (227,229,7,6),
@@ -22646,6 +22652,7 @@ INSERT INTO KarreraSailkapena (Karrera_ID, Txirrindularia_ID, Puntuak, Sailkapen
 (343,86,28,15);
 
 -- TxapelketaEmaitzaTxirrindulariak (1083)
+TRUNCATE TABLE TxapelketaEmaitzaTxirrindulariak;
 INSERT INTO TxapelketaEmaitzaTxirrindulariak (Txapelketa_ID, Txirrindularia_ID, Posizioa, Puntuak, Puntuak_Sailkapen_Nag, Puntuak_Mendian, Zenbatek) VALUES
 (1,1,1,177,NULL,NULL,76),
 (1,2,2,167,NULL,NULL,23),
@@ -22897,7 +22904,7 @@ INSERT INTO TxapelketaEmaitzaTxirrindulariak (Txapelketa_ID, Txirrindularia_ID, 
 (4,199,47,13,NULL,NULL,NULL),
 (4,200,48,13,NULL,NULL,NULL),
 (4,201,49,13,NULL,NULL,NULL),
-(4,202,50,10,NULL,NULL,NULL),
+(4,118,50,10,NULL,NULL,NULL),
 (4,203,51,9,NULL,NULL,NULL),
 (4,204,52,9,NULL,NULL,NULL),
 (4,205,53,9,NULL,NULL,NULL),
@@ -22946,7 +22953,7 @@ INSERT INTO TxapelketaEmaitzaTxirrindulariak (Txapelketa_ID, Txirrindularia_ID, 
 (5,163,33,20,NULL,NULL,NULL),
 (5,32,34,18,NULL,NULL,NULL),
 (5,134,35,17,NULL,NULL,NULL),
-(5,220,36,17,NULL,NULL,NULL),
+(5,183,36,17,NULL,NULL,NULL),
 (5,221,37,17,NULL,NULL,NULL),
 (5,7,38,13,NULL,NULL,NULL),
 (5,21,39,13,NULL,NULL,NULL),
@@ -23111,7 +23118,7 @@ INSERT INTO TxapelketaEmaitzaTxirrindulariak (Txapelketa_ID, Txirrindularia_ID, 
 (8,9,25,31,31,31,NULL),
 (8,315,26,31,31,31,NULL),
 (8,316,27,31,31,31,NULL),
-(8,202,28,31,31,31,NULL),
+(8,118,28,31,31,31,NULL),
 (8,317,29,30,30,30,NULL),
 (8,92,30,26,26,26,NULL),
 (8,319,31,24,24,24,NULL),
@@ -23734,6 +23741,7 @@ INSERT INTO TxapelketaEmaitzaTxirrindulariak (Txapelketa_ID, Txirrindularia_ID, 
 (14,517,200,10,NULL,NULL,0);
 
 -- TxapelketaEmaitzaPorralariak (910)
+TRUNCATE TABLE TxapelketaEmaitzaPorralariak;
 INSERT INTO TxapelketaEmaitzaPorralariak (Txapelketa_ID, Ezizen_ID, Posizioa, Puntuak, Puntuak_Mendikoa, Puntuak_Generala) VALUES
 (1,1,1,1115,NULL,NULL),
 (1,2,2,1087,NULL,NULL),
@@ -24649,6 +24657,7 @@ INSERT INTO TxapelketaEmaitzaPorralariak (Txapelketa_ID, Ezizen_ID, Posizioa, Pu
 (14,918,45,20000,NULL,NULL);
 
 -- TxapelketaSailkapenaTxirrindulariak (1497)
+TRUNCATE TABLE TxapelketaSailkapenaTxirrindulariak;
 INSERT INTO TxapelketaSailkapenaTxirrindulariak (Txapelketa_ID, Txirrindularia_ID, Azken_Karrera_ID, Puntuak_Totalean, Puntuak_Azken_Karrera, Puntuak_Sailkapen_nagusia, Puntuak_Mendian, Eboluzioa) VALUES
 (15,234,54,400,400,NULL,NULL,0),
 (15,95,54,320,320,NULL,NULL,0),
@@ -26152,6 +26161,7 @@ INSERT INTO TxapelketaSailkapenaTxirrindulariak (Txapelketa_ID, Txirrindularia_I
 (15,945,343,40,40,NULL,NULL,0);
 
 -- TxapelketaSailkapenaPorralariak (19668)
+TRUNCATE TABLE TxapelketaSailkapenaPorralariak;
 INSERT INTO TxapelketaSailkapenaPorralariak (Txapelketa_ID, Ezizen_ID, Azken_Karrera_ID, Puntuak_Totalean, Puntuak_Azken_Karrera, Puntuazio_Finala, Puntuazioa_Fin_Mendikoa, Puntuazioa_Fin_Generala) VALUES
 (15,956,54,936,936,0,NULL,NULL),
 (15,957,54,828,828,0,NULL,NULL),
@@ -45872,6 +45882,7 @@ INSERT INTO TxapelketaSailkapenaPorralariak (Txapelketa_ID, Ezizen_ID, Azken_Kar
 (15,964,343,18004,400,0,NULL,NULL);
 
 -- TxirrindulariakTxapleketanParteHartzea (2950)
+TRUNCATE TABLE TxirrindulariakTxapleketanParteHartzea;
 INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, TxirrindulariaID, Dortsala) VALUES
 (7,1,1),
 (7,282,2),
@@ -46082,7 +46093,7 @@ INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, Txirrindularia
 (8,239,218),
 (8,267,221),
 (8,230,223),
-(8,202,224),
+(8,118,224),
 (8,92,225),
 (8,324,226),
 (8,343,227),
@@ -46347,7 +46358,7 @@ INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, Txirrindularia
 (4,290,7),
 (4,69,11),
 (4,419,12),
-(4,202,16),
+(4,118,16),
 (4,266,17),
 (4,117,18),
 (4,146,19),
@@ -46757,7 +46768,7 @@ INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, Txirrindularia
 (5,122,32),
 (5,213,33),
 (5,32,34),
-(5,220,35),
+(5,183,35),
 (5,136,36),
 (5,3,37),
 (5,149,38),
@@ -47346,7 +47357,7 @@ INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, Txirrindularia
 (12,122,62),
 (12,78,63),
 (12,408,64),
-(12,220,65),
+(12,183,65),
 (12,154,67),
 (12,149,68),
 (12,168,71),
@@ -47824,7 +47835,7 @@ INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, Txirrindularia
 (13,329,1213),
 (13,5,1214),
 (13,52,1215),
-(13,202,1815),
+(13,118,1815),
 (13,892,1216),
 (13,890,1516),
 (13,31,1816),
@@ -48031,7 +48042,7 @@ INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, Txirrindularia
 (14,169,512),
 (14,408,812),
 (14,442,513),
-(14,220,813),
+(14,183,813),
 (14,159,514),
 (14,243,815),
 (14,201,216),
@@ -48517,7 +48528,7 @@ INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, Txirrindularia
 (15,841,225),
 (15,908,525),
 (15,195,301),
-(15,220,601),
+(15,183,601),
 (15,93,901),
 (15,418,302),
 (15,122,602),
@@ -48832,6 +48843,7 @@ INSERT INTO TxirrindulariakTxapleketanParteHartzea (TxapelketaID, Txirrindularia
 (13,92,1817);
 
 -- Sariak (47)
+TRUNCATE TABLE Sariak;
 INSERT INTO Sariak (Txapelketa_ID, Posizioa, Saria) VALUES
 (1,1,'616.00 €'),
 (1,2,'385.00 €'),

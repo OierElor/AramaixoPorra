@@ -14,9 +14,9 @@ header('Content-Type: application/json; charset=utf-8');
 
 // ───── KONFIGURAZIOA — bete zure datuekin ───────────────────────────────────
 $DB_HOST = 'localhost';
-$DB_NAME = 'ALDATU_datubase_izena';
-$DB_USER = 'ALDATU_erabiltzailea';   // SELECT-soilik baimenarekin, gomendatua
-$DB_PASS = 'ALDATU_pasahitza';
+$DB_NAME = 'Erabiltzaile';
+$DB_USER = 'Erabiltzaile';   // SELECT-soilik baimenarekin, gomendatua
+$DB_PASS = 'erabiltzailePH';
 // ────────────────────────────────────────────────────────────────────────────
 
 function fail($msg, $code = 400) {

@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/js/db-loader.js"></script>
-    <script src="/js/erreminta-komuna.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
@@ -26,7 +26,7 @@
                 <li><a class="giro" href="/giro/">Giro</a></li>
                 <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
                 <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
-                <li><a class="grafikoak" href="/erremintak/">Erremintak</a></li>
+                <li><a class="grafikoak" href="/tresnak/">Tresnak</a></li>
             </ul>
         </nav>
     </header>
@@ -79,7 +79,7 @@
         const state = { txapId: null, porrak: [], karrerak: [], hautatuak: [], filter: 'denak', chart: null };
 
         async function init() {
-            const txs = await Erreminta.txapelketak();
+            const txs = await Tresna.txapelketak();
             const sel = document.getElementById('txap-select');
             sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
             state.txapId = txs.length ? txs[0].id : null;
@@ -96,8 +96,8 @@
 
         async function loadPorrak() {
             state.hautatuak = [];
-            state.porrak = await Erreminta.porrak(state.txapId);
-            state.karrerak = await Erreminta.karrerak(state.txapId);
+            state.porrak = await Tresna.porrak(state.txapId);
+            state.karrerak = await Tresna.karrerak(state.txapId);
             document.getElementById('porra-datalist').innerHTML =
                 state.porrak.map(p => `<option value="${p.izena.replace(/"/g, '&quot;')}">`).join('');
             document.getElementById('porra-input').value = '';
@@ -111,7 +111,7 @@
             const sel = state.hautatuak.map(id => state.porrak.find(p => p.id === id)).filter(Boolean);
             box.innerHTML = sel.length
                 ? sel.map((p, i) => {
-                    const color = Erreminta.COLORS[i % Erreminta.COLORS.length];
+                    const color = Tresna.COLORS[i % Tresna.COLORS.length];
                     return `<button type="button" class="grafiko-chip" data-id="${p.id}" ` +
                         `style="border-color:${color};color:${color};">${p.pos}. ${p.izena} ` +
                         `<span class="chip-x">×</span></button>`;
@@ -149,8 +149,8 @@
             cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
 
             // taldeak + eboluzioa
-            const teams = await Promise.all(sel.map(p => Erreminta.taldea(state.txapId, p.id)));
-            const cums = await Promise.all(sel.map(p => Erreminta.eboluzioa(state.txapId, p.id, state.karrerak)));
+            const teams = await Promise.all(sel.map(p => Tresna.taldea(state.txapId, p.id)));
+            const cums = await Promise.all(sel.map(p => Tresna.eboluzioa(state.txapId, p.id, state.karrerak)));
 
             // txirrindularien batuketa
             const ptsByName = new Map();
@@ -179,7 +179,7 @@
             }).join('');
 
             const summary = sel.map((p, i) => {
-                const color = Erreminta.COLORS[i % Erreminta.COLORS.length];
+                const color = Tresna.COLORS[i % Tresna.COLORS.length];
                 return `<div style="text-align:center;">
                     <div style="font-weight:bold;color:${color};">${p.izena}</div>
                     <div>${p.pos}. postua · ${p.total} p.</div></div>`;
@@ -201,18 +201,22 @@
                 </div>`;
 
             const datasets = sel.map((p, i) => {
-                const color = Erreminta.COLORS[i % Erreminta.COLORS.length];
+                const color = Tresna.COLORS[i % Tresna.COLORS.length];
                 return {
                     label: p.izena, data: cums[i],
                     borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 2, tension: 0.15,
                 };
             });
             if (state.chart) state.chart.destroy();
-            state.chart = Erreminta.lineChart(document.getElementById('konp-grafikoa'), state.karrerak, datasets);
+            state.chart = Tresna.lineChart(document.getElementById('konp-grafikoa'), state.karrerak, datasets);
         }
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
+    <footer class="orri-footer">
+        <div class="footer-iz">Aramaixo Porra</div>
+        <div>Harremanetarako: <a href="mailto:harremana@aramaixoporra.eus">harremana@aramaixoporra.eus</a></div>
+    </footer>
 </body>
 
 </html>

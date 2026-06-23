@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Sarien banaketa</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1><a href="/" style="color: inherit; text-decoration: none;">Aramaixo Porra</a></h1>
+        <nav class="karrerak">
+            <ul>
+                <li><a class="tour" href="/tour/">Tour</a></li>
+                <li><a class="giro" href="/giro/">Giro</a></li>
+                <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
+                <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
+                <li><a class="grafikoak" href="/tresnak/">Tresnak</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Sarien banaketa</h2>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="txap-select">Txapelketa</label>
+                        <select id="txap-select"></select>
+                    </div>
+                </div>
+
+                <div id="sari-edukia"></div>
+
+                <div class="table-wrapper" style="max-width:620px;margin:30px auto;">
+                    <h3 class="grafikoak" style="text-align:center;">DENBORA GUZTIETAKO SARI-IRABAZLEAK</h3>
+                    <div class="table-content" id="ranking-edukia"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const state = { txapId: null, withSariak: new Set() };
+
+        function euroParse(s) {
+            if (s == null) return null;
+            const v = parseFloat(String(s).replace(',', '.').replace(/[^\d.]/g, ''));
+            return isNaN(v) ? null : v;
+        }
+        const euroFmt = v => v.toLocaleString('eu-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+        async function init() {
+            const txs = await Tresna.txapelketak();
+            const sw = await Tresna.q("SELECT DISTINCT Txapelketa_ID AS id FROM Sariak");
+            state.withSariak = new Set(sw.map(r => r.id));
+            const usable = txs.filter(t => state.withSariak.has(t.id));
+            const sel = document.getElementById('txap-select');
+            sel.innerHTML = usable.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
+            state.txapId = usable.length ? usable[0].id : null;
+            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); renderSariak(); });
+            await renderSariak();
+            await renderRanking();
+        }
+
+        async function renderSariak() {
+            const cont = document.getElementById('sari-edukia');
+            if (state.txapId == null) { cont.innerHTML = '<p style="text-align:center;opacity:.6;">Ez dago sari-daturik.</p>'; return; }
+            const rows = await Tresna.q(
+                "SELECT s.Posizioa AS pos, s.Saria AS saria, pe.Ezizena AS ezizena, e.Puntuak AS pts " +
+                "FROM Sariak s " +
+                "LEFT JOIN TxapelketaEmaitzaPorralariak e ON e.Txapelketa_ID = s.Txapelketa_ID AND e.Posizioa = s.Posizioa " +
+                "LEFT JOIN PorraEzizenak pe ON pe.Ezizen_ID = e.Ezizen_ID " +
+                "WHERE s.Txapelketa_ID = ? ORDER BY s.Posizioa", [state.txapId]);
+            let total = 0;
+            const body = rows.map(r => {
+                const e = euroParse(r.saria); if (e) total += e;
+                let tr = '<tr';
+                if (r.pos === 1) tr += ' style="background:#fff4cc;font-weight:bold;"';
+                else if (r.pos === 2) tr += ' style="background:#f0f0f0;"';
+                else if (r.pos === 3) tr += ' style="background:#fde8d0;"';
+                return tr + `><td class="pos-col">${r.pos}.</td><td class="name-col">${r.ezizena ?? '—'}</td>` +
+                    `<td style="font-weight:600;color:#43a047;">${r.saria}</td><td class="points-col">${r.pts ?? '—'}</td></tr>`;
+            }).join('');
+            cont.innerHTML = `
+                <div class="grafiko-oihala" style="text-align:center;">
+                    <div style="font-size:1.6em;font-weight:bold;">${euroFmt(total)}</div>
+                    <div style="opacity:.6;">Sari guztira</div>
+                </div>
+                <div class="table-wrapper" style="max-width:620px;margin:14px auto;">
+                    <h3 class="grafikoak" style="text-align:center;">SARIAK</h3>
+                    <div class="table-content">
+                        <table class="sailkapena-table klasikak">
+                            <thead><tr><th>Pos</th><th>Irabazlea</th><th>Saria</th><th>Puntuak</th></tr></thead>
+                            <tbody>${body}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }
+
+        async function renderRanking() {
+            const rows = await Tresna.q(
+                "SELECT p.Izena AS porralari, s.Saria AS saria " +
+                "FROM Sariak s " +
+                "JOIN TxapelketaEmaitzaPorralariak e ON e.Txapelketa_ID = s.Txapelketa_ID AND e.Posizioa = s.Posizioa " +
+                "JOIN PorralariTaldeenEzizenak te ON te.Ezizen_ID = e.Ezizen_ID " +
+                "JOIN Porralariak p ON p.Porralaria_ID = te.Porralaria_ID");
+            const map = new Map();
+            rows.forEach(r => {
+                const m = map.get(r.porralari) || { eur: 0, n: 0 };
+                const e = euroParse(r.saria);
+                if (e) m.eur += e;
+                m.n += 1;
+                map.set(r.porralari, m);
+            });
+            const list = [...map.entries()].sort((a, b) => b[1].eur - a[1].eur);
+            const body = list.map(([izena, m], i) =>
+                `<tr><td class="pos-col">${i + 1}.</td><td class="name-col">${izena}</td>` +
+                `<td style="font-weight:600;color:#43a047;">${euroFmt(m.eur)}</td><td class="points-col">${m.n}</td></tr>`).join('');
+            document.getElementById('ranking-edukia').innerHTML =
+                `<table class="sailkapena-table klasikak"><thead><tr><th>Pos</th><th>Porralaria</th><th>Irabazitakoa</th><th>Sariak</th></tr></thead>` +
+                `<tbody>${body}</tbody></table>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    <footer class="orri-footer">
+        <div class="footer-iz">Aramaixo Porra</div>
+        <div>Harremanetarako: <a href="mailto:harremana@aramaixoporra.eus">harremana@aramaixoporra.eus</a></div>
+    </footer>
+</body>
+
+</html>

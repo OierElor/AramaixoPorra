@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <script src="/js/db-loader.js"></script>
-    <script src="/js/erreminta-komuna.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
@@ -25,7 +25,7 @@
                 <li><a class="giro" href="/giro/">Giro</a></li>
                 <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
                 <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
-                <li><a class="grafikoak" href="/erremintak/">Erremintak</a></li>
+                <li><a class="grafikoak" href="/tresnak/">Tresnak</a></li>
             </ul>
         </nav>
     </header>
@@ -55,7 +55,8 @@
                     </div>
                 </div>
 
-                <div id="bero-edukia" style="overflow:auto; max-height:70vh; margin-top:12px;"></div>
+                <div id="bero-kop" style="opacity:.6; font-size:.85em; margin-top:12px; max-width:1000px; margin-left:auto; margin-right:auto;"></div>
+                <div id="bero-edukia" style="overflow:auto; max-height:70vh; margin-top:6px;"></div>
             </section>
         </main>
     </div>
@@ -64,7 +65,7 @@
         const state = { txapId: null, minPicks: 1 };
 
         async function init() {
-            const txs = await Erreminta.txapelketak();
+            const txs = await Tresna.txapelketak();
             const sel = document.getElementById('txap-select');
             sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
             state.txapId = txs.length ? txs[0].id : null;
@@ -80,12 +81,12 @@
             cont.innerHTML = '<p style="opacity:.6;padding:16px;">Kargatzen...</p>';
             const tid = state.txapId;
 
-            const porrak = await Erreminta.porrak(tid);  // postuaren arabera ordenatua
-            const cyc = await Erreminta.q(
+            const porrak = await Tresna.porrak(tid);  // postuaren arabera ordenatua
+            const cyc = await Tresna.q(
                 "SELECT t.Txirrindularia_ID AS id, t.Izena AS izena, COUNT(*) AS n " +
                 "FROM PorraApustuak pa JOIN Txirrindulariak t ON t.Txirrindularia_ID = pa.Txirrindularia_ID " +
                 "WHERE pa.Txapelketa_ID = ? GROUP BY pa.Txirrindularia_ID ORDER BY n DESC, t.Izena", [tid]);
-            const picks = await Erreminta.q(
+            const picks = await Tresna.q(
                 "SELECT Ezizen_ID AS e, Txirrindularia_ID AS t FROM PorraApustuak WHERE Txapelketa_ID = ?", [tid]);
 
             const pickSet = new Set(picks.map(p => p.e + '-' + p.t));
@@ -108,11 +109,16 @@
                 html += '</tr>';
             });
             html += '</tbody></table>';
-            cont.innerHTML = `<p style="opacity:.6;font-size:.85em;">${rows.length} txirrindulari × ${np} porra</p>` + html;
+            document.getElementById('bero-kop').textContent = `${rows.length} txirrindulari × ${np} porra`;
+            cont.innerHTML = html;
         }
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
+    <footer class="orri-footer">
+        <div class="footer-iz">Aramaixo Porra</div>
+        <div>Harremanetarako: <a href="mailto:harremana@aramaixoporra.eus">harremana@aramaixoporra.eus</a></div>
+    </footer>
 </body>
 
 </html>

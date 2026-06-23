@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/js/db-loader.js"></script>
-    <script src="/js/erreminta-komuna.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
@@ -26,7 +26,7 @@
                 <li><a class="giro" href="/giro/">Giro</a></li>
                 <li><a class="vuelta" href="/vuelta/">Vuelta</a></li>
                 <li><a class="klasikak" href="/klasikak/">Klasikak</a></li>
-                <li><a class="grafikoak" href="/erremintak/">Erremintak</a></li>
+                <li><a class="grafikoak" href="/tresnak/">Tresnak</a></li>
             </ul>
         </nav>
     </header>
@@ -58,7 +58,7 @@
         const state = { txapId: null, porrak: [], karrerak: [], chart: null };
 
         async function init() {
-            const txs = await Erreminta.txapelketak();
+            const txs = await Tresna.txapelketak();
             const sel = document.getElementById('txap-select');
             sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
             state.txapId = txs.length ? txs[0].id : null;
@@ -70,8 +70,8 @@
         async function loadPorrak() {
             document.getElementById('fitxa-edukia').innerHTML = '';
             document.getElementById('porra-input').value = '';
-            state.porrak = await Erreminta.porrak(state.txapId);
-            state.karrerak = await Erreminta.karrerak(state.txapId);
+            state.porrak = await Tresna.porrak(state.txapId);
+            state.karrerak = await Tresna.karrerak(state.txapId);
             document.getElementById('porra-datalist').innerHTML =
                 state.porrak.map(p => `<option value="${p.izena}">`).join('');
         }
@@ -86,8 +86,8 @@
             const cont = document.getElementById('fitxa-edukia');
             cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
 
-            const taldea = await Erreminta.taldea(state.txapId, porra.id);
-            const cum = await Erreminta.eboluzioa(state.txapId, porra.id, state.karrerak);
+            const taldea = await Tresna.taldea(state.txapId, porra.id);
+            const cum = await Tresna.eboluzioa(state.txapId, porra.id, state.karrerak);
             const etapaTot = cum.length ? cum[cum.length - 1] : 0;
             const bonusa = (porra.total != null && porra.total > etapaTot) ? (porra.total - etapaTot) : 0;
 
@@ -122,7 +122,7 @@
                 </div>`;
 
             if (state.chart) state.chart.destroy();
-            state.chart = Erreminta.lineChart(document.getElementById('fitxa-grafikoa'), state.karrerak, [{
+            state.chart = Tresna.lineChart(document.getElementById('fitxa-grafikoa'), state.karrerak, [{
                 label: porra.izena, data: cum,
                 borderColor: '#43a047', backgroundColor: '#43a047', borderWidth: 2, pointRadius: 2, tension: 0.15,
             }]);
@@ -130,6 +130,10 @@
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
+    <footer class="orri-footer">
+        <div class="footer-iz">Aramaixo Porra</div>
+        <div>Harremanetarako: <a href="mailto:harremana@aramaixoporra.eus">harremana@aramaixoporra.eus</a></div>
+    </footer>
 </body>
 
 </html>

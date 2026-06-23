@@ -39,8 +39,36 @@ a.grafikoak {
     background: #43a047;
 }
 
-/* ── Erremintak hub-a ─────────────────────────────────────────────────────── */
-.erreminta-sareta {
+/* ── Orri-oina (footer) — headerraren estetika ────────────────────────────── */
+.orri-footer {
+    background: #222c36;
+    color: #c7d0db;
+    text-align: center;
+    padding: 28px 16px;
+    margin-top: 48px;
+    line-height: 1.8;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.orri-footer .footer-iz {
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: #fff;
+    font-size: 1.1em;
+}
+
+.orri-footer a {
+    color: #6fd08c;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.orri-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ── Tresnak hub-a ─────────────────────────────────────────────────────── */
+.tresna-sareta {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 18px;
@@ -48,7 +76,7 @@ a.grafikoak {
     margin: 24px auto;
 }
 
-.erreminta-txartela {
+.tresna-txartela {
     display: block;
     text-decoration: none;
     color: inherit;
@@ -60,28 +88,35 @@ a.grafikoak {
     transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.erreminta-txartela:hover {
+.tresna-txartela:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
 }
 
-.erreminta-ikonoa {
+.tresna-ikonoa {
     font-size: 2.2em;
     margin-bottom: 6px;
 }
 
-.erreminta-txartela h3 {
+.tresna-txartela h3 {
     margin: 6px 0;
     color: #43a047;
 }
 
-.erreminta-txartela p {
+.tresna-txartela p {
     margin: 0;
     font-size: 0.9em;
     opacity: 0.75;
 }
 
 /* ── Aukeren bero-mapa ────────────────────────────────────────────────────── */
+#bero-edukia {
+    border: 1px solid #e3e3e3;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+}
+
 .bero-mapa {
     border-collapse: collapse;
     font-size: 11px;
@@ -89,22 +124,24 @@ a.grafikoak {
 
 .bero-mapa th,
 .bero-mapa td {
-    border: 1px solid #eee;
+    border: 1px solid #f1f3f1;
 }
 
 .bero-mapa thead th {
     position: sticky;
     top: 0;
     z-index: 2;
-    background: #f0f0f0;
-    height: 26px;
+    background: #eef2f5;
+    color: #555;
+    height: 28px;
+    font-weight: 600;
 }
 
 .bero-mapa .bm-zut {
     width: 16px;
     min-width: 16px;
     font-size: 9px;
-    color: #888;
+    color: #99a3ad;
     padding: 0;
 }
 
@@ -114,42 +151,67 @@ a.grafikoak {
     z-index: 1;
     background: #fff;
     text-align: left;
-    padding: 2px 8px;
+    padding: 3px 10px;
     white-space: nowrap;
+    width: 160px;
+    min-width: 160px;
     max-width: 160px;
+    box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 500;
 }
 
 .bero-mapa thead .bm-izena,
 .bero-mapa thead .bm-n {
     z-index: 3;
+    background: #eef2f5;
 }
 
 .bero-mapa .bm-n {
     position: sticky;
     left: 160px;
     z-index: 1;
-    background: #fafafa;
-    width: 26px;
+    background: #fafbfc;
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    box-sizing: border-box;
     text-align: center;
-    color: #666;
+    color: #43a047;
+    font-weight: 600;
+    border-right: 2px solid #e0e4e8;
 }
 
 .bero-mapa .bm-cell {
     width: 16px;
     min-width: 16px;
+    max-width: 16px;
     height: 16px;
     padding: 0;
-    background: #fbfbfb;
+    box-sizing: border-box;
+    background: #f5f8f5;
+    transition: background 0.1s;
 }
 
 .bero-mapa .bm-cell.on {
-    background: #43a047;
+    background: #4caf50;
+    background-image: linear-gradient(135deg, #58c45e, #3f9e46);
 }
 
-.bero-mapa tbody tr:hover .bm-izena {
-    background: #e8f5e9;
+.bero-mapa .bm-cell:hover {
+    background: #cdeccf;
+}
+
+.bero-mapa .bm-cell.on:hover {
+    background-image: none;
+    background: #2e7d32;
+}
+
+.bero-mapa tbody tr:hover .bm-izena,
+.bero-mapa tbody tr:hover .bm-n {
+    background: #eaf6ec;
+    color: #2e7d32;
 }
 
 /* ── Grafikoen atala ──────────────────────────────────────────────────────── */

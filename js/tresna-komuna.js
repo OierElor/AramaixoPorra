@@ -1,8 +1,8 @@
 /**
- * Erreminta komuna — Erremintak ataleko orriek partekatzen duten logika
+ * Tresna komuna — Tresnak ataleko orriek partekatzen duten logika
  * (porra-fitxa, konparatzailea...). window.dbLoader behar du.
  */
-const Erreminta = {
+const Tresna = {
     COLORS: [
         '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4',
         '#f032e6', '#bfef45', '#fabed4', '#469990', '#9a6324', '#808000',
@@ -95,7 +95,7 @@ const Erreminta = {
 
     /** Chart.js lerro-grafiko baten konfigurazio komuna (eboluziorako). */
     lineChart(canvas, karrerak, datasets, yTitle) {
-        const fullNames = karrerak.map(k => Erreminta.karreraLabel(k.izena));
+        const fullNames = karrerak.map(k => Tresna.karreraLabel(k.izena));
         return new Chart(canvas, {
             type: 'line',
             data: { labels: karrerak.map((_, i) => i + 1), datasets },

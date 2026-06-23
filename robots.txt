@@ -8,5 +8,6 @@ Disallow: /tresnak/
 Disallow: /data/
 Disallow: /js/
 Disallow: /css/
+Disallow: /api/
 
 Sitemap: https://aramaixoporra.eus/sitemap.xml

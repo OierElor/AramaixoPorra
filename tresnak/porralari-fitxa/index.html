@@ -71,7 +71,7 @@
             if (!ezids.length) return new Map();
             const ph = ezids.map(() => '?').join(',');
             const rows = await Tresna.q(
-                "SELECT te.Ezizen_ID AS ezid, GROUP_CONCAT(p.Izena, ', ') AS kideak " +
+                "SELECT te.Ezizen_ID AS ezid, GROUP_CONCAT(p.Izena SEPARATOR ', ') AS kideak " +
                 "FROM PorralariTaldeenEzizenak te JOIN Porralariak p ON p.Porralaria_ID = te.Porralaria_ID " +
                 "WHERE te.Ezizen_ID IN (" + ph + ") AND te.Porralaria_ID <> ? " +
                 "GROUP BY te.Ezizen_ID", [...ezids, porralariId]);

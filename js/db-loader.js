@@ -1,48 +1,11 @@
 /**
- * DB Loader — AramaixoPorra.db-tik datuak kargatu BROWSERREAN
- * Zero zerbitzari: sql.js erabiltzen du datu-basea memoriara kargatzeko.
+ * DB Loader — datuak MySQL-etik kargatu /api/q.php API seguruaren bidez.
+ * SELECT kontsultak JSON gisa bidaltzen dira eta emaitzak JSON gisa jasotzen.
  */
 
+const API_URL = '/api/q.php';
+
 class DBLoader {
-    constructor() {
-        this.dbPromise = null;
-    }
-
-    /**
-     * Datu-basea hasieratu eta itzuli (behin bakarrik).
-     */
-    async getDB() {
-        if (!this.dbPromise) {
-            this.dbPromise = (async () => {
-                // 1. sql.js script-a dinamikoki kargatu
-                if (!window.initSqlJs) {
-                    await new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js';
-                        script.onload = resolve;
-                        script.onerror = () => reject(new Error('Ezin izan da sql.js kargatu CDN-tik.'));
-                        document.head.appendChild(script);
-                    });
-                }
-
-                // 2. sql.js hasieratu wasm fitxategiarekin
-                const SQL = await window.initSqlJs({
-                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
-                });
-
-                // 3. Datu-basea deskargatu (/data/AramaixoPorra.db)
-                const dbUrl = '/data/AramaixoPorra.db';
-                const res = await fetch(dbUrl);
-                if (!res.ok) throw new Error(`Ezin izan da datu-basea aurkitu: ${dbUrl}`);
-                const buf = await res.arrayBuffer();
-
-                // 4. SQL.Database instantzia sortu
-                return new SQL.Database(new Uint8Array(buf));
-            })();
-        }
-        return this.dbPromise;
-    }
-
     /**
      * SQL kontsulta publikoa (grafikoetarako e.a.): array of objects itzuli.
      */
@@ -51,18 +14,20 @@ class DBLoader {
     }
 
     /**
-     * SQL kontsulta exekutatu eta array of objects itzuli.
+     * SELECT kontsulta API-ra bidali eta emaitza-lerroak (array of objects) itzuli.
      */
     async _query(sql, params = []) {
-        const db = await this.getDB();
-        const stmt = db.prepare(sql);
-        stmt.bind(params);
-        const rows = [];
-        while (stmt.step()) {
-            rows.push(stmt.getAsObject());
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sql, params }),
+        });
+        if (!res.ok) {
+            let msg = 'HTTP ' + res.status;
+            try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (e) { /* ignoratu */ }
+            throw new Error(msg);
         }
-        stmt.free();
-        return rows;
+        return res.json();
     }
 
     /**
@@ -127,7 +92,7 @@ class DBLoader {
                     t.Izena   AS Txirrindularia,
                     te.Puntuak,
                     COALESCE(
-                        te."Zenbatek?",
+                        te.Zenbatek,
                         (SELECT COUNT(*) FROM "PorraApustuak" pa
                           WHERE pa.Txapelketa_ID = te.Txapelketa_ID
                             AND pa.Txirrindularia_ID = te.Txirrindularia_ID)

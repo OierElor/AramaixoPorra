@@ -396,6 +396,10 @@ nav.karrerak a {
     transition: background 0.2s, color 0.2s;
 }
 
+nav.karrerak a.active {
+    box-shadow: 0 0 0 2px #fff;
+}
+
 /* Etapa eta urteak aukeratzeko estiloak */
 
 .etapa-navegazioa {

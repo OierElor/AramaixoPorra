@@ -4,6 +4,7 @@ Disallow: /tour/
 Disallow: /giro/
 Disallow: /vuelta/
 Disallow: /klasikak/
+Disallow: /tresnak/
 Disallow: /data/
 Disallow: /js/
 Disallow: /css/

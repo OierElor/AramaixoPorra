@@ -49033,13 +49033,3 @@ INSERT INTO Sariak (Txapelketa_ID, Posizioa, Saria) VALUES
 (14,6,'36.00 €');
 
 SET FOREIGN_KEY_CHECKS = 1;
-
--- ── Errendimendu indizeak ────────────────────────────────────────────────────
--- PorraApustuak: ospea-balioa eta porra-ideala tresnek erabiltzen duten
--- (Txapelketa_ID, Txirrindularia_ID) bilaketa azkartzen du
-ALTER TABLE PorraApustuak DROP INDEX IF EXISTS idx_apustu_txap_txirr;
-ALTER TABLE PorraApustuak ADD INDEX idx_apustu_txap_txirr (Txapelketa_ID, Txirrindularia_ID);
-
--- PorraApustuak: ezizen baten apustu guztiak azkar bilatzeko
-ALTER TABLE PorraApustuak DROP INDEX IF EXISTS idx_apustu_ezizen_txap;
-ALTER TABLE PorraApustuak ADD INDEX idx_apustu_ezizen_txap (Ezizen_ID, Txapelketa_ID);

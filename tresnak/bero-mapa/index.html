@@ -79,7 +79,7 @@
     <script>
         const state = {
             txapId: null,
-            cycFilter: null,       // { id, izena } | null — zutabe filtroa
+            cycFilters: [],        // [{ id, izena }] — zutabe filtroa (AND logika)
             topN: null,            // number | null — zutabe muga
             porraHighlight: null,  // porraId | null — zutabe nabarmendu
             cyc: [],               // txirrindulari guztiak (autocomplete-entzat)
@@ -89,12 +89,12 @@
         function renderChips() {
             const box = document.getElementById('filtro-chipak');
             const chips = [];
-            if (state.cycFilter) {
+            state.cycFilters.forEach(cf => {
                 chips.push(
-                    `<span class="filtro-chip">🚴 ${state.cycFilter.izena} ` +
-                    `<span class="filtro-chip-x" data-clear="cyc">×</span></span>`
+                    `<span class="filtro-chip">🚴 ${cf.izena} ` +
+                    `<span class="filtro-chip-x" data-clear-cyc="${cf.id}">×</span></span>`
                 );
-            }
+            });
             if (state.porraHighlight != null) {
                 const p = state.porrakList.find(x => String(x.id) === String(state.porraHighlight));
                 const label = p ? p.izena : '?';
@@ -106,9 +106,8 @@
             box.innerHTML = chips.join('');
             box.querySelectorAll('.filtro-chip-x').forEach(btn =>
                 btn.addEventListener('click', () => {
-                    if (btn.dataset.clear === 'cyc') {
-                        state.cycFilter = null;
-                        document.getElementById('cyc-input').value = '';
+                    if (btn.dataset.clearCyc != null) {
+                        state.cycFilters = state.cycFilters.filter(cf => String(cf.id) !== btn.dataset.clearCyc);
                     }
                     if (btn.dataset.clear === 'porra') {
                         state.porraHighlight = null;
@@ -126,7 +125,7 @@
             state.txapId = txs.length ? txs[0].id : null;
             sel.addEventListener('change', () => {
                 state.txapId = parseInt(sel.value, 10);
-                state.cycFilter = null;
+                state.cycFilters = [];
                 state.porraHighlight = null;
                 document.getElementById('cyc-input').value = '';
                 document.getElementById('porra-input').value = '';
@@ -144,9 +143,13 @@
 
             Tresna.autocomplete(
                 document.getElementById('cyc-input'),
-                () => state.cyc.map(c => ({ id: c.id, label: c.izena })),
+                () => state.cyc
+                    .filter(c => !state.cycFilters.some(cf => String(cf.id) === String(c.id)))
+                    .map(c => ({ id: c.id, label: c.izena })),
                 item => {
-                    state.cycFilter = { id: item.id, izena: item.label };
+                    if (!state.cycFilters.some(cf => String(cf.id) === String(item.id))) {
+                        state.cycFilters.push({ id: item.id, izena: item.label });
+                    }
                     document.getElementById('cyc-input').value = '';
                     renderChips();
                     render();
@@ -187,8 +190,9 @@
 
             // Zutabe filtroak
             let porrak = porrakAll;
-            if (state.cycFilter) {
-                porrak = porrak.filter(p => pickSet.has(p.id + '-' + state.cycFilter.id));
+            if (state.cycFilters.length) {
+                porrak = porrak.filter(p =>
+                    state.cycFilters.every(cf => pickSet.has(p.id + '-' + cf.id)));
             }
             if (state.topN) {
                 porrak = porrak.slice(0, state.topN);
@@ -220,7 +224,7 @@
 
             document.getElementById('bero-kop').textContent =
                 `${cyc.length} txirrindulari × ${np} porra` +
-                (state.cycFilter ? ` (${state.cycFilter.izena} aukeratu dutenak)` : '');
+                (state.cycFilters.length ? ` (${state.cycFilters.map(cf => cf.izena).join(' + ')} aukeratu dutenak)` : '');
             cont.innerHTML = html;
         }
 

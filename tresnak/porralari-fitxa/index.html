@@ -91,14 +91,17 @@
             const klasika = r => /klasik/i.test(r.txap);
             const mediaItzuli = bataz(lerroak.filter(r => r.pts != null && !klasika(r)).map(r => Number(r.pts)));
             const mediaKlasika = bataz(lerroak.filter(r => r.pts != null && klasika(r)).map(r => Number(r.pts)));
-            const sariGuztira = lerroak.filter(r => r.saria != null).reduce((a, r) => a + Number(r.saria), 0);
+            const isEuroSaria = r => r.saria != null && !isNaN(Number(r.saria));
+            const sariGuztira = lerroak.filter(isEuroSaria).reduce((a, r) => a + Number(r.saria), 0);
             const baderaSaria = lerroak.some(r => r.saria != null);
 
             const body = lerroak.map(r => {
                 const pos = r.pos != null ? `${r.pos}. <span style="opacity:.5;">/ ${r.np}</span>`
                     : '<span style="opacity:.5;">martxan</span>';
                 const kide = kideMap.get(r.ezid);
-                const saria = r.saria != null ? `<strong>${Number(r.saria)} €</strong>` : '—';
+                const saria = r.saria != null
+                    ? (isEuroSaria(r) ? `<strong>${Number(r.saria)} €</strong>` : r.saria)
+                    : '—';
                 return `<tr><td class="name-col">${r.txap}</td><td>${r.ezizena}</td>` +
                     `<td>${pos}</td><td class="points-col">${r.pts ?? '—'}</td>` +
                     (baderaSaria ? `<td class="points-col">${saria}</td>` : '') +

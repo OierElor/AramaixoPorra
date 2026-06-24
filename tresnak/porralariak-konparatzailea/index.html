@@ -184,7 +184,7 @@
                     const podioak = txPoses.filter(x => x <= 3).length;
                     const avgPos = txPoses.length
                         ? (txPoses.reduce((a, b) => a + b, 0) / txPoses.length).toFixed(1) : '—';
-                    const sariGuztira = filtered[i].filter(r => r.saria != null).reduce((a, r) => a + Number(r.saria), 0);
+                    const sariGuztira = filtered[i].filter(r => r.saria != null && !isNaN(Number(r.saria))).reduce((a, r) => a + Number(r.saria), 0);
                     return { part: txids.length, garaipenak, podioak, avgPos, sariGuztira };
                 });
 

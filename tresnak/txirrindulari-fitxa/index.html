@@ -26,9 +26,8 @@
                 <div class="grafiko-kontrolak">
                     <div>
                         <label for="tx-input">Txirrindularia (bilatu)</label>
-                        <input id="tx-input" list="tx-datalist" placeholder="Idatzi izena..."
+                        <input id="tx-input" placeholder="Idatzi izena edo hautatu..."
                             autocomplete="off" style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:260px;">
-                        <datalist id="tx-datalist"></datalist>
                     </div>
                 </div>
                 <div id="fitxa-edukia"></div>
@@ -42,15 +41,14 @@
         async function init() {
             state.guztiak = await Tresna.q(
                 "SELECT Txirrindularia_ID AS id, Izena AS izena FROM Txirrindulariak ORDER BY Izena");
-            document.getElementById('tx-datalist').innerHTML =
-                state.guztiak.map(t => `<option value="${t.izena.replace(/"/g, '&quot;')}">`).join('');
-            document.getElementById('tx-input').addEventListener('change', onPick);
-        }
-
-        function onPick() {
-            const val = document.getElementById('tx-input').value.trim().toLowerCase();
-            const t = state.guztiak.find(x => x.izena.toLowerCase() === val);
-            if (t) renderFitxa(t);
+            Tresna.autocomplete(
+                document.getElementById('tx-input'),
+                state.guztiak.map(t => ({ id: t.id, label: t.izena })),
+                item => {
+                    const t = state.guztiak.find(x => x.id === item.id);
+                    if (t) renderFitxa(t);
+                }
+            );
         }
 
         async function partaidetzak(id) {

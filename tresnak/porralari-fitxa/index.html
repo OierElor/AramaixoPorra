@@ -26,9 +26,8 @@
                 <div class="grafiko-kontrolak">
                     <div>
                         <label for="porralari-input">Porralaria (bilatu)</label>
-                        <input id="porralari-input" list="porralari-datalist" placeholder="Idatzi izena..."
+                        <input id="porralari-input" placeholder="Idatzi izena edo hautatu..."
                             autocomplete="off" style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
-                        <datalist id="porralari-datalist"></datalist>
                     </div>
                 </div>
                 <div id="fitxa-edukia"></div>
@@ -42,15 +41,14 @@
         async function init() {
             state.guztiak = await Tresna.q(
                 "SELECT Porralaria_ID AS id, Izena AS izena FROM Porralariak ORDER BY Izena");
-            document.getElementById('porralari-datalist').innerHTML =
-                state.guztiak.map(p => `<option value="${p.izena}">`).join('');
-            document.getElementById('porralari-input').addEventListener('change', onPick);
-        }
-
-        function onPick() {
-            const val = document.getElementById('porralari-input').value.trim().toLowerCase();
-            const p = state.guztiak.find(x => x.izena.toLowerCase() === val);
-            if (p) renderFitxa(p);
+            Tresna.autocomplete(
+                document.getElementById('porralari-input'),
+                state.guztiak.map(p => ({ id: p.id, label: p.izena })),
+                item => {
+                    const p = state.guztiak.find(x => x.id === item.id);
+                    if (p) renderFitxa(p);
+                }
+            );
         }
 
         // Porralari baten porrak (PorralariTaldeenEzizenak bidez), ezizen-IDarekin.

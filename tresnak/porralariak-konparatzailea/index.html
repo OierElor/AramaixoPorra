@@ -43,10 +43,9 @@
                     <div>
                         <label for="pl-input">Gehitu porralaria (bilatu) — gehienez 4</label>
                         <span style="display:inline-flex;gap:6px;">
-                            <input id="pl-input" list="pl-datalist" placeholder="Idatzi izena..."
+                            <input id="pl-input" placeholder="Idatzi izena edo hautatu..."
                                 autocomplete="off"
                                 style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
-                            <datalist id="pl-datalist"></datalist>
                             <button id="gehitu-btn" type="button" class="gehitu-btn">+ Gehitu</button>
                         </span>
                     </div>
@@ -72,8 +71,6 @@
         async function init() {
             state.guztiak = await Tresna.q(
                 "SELECT Porralaria_ID AS id, Izena AS izena FROM Porralariak ORDER BY Izena");
-            document.getElementById('pl-datalist').innerHTML =
-                state.guztiak.map(p => `<option value="${p.izena.replace(/"/g, '&quot;')}">`).join('');
 
             document.querySelectorAll('#mota-toggle button').forEach(b =>
                 b.addEventListener('click', () => {
@@ -82,8 +79,22 @@
                     state.mota = b.dataset.f;
                     render();
                 }));
+
+            const plInp = document.getElementById('pl-input');
+            Tresna.autocomplete(
+                plInp,
+                state.guztiak.map(p => ({ id: p.id, label: p.izena })),
+                item => {
+                    if (state.hautatuak.some(h => h.id === item.id) || state.hautatuak.length >= MAX) return;
+                    plInp.value = '';
+                    const p = state.guztiak.find(x => x.id === item.id);
+                    if (!p) return;
+                    state.hautatuak.push(p);
+                    renderChips();
+                    render();
+                }
+            );
             document.getElementById('gehitu-btn').addEventListener('click', addFromInput);
-            document.getElementById('pl-input').addEventListener('change', addFromInput);
         }
 
         function addFromInput() {

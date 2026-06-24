@@ -32,9 +32,8 @@
                     </div>
                     <div>
                         <label for="porra-input">Porra (bilatu)</label>
-                        <input id="porra-input" list="porra-datalist" placeholder="Idatzi porra izena..."
+                        <input id="porra-input" placeholder="Idatzi izena edo hautatu..."
                             autocomplete="off" style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:220px;">
-                        <datalist id="porra-datalist"></datalist>
                     </div>
                 </div>
 
@@ -52,7 +51,14 @@
             sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
             state.txapId = txs.length ? txs[0].id : null;
             sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); loadPorrak(); });
-            document.getElementById('porra-input').addEventListener('change', onPorraPick);
+            Tresna.autocomplete(
+                document.getElementById('porra-input'),
+                () => state.porrak.map(p => ({ id: p.id, label: p.izena })),
+                item => {
+                    const porra = state.porrak.find(p => p.id === item.id);
+                    if (porra) renderFitxa(porra);
+                }
+            );
             await loadPorrak();
         }
 
@@ -61,14 +67,6 @@
             document.getElementById('porra-input').value = '';
             state.porrak = await Tresna.porrak(state.txapId);
             state.karrerak = await Tresna.karrerak(state.txapId);
-            document.getElementById('porra-datalist').innerHTML =
-                state.porrak.map(p => `<option value="${p.izena}">`).join('');
-        }
-
-        function onPorraPick() {
-            const val = document.getElementById('porra-input').value.trim().toLowerCase();
-            const porra = state.porrak.find(p => p.izena.toLowerCase() === val);
-            if (porra) renderFitxa(porra);
         }
 
         async function renderFitxa(porra) {

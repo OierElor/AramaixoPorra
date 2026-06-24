@@ -46,10 +46,9 @@
                     <div>
                         <label for="porra-input">Gehitu porra (bilatu) — gehienez 4</label>
                         <span style="display:inline-flex;gap:6px;">
-                            <input id="porra-input" list="porra-datalist" placeholder="Idatzi porra izena..."
+                            <input id="porra-input" placeholder="Idatzi izena edo hautatu..."
                                 autocomplete="off"
                                 style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
-                            <datalist id="porra-datalist"></datalist>
                             <button id="gehitu-btn" type="button" class="gehitu-btn">+ Gehitu</button>
                         </span>
                     </div>
@@ -81,8 +80,19 @@
                     document.querySelectorAll('#iragazki-toggle button').forEach(x => x.classList.remove('active'));
                     b.classList.add('active'); state.filter = b.dataset.f; renderKonp();
                 }));
+            const porraInp = document.getElementById('porra-input');
+            Tresna.autocomplete(
+                porraInp,
+                () => state.porrak.map(p => ({ id: p.id, label: p.izena })),
+                item => {
+                    if (state.hautatuak.includes(item.id) || state.hautatuak.length >= MAX) return;
+                    porraInp.value = '';
+                    state.hautatuak.push(item.id);
+                    renderChips();
+                    renderKonp();
+                }
+            );
             document.getElementById('gehitu-btn').addEventListener('click', addFromInput);
-            document.getElementById('porra-input').addEventListener('change', addFromInput);
             await loadPorrak();
         }
 
@@ -90,6 +100,7 @@
             state.hautatuak = [];
             state.porrak = await Tresna.porrak(state.txapId);
             state.karrerak = await Tresna.karrerak(state.txapId);
+            document.getElementById('porra-input').value = '';
 
             const tid = state.txapId;
             const N = state.karrerak.length;
@@ -131,9 +142,6 @@
                 ranked.forEach((id, rank) => state.allPos.get(id)[j] = rank + 1);
             }
 
-            document.getElementById('porra-datalist').innerHTML =
-                state.porrak.map(p => `<option value="${p.izena.replace(/"/g, '&quot;')}">`).join('');
-            document.getElementById('porra-input').value = '';
             renderChips();
             document.getElementById('konp-edukia').innerHTML =
                 '<p style="text-align:center;opacity:.6;">Aukeratu gutxienez 2 porra.</p>';

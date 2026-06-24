@@ -9,6 +9,7 @@
     <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/js/db-loader.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
@@ -52,10 +53,9 @@
                     <div>
                         <label for="entitate-input">Gehitu (bilatu izena)</label>
                         <span style="display:inline-flex;gap:6px;">
-                            <input id="entitate-input" list="entitate-datalist" placeholder="Idatzi izena..."
+                            <input id="entitate-input" placeholder="Idatzi izena edo hautatu..."
                                 autocomplete="off"
                                 style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
-                            <datalist id="entitate-datalist"></datalist>
                             <button id="gehitu-btn" type="button" class="gehitu-btn">+ Gehitu</button>
                         </span>
                     </div>
@@ -106,8 +106,22 @@
                 b.addEventListener('click', () => setToggle('mota-toggle', b, 'mota', b.dataset.mota, true)));
             document.querySelectorAll('#metrika-toggle button').forEach(b =>
                 b.addEventListener('click', () => setToggle('metrika-toggle', b, 'metrika', b.dataset.metrika, false)));
+            const entInp = document.getElementById('entitate-input');
+            Tresna.autocomplete(
+                entInp,
+                () => state.entitateak.map(e => ({ id: e.id, label: e.izena })),
+                item => {
+                    if (!state.hautatuak.has(item.id)) {
+                        state.hautatuak.add(item.id);
+                        entInp.value = '';
+                        renderChips();
+                        renderChart();
+                    } else {
+                        entInp.value = '';
+                    }
+                }
+            );
             document.getElementById('gehitu-btn').addEventListener('click', addFromInput);
-            document.getElementById('entitate-input').addEventListener('change', addFromInput);
 
             await loadData();
         }
@@ -174,9 +188,6 @@
             }
 
             state.entitateak = ents;
-            // datalist bete eta lehenetsia: lehen 5ak
-            document.getElementById('entitate-datalist').innerHTML =
-                ents.map(e => `<option value="${e.izena.replace(/"/g, '&quot;')}">`).join('');
             document.getElementById('entitate-input').value = '';
             state.hautatuak = new Set(ents.slice(0, 5).map(e => e.id));
 

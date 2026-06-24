@@ -94,6 +94,62 @@ const Tresna = {
         return cum;
     },
 
+    /**
+     * Custom autocomplete dropdown (datalist-aren ordez, mobilean ere ongi funtzionatzen du).
+     * @param {HTMLInputElement} input
+     * @param {Array|Function} getItems  [{id, label}] array edo array itzultzen duen funtzioa
+     * @param {Function} onSelect  onSelect({id, label}) deitua aukera hautatzean
+     */
+    autocomplete(input, getItems, onSelect) {
+        const items = () => typeof getItems === 'function' ? getItems() : getItems;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'ac-wrap';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+
+        const drop = document.createElement('div');
+        drop.className = 'ac-drop';
+        drop.style.display = 'none';
+        wrap.appendChild(drop);
+
+        let visible = [];
+
+        function populate(query) {
+            const all = items();
+            const q = (query || '').toLowerCase().trim();
+            visible = q ? all.filter(it => it.label.toLowerCase().includes(q)) : all.slice();
+            if (!visible.length) { drop.style.display = 'none'; return; }
+            drop.innerHTML = visible.map((it, i) =>
+                `<div class="ac-item" data-i="${i}">${it.label}</div>`).join('');
+            drop.style.display = '';
+        }
+
+        function hide() { drop.style.display = 'none'; }
+
+        function pick(i) {
+            const it = visible[i];
+            if (!it) return;
+            input.value = it.label;
+            hide();
+            onSelect(it);
+        }
+
+        input.addEventListener('focus', () => populate(input.value));
+        input.addEventListener('input', () => populate(input.value));
+        // mousedown prevents blur (mahai-gainekoak); touchend handles touch (mugikorrak)
+        drop.addEventListener('mousedown', e => e.preventDefault());
+        drop.addEventListener('click', e => {
+            const el = e.target.closest('.ac-item');
+            if (el) pick(Number(el.dataset.i));
+        });
+        drop.addEventListener('touchend', e => {
+            const el = e.target.closest('.ac-item');
+            if (el) { e.preventDefault(); pick(Number(el.dataset.i)); }
+        });
+        input.addEventListener('blur', () => setTimeout(hide, 150));
+    },
+
     /** Chart.js lerro-grafiko baten konfigurazio komuna (eboluziorako). */
     lineChart(canvas, karrerak, datasets, yTitle) {
         const fullNames = karrerak.map(k => Tresna.karreraLabel(k.izena));

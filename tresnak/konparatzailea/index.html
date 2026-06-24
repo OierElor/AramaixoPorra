@@ -37,7 +37,6 @@
                         <label>Erakutsi</label>
                         <div class="grafiko-mota" id="iragazki-toggle">
                             <button data-f="denak" class="active">Denak</button>
-                            <button data-f="komunak">Komunak</button>
                             <button data-f="ezberdinak">Ezberdinak</button>
                         </div>
                     </div>
@@ -65,7 +64,11 @@
 
     <script>
         const MAX = 4;
-        const state = { txapId: null, porrak: [], karrerak: [], hautatuak: [], filter: 'denak', chart: null };
+        const state = {
+            txapId: null, porrak: [], karrerak: [],
+            allCums: new Map(), allPos: new Map(),
+            hautatuak: [], filter: 'denak', chart: null,
+        };
 
         async function init() {
             const txs = await Tresna.txapelketak();
@@ -87,6 +90,47 @@
             state.hautatuak = [];
             state.porrak = await Tresna.porrak(state.txapId);
             state.karrerak = await Tresna.karrerak(state.txapId);
+
+            const tid = state.txapId;
+            const N = state.karrerak.length;
+            const kidx = new Map(state.karrerak.map((k, i) => [k.kid, i]));
+
+            // (porra, karrera) -> puntuak, porra guztientzat
+            const raceRows = await Tresna.q(
+                "SELECT pa.Ezizen_ID AS id, k.Karrerak_ID AS kid, SUM(ks.Puntuak) AS pts " +
+                "FROM PorraApustuak pa " +
+                "JOIN KarreraSailkapena ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
+                "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID AND k.Txapelketa_ID = pa.Txapelketa_ID " +
+                "WHERE pa.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> '' " +
+                "GROUP BY pa.Ezizen_ID, k.Karrerak_ID", [tid]);
+
+            const rawMap = new Map();
+            // Hasi porra guztiak zeroekin
+            state.porrak.forEach(p => rawMap.set(p.id, new Array(N).fill(0)));
+            raceRows.forEach(r => {
+                if (!rawMap.has(r.id)) rawMap.set(r.id, new Array(N).fill(0));
+                const j = kidx.get(r.kid);
+                if (j != null) rawMap.get(r.id)[j] = Number(r.pts) || 0;
+            });
+
+            // Kumulatiboak
+            state.allCums = new Map();
+            rawMap.forEach((pts, id) => {
+                const cum = [];
+                let s = 0;
+                pts.forEach(p => { s += p; cum.push(s); });
+                state.allCums.set(id, cum);
+            });
+
+            // Posizioa karrera bakoitzaren ostean (kumulatiboen arabera)
+            const porraIds = [...rawMap.keys()];
+            state.allPos = new Map(porraIds.map(id => [id, new Array(N).fill(0)]));
+            for (let j = 0; j < N; j++) {
+                const ranked = porraIds.slice().sort((a, b) =>
+                    (state.allCums.get(b)[j] || 0) - (state.allCums.get(a)[j] || 0));
+                ranked.forEach((id, rank) => state.allPos.get(id)[j] = rank + 1);
+            }
+
             document.getElementById('porra-datalist').innerHTML =
                 state.porrak.map(p => `<option value="${p.izena.replace(/"/g, '&quot;')}">`).join('');
             document.getElementById('porra-input').value = '';
@@ -137,11 +181,9 @@
             }
             cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
 
-            // taldeak + eboluzioa
             const teams = await Promise.all(sel.map(p => Tresna.taldea(state.txapId, p.id)));
-            const cums = await Promise.all(sel.map(p => Tresna.eboluzioa(state.txapId, p.id, state.karrerak)));
 
-            // txirrindularien batuketa
+            // Txirrindularien taula
             const ptsByName = new Map();
             const pickedSets = teams.map(t => {
                 const s = new Set();
@@ -150,12 +192,7 @@
             });
             let names = [...ptsByName.keys()];
             const countPicks = n => pickedSets.reduce((a, s) => a + (s.has(n) ? 1 : 0), 0);
-            names = names.filter(n => {
-                const c = countPicks(n);
-                if (state.filter === 'komunak') return c === sel.length;
-                if (state.filter === 'ezberdinak') return c < sel.length;
-                return true;
-            });
+            if (state.filter === 'ezberdinak') names = names.filter(n => countPicks(n) < sel.length);
             names.sort((a, b) => countPicks(b) - countPicks(a) || ptsByName.get(b) - ptsByName.get(a));
 
             const head = `<tr><th>Txirrindularia</th>${sel.map(p => `<th>${p.izena}</th>`).join('')}</tr>`;
@@ -178,7 +215,8 @@
                 <div class="grafiko-oihala" style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;">${summary}</div>
                 <div class="grafiko-oihala">
                     <h3 class="grafikoak" style="text-align:center;">EBOLUZIOA</h3>
-                    <div style="position:relative;height:340px;"><canvas id="konp-grafikoa"></canvas></div>
+                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">━━ Puntu metatuak (ezkerra) &nbsp;·&nbsp; - - Posizioa (eskuina)</p>
+                    <div style="position:relative;height:360px;"><canvas id="konp-grafikoa"></canvas></div>
                 </div>
                 <div class="table-wrapper" style="max-width:760px;margin:16px auto;overflow-x:auto;">
                     <h3 class="grafikoak" style="text-align:center;">AUKERAK (etapetako puntuak)</h3>
@@ -189,15 +227,57 @@
                     </div>
                 </div>`;
 
-            const datasets = sel.map((p, i) => {
+            const fullNames = state.karrerak.map(k => Tresna.karreraLabel(k.izena));
+            const labels = state.karrerak.map((_, i) => i + 1);
+
+            // Lerro solidoa: puntu metatuak (y ezker) + lerro punteatua: posizioa (y2 eskuin)
+            const datasets = sel.flatMap((p, i) => {
                 const color = Tresna.COLORS[i % Tresna.COLORS.length];
-                return {
-                    label: p.izena, data: cums[i],
-                    borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 2, tension: 0.15,
-                };
+                const base = { borderColor: color, backgroundColor: color, tension: 0.15, pointRadius: 2 };
+                return [
+                    { ...base, label: p.izena, data: state.allCums.get(p.id) || [], borderWidth: 2, yAxisID: 'y' },
+                    { ...base, label: p.izena + ' ▪', data: state.allPos.get(p.id) || [],
+                      borderWidth: 1.5, borderDash: [5, 4], yAxisID: 'y2' },
+                ];
             });
+
             if (state.chart) state.chart.destroy();
-            state.chart = Tresna.lineChart(document.getElementById('konp-grafikoa'), state.karrerak, datasets);
+            state.chart = new Chart(document.getElementById('konp-grafikoa'), {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { filter: item => !item.text.endsWith(' ▪') },
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: items => fullNames[items[0].dataIndex],
+                                label: ctx => {
+                                    if (ctx.dataset.yAxisID === 'y2') return null;
+                                    const posDs = datasets.find(d => d.yAxisID === 'y2' &&
+                                        d.label === ctx.dataset.label + ' ▪');
+                                    const pos = posDs?.data[ctx.dataIndex];
+                                    return `${ctx.dataset.label}: ${ctx.raw} p.${pos ? '  (' + pos + '. postu)' : ''}`;
+                                },
+                                filter: ctx => ctx.dataset.yAxisID !== 'y2',
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Karrera' } },
+                        y: { beginAtZero: true, position: 'left',
+                             title: { display: true, text: 'Puntu metatuak' } },
+                        y2: { reverse: true, min: 1, position: 'right',
+                              title: { display: true, text: 'Posizioa' },
+                              ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v + '.' : '' },
+                              grid: { drawOnChartArea: false } },
+                    },
+                },
+            });
         }
 
         document.addEventListener('DOMContentLoaded', init);

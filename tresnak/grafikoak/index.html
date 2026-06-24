@@ -43,7 +43,7 @@
                     <div>
                         <label>Metrika</label>
                         <div class="grafiko-mota" id="metrika-toggle">
-                            <button data-metrika="puntuak" class="active">Puntu metatuak</button>
+                            <button data-metrika="puntuak" class="active">Desberdintasuna</button>
                             <button data-metrika="postua">Postua</button>
                         </div>
                     </div>
@@ -187,6 +187,25 @@
                 order.forEach((e, rank) => { (e.pos = e.pos || [])[j] = rank + 1; });
             }
 
+            // 5) erreferentzia-puntua karrera bakoitzean → desberdintasuna
+            let N_ref;
+            if (state.mota === 'txirrindulari') {
+                const sel = document.getElementById('txap-select');
+                const txName = sel.options[sel.selectedIndex]?.text || '';
+                N_ref = /klasik/i.test(txName) ? 25 : 15;
+            } else {
+                const sarRow = await window.dbLoader.query(
+                    "SELECT MAX(Posizioa) AS n FROM Sariak WHERE Txapelketa_ID = ?", [tid]);
+                N_ref = (sarRow[0]?.n) ? Number(sarRow[0].n) : 5;
+            }
+            const refCum = [];
+            for (let j = 0; j < N; j++) {
+                const sorted = [...ents].sort((a, b) => b.cum[j] - a.cum[j]);
+                refCum.push(sorted.length >= N_ref ? sorted[N_ref - 1].cum[j] : 0);
+            }
+            ents.forEach(e => { e.diff = refCum.map((ref, j) => e.cum[j] - ref); });
+            state.N_ref = N_ref;
+
             state.entitateak = ents;
             document.getElementById('entitate-input').value = '';
             state.hautatuak = new Set(ents.slice(0, 5).map(e => e.id));
@@ -237,11 +256,15 @@
             const labels = state.karrerak.map((k, i) => i + 1);
             const usePos = state.metrika === 'postua';
 
+            const refLabel = state.mota === 'txirrindulari'
+                ? `${state.N_ref}. txirrindularia (talde ideala)`
+                : `${state.N_ref}. porra (azken sariduna)`;
+
             const datasets = ents.map((e, i) => {
                 const color = COLORS[state.entitateak.indexOf(e) % COLORS.length];
                 return {
                     label: e.izena,
-                    data: usePos ? e.pos : e.cum,
+                    data: usePos ? e.pos : e.diff,
                     borderColor: color,
                     backgroundColor: color,
                     borderWidth: 2,
@@ -259,13 +282,27 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { position: 'bottom' },
-                        tooltip: { callbacks: { title: items => fullNames[items[0].dataIndex] } },
+                        tooltip: {
+                            callbacks: {
+                                title: items => fullNames[items[0].dataIndex],
+                                label: usePos ? undefined : ctx => {
+                                    const v = ctx.raw;
+                                    return `${ctx.dataset.label}: ${v > 0 ? '+' : ''}${v} p.`;
+                                },
+                            },
+                        },
                     },
                     scales: {
                         x: { title: { display: true, text: 'Karrera' } },
                         y: usePos
                             ? { reverse: true, min: 1, title: { display: true, text: 'Postua' }, ticks: { precision: 0 } }
-                            : { beginAtZero: true, title: { display: true, text: 'Puntu metatuak' } },
+                            : {
+                                title: { display: true, text: `Desberdintasuna: ${refLabel}` },
+                                grid: {
+                                    color: ctx => ctx.tick.value === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.08)',
+                                    lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
+                                },
+                            },
                     },
                 },
             };

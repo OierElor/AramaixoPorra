@@ -1,47 +1,61 @@
+:root {
+    --color-giro: #e754a6;
+    --color-giro-dark: #b8006e;
+    --color-tour: #ffd600;
+    --color-tour-dark: #c79100;
+    --color-vuelta: #e53935;
+    --color-vuelta-dark: #b71c1c;
+    --color-klasikak: #4fc3f7;
+    --color-klasikak-dark: #0288d1;
+    --color-tresnak: #43a047;
+    --color-tresnak-dark: #388e3c;
+    --header-bg: #222c36;
+}
+
 /* Karrera bakoitzaren koloreak */
 h2.giro {
-    color: #e754a6;
+    color: var(--color-giro);
 }
 
 a.giro {
-    background: #e754a6;
+    background: var(--color-giro);
 }
 
 h2.vuelta {
-    color: #e53935;
+    color: var(--color-vuelta);
 }
 
 a.vuelta {
-    background: #e53935;
+    background: var(--color-vuelta);
 }
 
 h2.tour {
-    color: #ffd600;
+    color: var(--color-tour);
 }
 
 a.tour {
-    background: #ffd600;
+    background: var(--color-tour);
 }
 
 h2.klasikak {
-    color: #4fc3f7;
+    color: var(--color-klasikak);
 }
 
 a.klasikak {
-    background: #4fc3f7;
+    background: var(--color-klasikak);
 }
 
 h2.grafikoak {
-    color: #43a047;
+    color: var(--color-tresnak);
 }
 
 a.grafikoak {
-    background: #43a047;
+    background: var(--color-tresnak);
 }
 
 /* ── Orri-oina (footer) — headerraren estetika ────────────────────────────── */
 .orri-footer {
-    background: #222c36;
+    background: var(--header-bg);
     color: #c7d0db;
     text-align: center;
     padding: 28px 16px;
@@ -82,7 +96,7 @@ a.grafikoak {
     color: inherit;
     background: #fff;
     border: 1px solid #e3e3e3;
-    border-top: 4px solid #43a047;
+    border-top: 4px solid var(--color-tresnak);
     border-radius: 10px;
     padding: 20px;
     transition: transform 0.15s, box-shadow 0.15s;
@@ -100,7 +114,7 @@ a.grafikoak {
 
 .tresna-txartela h3 {
     margin: 6px 0;
-    color: #43a047;
+    color: var(--color-tresnak);
 }
 
 .tresna-txartela p {
@@ -178,7 +192,7 @@ a.grafikoak {
     max-width: 30px;
     box-sizing: border-box;
     text-align: center;
-    color: #43a047;
+    color: var(--color-tresnak);
     font-weight: 600;
     border-right: 2px solid #e0e4e8;
 }
@@ -242,7 +256,7 @@ a.grafikoak {
 
 .grafiko-mota {
     display: inline-flex;
-    border: 1px solid #43a047;
+    border: 1px solid var(--color-tresnak);
     border-radius: 6px;
     overflow: hidden;
 }
@@ -250,14 +264,14 @@ a.grafikoak {
 .grafiko-mota button {
     border: none;
     background: #fff;
-    color: #43a047;
+    color: var(--color-tresnak);
     padding: 8px 16px;
     cursor: pointer;
     font-weight: bold;
 }
 
 .grafiko-mota button.active {
-    background: #43a047;
+    background: var(--color-tresnak);
     color: #fff;
 }
 
@@ -278,7 +292,7 @@ a.grafikoak {
 
 .gehitu-btn {
     border: none;
-    background: #43a047;
+    background: var(--color-tresnak);
     color: #fff;
     padding: 8px 14px;
     border-radius: 6px;
@@ -287,7 +301,7 @@ a.grafikoak {
 }
 
 .gehitu-btn:hover {
-    background: #388e3c;
+    background: var(--color-tresnak-dark);
 }
 
 .grafiko-chipak {
@@ -305,7 +319,7 @@ a.grafikoak {
     align-items: center;
     gap: 6px;
     background: #fff;
-    border: 2px solid #43a047;
+    border: 2px solid var(--color-tresnak);
     border-radius: 16px;
     padding: 4px 12px;
     font-size: 0.9em;
@@ -349,7 +363,7 @@ body {
 }
 
 header {
-    background: #222c36;
+    background: var(--header-bg);
     color: #fff;
     padding: 24px 0 10px 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
@@ -419,19 +433,19 @@ nav.karrerak a.active {
 }
 
 .etapa-info.giro {
-    color: #e754a6;
+    color: var(--color-giro);
 }
 
 .etapa-info.vuelta {
-    color: #e53935;
+    color: var(--color-vuelta);
 }
 
 .etapa-info.tour {
-    color: #ffd600;
+    color: var(--color-tour);
 }
 
 .etapa-info.klasikak {
-    color: #4fc3f7;
+    color: var(--color-klasikak);
 }
 
 .etapa-arrow {
@@ -466,35 +480,35 @@ nav.karrerak a.active {
 }
 
 .etapa-arrow.giro {
-    background: #e754a6;
+    background: var(--color-giro);
 }
 
 .etapa-arrow.vuelta {
-    background: #e53935;
+    background: var(--color-vuelta);
 }
 
 .etapa-arrow.tour {
-    background: #ffd600;
+    background: var(--color-tour);
 }
 
 .etapa-arrow.klasikak {
-    background: #4fc3f7;
+    background: var(--color-klasikak);
 }
 
 .etapa-arrow.giro:hover {
-    background: #b8006e;
+    background: var(--color-giro-dark);
 }
 
 .etapa-arrow.vuelta:hover {
-    background: #b71c1c;
+    background: var(--color-vuelta-dark);
 }
 
 .etapa-arrow.tour:hover {
-    background: #c79100;
+    background: var(--color-tour-dark);
 }
 
 .etapa-arrow.klasikak:hover {
-    background: #0288d1;
+    background: var(--color-klasikak-dark);
 }
 
 .etapa-back-btn {
@@ -517,42 +531,42 @@ nav.karrerak a.active {
 }
 
 .etapa-back-btn.tour {
-    background-color: #ffd600;
+    background-color: var(--color-tour);
     color: #000;
 }
 
 .etapa-back-btn.giro {
-    background-color: #e754a6;
+    background-color: var(--color-giro);
     color: #fff;
 }
 
 .etapa-back-btn.vuelta {
-    background-color: #e53935;
+    background-color: var(--color-vuelta);
     color: #fff;
 }
 
 .etapa-back-btn.klasikak {
-    background-color: #4fc3f7;
+    background-color: var(--color-klasikak);
     color: #fff;
 }
 
 .etapa-back-btn.tour:hover {
-    background-color: #c79100;
+    background-color: var(--color-tour-dark);
     color: #000;
 }
 
 .etapa-back-btn.giro:hover {
-    background-color: #b8006e;
+    background-color: var(--color-giro-dark);
     color: #fff;
 }
 
 .etapa-back-btn.vuelta:hover {
-    background-color: #b71c1c;
+    background-color: var(--color-vuelta-dark);
     color: #fff;
 }
 
 .etapa-back-btn.klasikak:hover {
-    background-color: #0288d1;
+    background-color: var(--color-klasikak-dark);
     color: #fff;
 }
 
@@ -611,19 +625,19 @@ p {
 }
 
 .etapak-menu.giro h3 {
-    color: #e754a6;
+    color: var(--color-giro);
 }
 
 .etapak-menu.vuelta h3 {
-    color: #e53935;
+    color: var(--color-vuelta);
 }
 
 .etapak-menu.tour h3 {
-    color: #ffd600;
+    color: var(--color-tour);
 }
 
 .etapak-menu.klasikak h3 {
-    color: #4fc3f7;
+    color: var(--color-klasikak);
 }
 
 .etapak-menu ul {
@@ -643,35 +657,35 @@ p {
 }
 
 .etapak-menu.giro a {
-    color: #e754a6;
+    color: var(--color-giro);
 }
 
 .etapak-menu.vuelta a {
-    color: #e53935;
+    color: var(--color-vuelta);
 }
 
 .etapak-menu.tour a {
-    color: #ffd600;
+    color: var(--color-tour);
 }
 
 .etapak-menu.klasikak a {
-    color: #4fc3f7;
+    color: var(--color-klasikak);
 }
 
 .etapak-menu.giro a:hover {
-    color: #b8006e;
+    color: var(--color-giro-dark);
 }
 
 .etapak-menu.vuelta a:hover {
-    color: #b71c1c;
+    color: var(--color-vuelta-dark);
 }
 
 .etapak-menu.tour a:hover {
-    color: #c79100;
+    color: var(--color-tour-dark);
 }
 
 .etapak-menu.klasikak a:hover {
-    color: #0288d1;
+    color: var(--color-klasikak-dark);
 }
 
 .etapak-menu a:hover {
@@ -693,7 +707,7 @@ p {
 
 .table-wrapper {
     flex: 1;
-    min-width: 600px;
+    min-width: 0;
     border: 1px solid #ddd;
     border-radius: 8px;
     background: #fff;
@@ -706,6 +720,21 @@ p {
     overflow-y: auto;
     overflow-x: auto;
     width: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll adierazlea — itzala eskuinean taulak jarraitzen duenean */
+.table-wrapper {
+    background:
+        linear-gradient(to right, #fff 30%, rgba(255,255,255,0)),
+        linear-gradient(to right, rgba(255,255,255,0), #fff 70%) 0 100%,
+        radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.12), rgba(0,0,0,0)),
+        radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.12), rgba(0,0,0,0)) 0 100%;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+    background-position: 0 0, 100%, 0 0, 100%;
+    background-attachment: local, local, scroll, scroll;
 }
 
 .table-content table {
@@ -770,7 +799,7 @@ p {
 }
 
 .sailkapena-table th {
-    background: #ffd600;
+    background: var(--color-tour);
     color: #000;
     font-weight: bold;
     padding: 8px;
@@ -781,9 +810,9 @@ p {
 /* Vuelta Estiloa */
 .sailkapena-table.vuelta th,
 .sailkapena-table.vuelta .etapa-header {
-    background: #e53935;
+    background: var(--color-vuelta);
     color: #fff;
-    border: 1px solid #b71c1c;
+    border: 1px solid var(--color-vuelta-dark);
 }
 
 .sailkapena-table .etapa-header {
@@ -847,24 +876,24 @@ p {
 }
 
 .sailkapena-table.giro th {
-    background: #e754a6;
+    background: var(--color-giro);
     color: white;
 }
 
 h3.giro {
-    color: #e754a6;
+    color: var(--color-giro);
     margin-bottom: 15px;
 }
 
 /* Tour Estiloa */
 .sailkapena-table.tour th {
-    background: #ffd600;
+    background: var(--color-tour);
     color: #000;
-    border: 1px solid #c79100;
+    border: 1px solid var(--color-tour-dark);
 }
 
 h3.tour {
-    color: #ffd600;
+    color: var(--color-tour);
     margin-bottom: 15px;
 }
 
@@ -874,9 +903,9 @@ h3.tour {
 }
 
 .sailkapena-table.klasikak th {
-    background: #4fc3f7;
+    background: var(--color-klasikak);
     color: #fff;
-    border: 1px solid #0288d1;
+    border: 1px solid var(--color-klasikak-dark);
     padding: 10px 8px;
     font-size: 0.9em;
 }
@@ -906,7 +935,7 @@ h3.klasikak {
 
 
 h3.vuelta {
-    color: #e53935;
+    color: var(--color-vuelta);
     margin-bottom: 15px;
 }
 
@@ -946,8 +975,8 @@ h3.vuelta {
 }
 
 .profile-notice.giro {
-    color: #e754a6;
-    border-color: #e754a6;
+    color: var(--color-giro);
+    border-color: var(--color-giro);
 }
 
 .profile-notice.tour {
@@ -956,13 +985,13 @@ h3.vuelta {
 }
 
 .profile-notice.vuelta {
-    color: #e53935;
-    border-color: #e53935;
+    color: var(--color-vuelta);
+    border-color: var(--color-vuelta);
 }
 
 .profile-notice.klasikak {
-    color: #0288d1;
-    border-color: #0288d1;
+    color: var(--color-klasikak-dark);
+    border-color: var(--color-klasikak-dark);
 }
 
 /* Download Button Estiloak */
@@ -990,25 +1019,25 @@ h3.vuelta {
 
 /* Tour Button */
 .download-button.tour {
-    background-color: #ffd600;
+    background-color: var(--color-tour);
     color: black;
 }
 
 /* Giro Button */
 .download-button.giro {
-    background-color: #e754a6;
+    background-color: var(--color-giro);
     color: white;
 }
 
 /* Vuelta Button */
 .download-button.vuelta {
-    background-color: #e53935;
+    background-color: var(--color-vuelta);
     color: white;
 }
 
 /* Klasikak Button (badaezpada) */
 .download-button.klasikak {
-    background-color: #4fc3f7;
+    background-color: var(--color-klasikak);
     color: black;
 }
 
@@ -1032,14 +1061,14 @@ h3.vuelta {
     nav.karrerak {
         margin-right: 0;
         width: 100%;
-        max-width: 320px;
-        margin: 0 auto;
+        max-width: 440px;
+        margin: 8px auto 0;
     }
 
     nav.karrerak ul {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
         padding: 0;
         justify-content: center;
     }
@@ -1051,8 +1080,8 @@ h3.vuelta {
 
     nav.karrerak a {
         display: block;
-        padding: 10px 5px;
-        font-size: 0.9rem;
+        padding: 8px 2px;
+        font-size: 0.82rem;
         text-align: center;
         width: auto;
     }
@@ -1103,9 +1132,7 @@ h3.vuelta {
 
     .table-content table {
         width: 100%;
-        min-width: 320px;
-        /* Base minimum for content */
-        font-size: 0.8rem;
+        font-size: 0.82rem;
         table-layout: auto;
     }
 
@@ -1124,8 +1151,7 @@ h3.vuelta {
     .sailkapena-table .name-col {
         text-align: left;
         padding-left: 4px;
-        max-width: 120px;
-        /* Constrain the Porralaria column */
+        max-width: 150px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1135,21 +1161,6 @@ h3.vuelta {
         width: 45px;
         text-align: center;
         padding: 6px 1px;
-    }
-
-    /* Extra tight for very small screens */
-    @media (max-width: 320px) {
-        main {
-            padding: 8px 1px;
-        }
-
-        .table-content table {
-            font-size: 0.75rem;
-        }
-
-        .sailkapena-table .name-col {
-            max-width: 90px;
-        }
     }
 
     .etapa-navegazioa {
@@ -1194,7 +1205,22 @@ h3.vuelta {
     }
 
     nav.karrerak a {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
+    }
+}
+
+/* Extra tight for very small screens */
+@media (max-width: 320px) {
+    main {
+        padding: 8px 1px;
+    }
+
+    .table-content table {
+        font-size: 0.75rem;
+    }
+
+    .sailkapena-table .name-col {
+        max-width: 90px;
     }
 }
 
@@ -1223,14 +1249,14 @@ h3.vuelta {
     font-weight: bold;
     cursor: pointer;
     border: none;
-    background: #4fc3f7;
+    background: var(--color-klasikak);
     color: #fff;
     transition: background 0.2s;
 }
 
-.etapa-toggle.vuelta { background: #e53935; }
-.etapa-toggle.giro   { background: #e754a6; }
-.etapa-toggle.tour   { background: #ffd600; color: #000; }
+.etapa-toggle.vuelta { background: var(--color-vuelta); }
+.etapa-toggle.giro   { background: var(--color-giro); }
+.etapa-toggle.tour   { background: var(--color-tour); color: #000; }
 
 .etapa-toggle:hover            { filter: brightness(0.92); }
 .etapa-chevron {

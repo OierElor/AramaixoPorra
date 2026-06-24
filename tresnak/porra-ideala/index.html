@@ -76,9 +76,9 @@
 
             // benetako porrak (etapetako puntuak)
             const porrak = await Tresna.porrak(tid);
-            const totals = porrak.map(p => p.etapaTot).filter(v => v != null);
-            const best = porrak.slice().sort((a, b) => b.etapaTot - a.etapaTot)[0];
-            const bestPts = best ? best.etapaTot : 0;
+            const totals = porrak.map(p => Number(p.etapaTot)).filter(v => !isNaN(v));
+            const best = porrak.slice().sort((a, b) => Number(b.etapaTot) - Number(a.etapaTot))[0];
+            const bestPts = best ? Number(best.etapaTot) : 0;
             const avg = totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
             const gap = idealPts - bestPts;
 

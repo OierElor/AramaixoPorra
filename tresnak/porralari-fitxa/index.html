@@ -95,7 +95,7 @@
             const sariGuztira = lerroak.filter(isEuroSaria).reduce((a, r) => a + Number(r.saria), 0);
             const baderaSaria = lerroak.some(r => r.saria != null);
 
-            const body = lerroak.map(r => {
+            const body = lerroak.ma(r => {
                 const pos = r.pos != null ? `${r.pos}. <span style="opacity:.5;">/ ${r.np}</span>`
                     : '<span style="opacity:.5;">martxan</span>';
                 const kide = kideMap.get(r.ezid);

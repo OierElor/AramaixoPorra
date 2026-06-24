@@ -90,8 +90,8 @@
             const onena = posizioak.length ? Math.min(...posizioak) : null;
             const bataz = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
             const klasika = r => /klasik/i.test(r.txap);
-            const mediaItzuli = bataz(lerroak.filter(r => r.pts != null && !klasika(r)).map(r => r.pts));
-            const mediaKlasika = bataz(lerroak.filter(r => r.pts != null && klasika(r)).map(r => r.pts));
+            const mediaItzuli = bataz(lerroak.filter(r => r.pts != null && !klasika(r)).map(r => Number(r.pts)));
+            const mediaKlasika = bataz(lerroak.filter(r => r.pts != null && klasika(r)).map(r => Number(r.pts)));
 
             const body = lerroak.map(r => {
                 const pos = r.pos != null ? `${r.pos}. <span style="opacity:.5;">/ ${r.np}</span>`

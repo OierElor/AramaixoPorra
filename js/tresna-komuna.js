@@ -49,6 +49,7 @@ const Tresna = {
             "  ON e.Ezizen_ID = ez.Ezizen_ID AND e.Txapelketa_ID = ez.Txapelketa_ID " +
             "WHERE ez.Txapelketa_ID = ?", [tid]);
         const hasOfficial = rows.some(r => r.ofPos != null);
+        rows.forEach(r => { r.etapaTot = Number(r.etapaTot); r.ofPts = r.ofPts != null ? Number(r.ofPts) : null; });
         rows.sort((a, b) => {
             if (hasOfficial) return (a.ofPos ?? 1e9) - (b.ofPos ?? 1e9);
             return b.etapaTot - a.etapaTot;
@@ -86,7 +87,7 @@ const Tresna = {
             "  AND pa.Txapelketa_ID = k.Txapelketa_ID " +
             "WHERE k.Txapelketa_ID = ? AND k.Kategoria <> '' AND pa.Ezizen_ID = ? " +
             "GROUP BY k.Karrerak_ID", [tid, ezId]);
-        const byKid = new Map(rows.map(r => [r.kid, r.pts]));
+        const byKid = new Map(rows.map(r => [r.kid, Number(r.pts)]));
         const cum = [];
         let s = 0;
         karrerak.forEach(k => { s += (byKid.get(k.kid) || 0); cum.push(s); });

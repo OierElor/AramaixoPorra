@@ -72,7 +72,7 @@
             cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
 
             const lerroak = await partaidetzak(t.id);
-            const puntuV = lerroak.filter(r => r.pts != null).map(r => r.pts);
+            const puntuV = lerroak.filter(r => r.pts != null).map(r => Number(r.pts));
             const guztira = puntuV.reduce((a, b) => a + b, 0);
             const posV = lerroak.filter(r => r.pos != null).map(r => r.pos);
             const onena = posV.length ? Math.min(...posV) : null;

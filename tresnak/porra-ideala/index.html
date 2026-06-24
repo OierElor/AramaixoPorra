@@ -69,6 +69,7 @@
                 "JOIN Txirrindulariak t ON t.Txirrindularia_ID = ks.Txirrindularia_ID " +
                 "WHERE k.Txapelketa_ID = ? AND k.Kategoria <> '' GROUP BY ks.Txirrindularia_ID " +
                 "ORDER BY p DESC, t.Izena LIMIT ?", [tid, N]);
+            ideala.forEach(r => { r.p = Number(r.p); });
             const idealPts = ideala.reduce((a, r) => a + r.p, 0);
 
             // benetako porrak (etapetako puntuak)

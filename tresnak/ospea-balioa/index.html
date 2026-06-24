@@ -85,6 +85,7 @@
                 "JOIN Txirrindulariak t ON t.Txirrindularia_ID = ks.Txirrindularia_ID " +
                 "WHERE k.Txapelketa_ID = ? AND k.Kategoria <> '' GROUP BY ks.Txirrindularia_ID " +
                 "ORDER BY pts DESC, t.Izena LIMIT ?", [tid, tid, N]);
+            ideala.forEach(r => { r.pts = Number(r.pts); r.auk = Number(r.auk); });
             const cutoff = ideala.length ? ideala[ideala.length - 1].pts : 0;
 
             // aukeratutako txirrindulariak (sakabanaketa)
@@ -95,6 +96,7 @@
                 "FROM PorraApustuak pa JOIN Txirrindulariak t ON t.Txirrindularia_ID = pa.Txirrindularia_ID " +
                 "WHERE pa.Txapelketa_ID = ? GROUP BY pa.Txirrindularia_ID", [tid, tid]);
 
+            rows.forEach(r => { r.pts = Number(r.pts); r.auk = Number(r.auk); });
             const points = rows.map(r => ({ x: r.auk, y: r.pts, izena: r.izena }));
             const maxAuk = Math.max(1, ...rows.map(r => r.auk));
 

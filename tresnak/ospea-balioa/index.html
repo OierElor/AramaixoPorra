@@ -74,7 +74,7 @@
 
             // porra-tamaina N
             const szRow = await Tresna.q(
-                "SELECT MAX(n) AS sz FROM (SELECT Ezizen_ID, COUNT(*) n FROM PorraApustuak WHERE Txapelketa_ID = ? GROUP BY Ezizen_ID)", [tid]);
+                "SELECT MAX(n) AS sz FROM (SELECT Ezizen_ID, COUNT(*) n FROM PorraApustuak WHERE Txapelketa_ID = ? GROUP BY Ezizen_ID) AS sub", [tid]);
             const N = (szRow[0] && szRow[0].sz) ? szRow[0].sz : 15;
 
             // talde ideala (top N puntuka) + zenbat porrak hartu zuten

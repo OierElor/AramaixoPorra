@@ -63,6 +63,12 @@
         const state = { guztiak: [], hautatuak: [], mota: 'denak', chart: null };
         const isKlasika = txap => /klasik/i.test(txap);
 
+        // Txapelketa bateko porra array batetik postu onena (ofiziala, baxuena = onena)
+        function bestPos(rows) {
+            const poses = rows.filter(r => r.pos != null).map(r => Number(r.pos));
+            return poses.length ? Math.min(...poses) : null;
+        }
+
         async function init() {
             state.guztiak = await Tresna.q(
                 "SELECT Porralaria_ID AS id, Izena AS izena FROM Porralariak ORDER BY Izena");
@@ -141,40 +147,42 @@
                     return true;
                 }));
 
-                // Union of all championships, chronological
-                const txMap = new Map();
+                // Txapelketa guztien batasena, kronologikoki
+                const txMeta = new Map();
                 filtered.forEach(hist => hist.forEach(r => {
-                    if (!txMap.has(r.txid)) txMap.set(r.txid, { txid: r.txid, txap: r.txap, urtea: r.urtea });
+                    if (!txMeta.has(r.txid)) txMeta.set(r.txid, { txid: r.txid, txap: r.txap, urtea: r.urtea });
                 }));
-                const txList = [...txMap.values()].sort((a, b) => a.urtea - b.urtea || a.txap.localeCompare(b.txap));
+                const txList = [...txMeta.values()].sort((a, b) => a.urtea - b.urtea || a.txap.localeCompare(b.txap));
 
-                // Per-porralari lookup map: txid → row
+                // txid → porra[] (porra guztiak txapelketa bakoitzean, porralari bakoitzeko)
                 const histMaps = filtered.map(hist => {
                     const m = new Map();
-                    hist.forEach(r => m.set(r.txid, r));
+                    hist.forEach(r => {
+                        if (!m.has(r.txid)) m.set(r.txid, []);
+                        m.get(r.txid).push(r);
+                    });
                     return m;
                 });
 
-                // Stats per porralari
+                // Estatistikak: txapelketa bakoitzeko postu onena hartu
                 const stats = state.hautatuak.map((p, i) => {
-                    const hist = filtered[i];
-                    const poses = hist.filter(r => r.pos != null).map(r => Number(r.pos));
-                    const garaipenak = poses.filter(x => x === 1).length;
-                    const podioak = poses.filter(x => x <= 3).length;
-                    const avgPos = poses.length
-                        ? (poses.reduce((a, b) => a + b, 0) / poses.length).toFixed(1) : '—';
-                    return { part: hist.length, garaipenak, podioak, avgPos };
+                    const txids = [...histMaps[i].keys()];
+                    const txPoses = txids.map(txid => bestPos(histMaps[i].get(txid))).filter(v => v != null);
+                    const garaipenak = txPoses.filter(x => x === 1).length;
+                    const podioak = txPoses.filter(x => x <= 3).length;
+                    const avgPos = txPoses.length
+                        ? (txPoses.reduce((a, b) => a + b, 0) / txPoses.length).toFixed(1) : '—';
+                    return { part: txids.length, garaipenak, podioak, avgPos };
                 });
 
-                // Head-to-head (2 porralariak)
+                // Head-to-head: txapelketa bakoitzean postu onena konparatu
                 let h2hHtml = '';
                 if (state.hautatuak.length === 2) {
                     let wins = [0, 0], draws = 0;
                     txList.forEach(tx => {
-                        const r0 = histMaps[0].get(tx.txid);
-                        const r1 = histMaps[1].get(tx.txid);
-                        if (r0?.pos != null && r1?.pos != null) {
-                            const p0 = Number(r0.pos), p1 = Number(r1.pos);
+                        const p0 = bestPos(histMaps[0].get(tx.txid) || []);
+                        const p1 = bestPos(histMaps[1].get(tx.txid) || []);
+                        if (p0 != null && p1 != null) {
                             if (p0 < p1) wins[0]++;
                             else if (p1 < p0) wins[1]++;
                             else draws++;
@@ -188,18 +196,18 @@
                             <span style="color:${c1};">${state.hautatuak[1].izena}</span>
                         </div>
                         ${draws ? `<div style="opacity:.55;font-size:.85em;margin-top:3px;">${draws} berdinketa</div>` : ''}
-                        <div style="opacity:.55;font-size:.82em;margin-top:2px;">Zuzeneko aurrez-aurrekoa (sailkapen ofizialean)</div>
+                        <div style="opacity:.55;font-size:.82em;margin-top:2px;">Zuzeneko aurrez-aurrekoa — txapelketa bakoitzean postu onena</div>
                     </div>`;
                 }
 
-                // Summary cards
+                // Laburpen txartelak
                 const summaryHtml = state.hautatuak.map((p, i) => {
                     const color = Tresna.COLORS[i % Tresna.COLORS.length];
                     const s = stats[i];
                     return `<div style="text-align:center;padding:8px 16px;">
                         <div style="font-weight:bold;color:${color};font-size:1.05em;">${p.izena}</div>
                         <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:6px;">
-                            <div><div style="font-size:1.4em;font-weight:bold;">${s.part}</div><div style="opacity:.6;font-size:.82em;">Porrak</div></div>
+                            <div><div style="font-size:1.4em;font-weight:bold;">${s.part}</div><div style="opacity:.6;font-size:.82em;">Txapelketak</div></div>
                             <div><div style="font-size:1.4em;font-weight:bold;">${s.garaipenak}</div><div style="opacity:.6;font-size:.82em;">Garaipenak</div></div>
                             <div><div style="font-size:1.4em;font-weight:bold;">${s.podioak}</div><div style="opacity:.6;font-size:.82em;">Podioak</div></div>
                             <div><div style="font-size:1.4em;font-weight:bold;">${s.avgPos}</div><div style="opacity:.6;font-size:.82em;">Batez b. pos.</div></div>
@@ -207,32 +215,41 @@
                     </div>`;
                 }).join('');
 
-                // Comparison table
+                // Taula: txapelketa bakoitzeko zelda bakoitzean porra guztiak erakutsi
                 const thead = `<tr><th>Txapelketa</th>${state.hautatuak.map((p, i) => {
                     const color = Tresna.COLORS[i % Tresna.COLORS.length];
                     return `<th style="color:${color};">${p.izena}</th>`;
                 }).join('')}</tr>`;
 
-                const tbody = txList.map(tx => {
-                    const cells = state.hautatuak.map((p, i) => {
-                        const r = histMaps[i].get(tx.txid);
-                        if (!r) return `<td style="opacity:.3;">—</td>`;
+                const renderCell = rows => {
+                    if (!rows || !rows.length) return `<td style="opacity:.3;">—</td>`;
+                    const sorted = rows.slice().sort((a, b) => (a.pos ?? 9999) - (b.pos ?? 9999));
+                    if (sorted.length === 1) {
+                        const r = sorted[0];
                         if (r.pos == null) return `<td style="opacity:.6;font-style:italic;">martxan</td>`;
                         const pts = r.pts != null ? ` · ${r.pts} p.` : '';
                         return `<td class="points-col">${r.pos}. <span style="opacity:.5;">/ ${r.np}</span>${pts}</td>`;
-                    }).join('');
+                    }
+                    // Hainbat porra: denak lerrokatu
+                    const lines = sorted.map(r => {
+                        if (r.pos == null) return `<span style="opacity:.6;font-style:italic;">${r.ezizena}: martxan</span>`;
+                        const pts = r.pts != null ? ` · ${r.pts}p.` : '';
+                        return `${r.pos}.<span style="opacity:.5;">/${r.np}</span>${pts} <span style="opacity:.55;font-size:.8em;">(${r.ezizena})</span>`;
+                    });
+                    return `<td class="points-col" style="line-height:1.7;">${lines.join('<br>')}</td>`;
+                };
+
+                const tbody = txList.map(tx => {
+                    const cells = histMaps.map(m => renderCell(m.get(tx.txid))).join('');
                     return `<tr><td class="name-col">${tx.txap}</td>${cells}</tr>`;
                 }).join('');
 
-                // Position chart (Y reversed: 1st at top)
+                // Grafiko: txapelketa bakoitzeko postu onena (Y alderantzikatua)
                 const datasets = state.hautatuak.map((p, i) => {
                     const color = Tresna.COLORS[i % Tresna.COLORS.length];
                     return {
                         label: p.izena,
-                        data: txList.map(tx => {
-                            const r = histMaps[i].get(tx.txid);
-                            return (r?.pos != null) ? Number(r.pos) : null;
-                        }),
+                        data: txList.map(tx => bestPos(histMaps[i].get(tx.txid) || [])),
                         borderColor: color, backgroundColor: color,
                         borderWidth: 2, pointRadius: 4, tension: 0.15, spanGaps: false,
                     };
@@ -245,6 +262,7 @@
                     ${h2hHtml}
                     <div class="grafiko-oihala">
                         <h3 class="grafikoak" style="text-align:center;">POSIZIOEN EBOLUZIOA</h3>
+                        <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">Hainbat porra baditu txapelketa batean, onena erakusten da</p>
                         <div style="position:relative;height:340px;"><canvas id="konp-grafikoa"></canvas></div>
                     </div>
                     <div class="table-wrapper" style="max-width:900px;margin:16px auto;overflow-x:auto;">

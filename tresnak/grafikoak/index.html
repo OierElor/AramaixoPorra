@@ -231,7 +231,7 @@
                 : '<span style="opacity:.6;">Gehitu izenak bilatzailetik.</span>';
             box.querySelectorAll('.grafiko-chip').forEach(btn =>
                 btn.addEventListener('click', () => {
-                    state.hautatuak.delete(parseInt(btn.dataset.id, 10));
+                    state.hautatuak.delete(btn.dataset.id);
                     renderChips();
                     renderChart();
                 }));

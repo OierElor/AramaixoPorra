@@ -34,34 +34,136 @@
                         <select id="txap-select"></select>
                     </div>
                     <div>
-                        <label for="min-select">Gutxieneko aukerak</label>
-                        <select id="min-select">
-                            <option value="1">Denak</option>
-                            <option value="2">≥ 2 porrak</option>
-                            <option value="5">≥ 5 porrak</option>
-                            <option value="10">≥ 10 porrak</option>
-                        </select>
+                        <label for="cyc-input">Txirrindularia (filtroa)</label>
+                        <input id="cyc-input" placeholder="Idatzi izena edo hautatu..."
+                            autocomplete="off"
+                            style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:200px;">
+                    </div>
+                    <div>
+                        <label>Porrak erakutsi</label>
+                        <div class="grafiko-mota" id="topn-toggle">
+                            <button data-n="" class="active">Denak</button>
+                            <button data-n="10">Top 10</button>
+                            <button data-n="20">Top 20</button>
+                            <button data-n="30">Top 30</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="porra-input">Nabarmendu porra</label>
+                        <input id="porra-input" placeholder="Idatzi izena edo hautatu..."
+                            autocomplete="off"
+                            style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:200px;">
                     </div>
                 </div>
 
-                <div id="bero-kop" style="opacity:.6; font-size:.85em; margin-top:12px; max-width:1000px; margin-left:auto; margin-right:auto;"></div>
+                <div id="filtro-chipak" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px auto 0;max-width:1000px;min-height:28px;"></div>
+                <div id="bero-kop" style="opacity:.6; font-size:.85em; margin-top:8px; max-width:1000px; margin-left:auto; margin-right:auto;"></div>
                 <div id="bero-edukia" style="overflow:auto; max-height:70vh; margin-top:6px;"></div>
             </section>
         </main>
     </div>
 
+    <style>
+        .bm-zut.highlighted { background: #fff3e0 !important; color: #e65100; }
+        .bm-cell.on.highlighted { background: linear-gradient(135deg, #f57c00 0%, #ffb74d 100%); }
+        .filtro-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 14px; font-size: .85em;
+            border: 1.5px solid #1976d2; color: #1976d2; background: #e3f2fd;
+            cursor: default;
+        }
+        .filtro-chip-x { cursor: pointer; opacity: .65; font-weight: bold; }
+        .filtro-chip-x:hover { opacity: 1; }
+    </style>
+
     <script>
-        const state = { txapId: null, minPicks: 1 };
+        const state = {
+            txapId: null,
+            cycFilter: null,       // { id, izena } | null — zutabe filtroa
+            topN: null,            // number | null — zutabe muga
+            porraHighlight: null,  // porraId | null — zutabe nabarmendu
+            cyc: [],               // txirrindulari guztiak (autocomplete-entzat)
+            porrakList: [],        // porra guztiak (autocomplete-entzat)
+        };
+
+        function renderChips() {
+            const box = document.getElementById('filtro-chipak');
+            const chips = [];
+            if (state.cycFilter) {
+                chips.push(
+                    `<span class="filtro-chip">🚴 ${state.cycFilter.izena} ` +
+                    `<span class="filtro-chip-x" data-clear="cyc">×</span></span>`
+                );
+            }
+            if (state.porraHighlight != null) {
+                const p = state.porrakList.find(x => String(x.id) === String(state.porraHighlight));
+                const label = p ? p.izena : '?';
+                chips.push(
+                    `<span class="filtro-chip" style="border-color:#f57c00;color:#e65100;background:#fff3e0;">` +
+                    `⭐ ${label} <span class="filtro-chip-x" data-clear="porra" style="color:#e65100;">×</span></span>`
+                );
+            }
+            box.innerHTML = chips.join('');
+            box.querySelectorAll('.filtro-chip-x').forEach(btn =>
+                btn.addEventListener('click', () => {
+                    if (btn.dataset.clear === 'cyc') {
+                        state.cycFilter = null;
+                        document.getElementById('cyc-input').value = '';
+                    }
+                    if (btn.dataset.clear === 'porra') {
+                        state.porraHighlight = null;
+                        document.getElementById('porra-input').value = '';
+                    }
+                    renderChips();
+                    render();
+                }));
+        }
 
         async function init() {
             const txs = await Tresna.txapelketak();
             const sel = document.getElementById('txap-select');
             sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
             state.txapId = txs.length ? txs[0].id : null;
-            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); render(); });
-            document.getElementById('min-select').addEventListener('change', e => {
-                state.minPicks = parseInt(e.target.value, 10); render();
+            sel.addEventListener('change', () => {
+                state.txapId = parseInt(sel.value, 10);
+                state.cycFilter = null;
+                state.porraHighlight = null;
+                document.getElementById('cyc-input').value = '';
+                document.getElementById('porra-input').value = '';
+                renderChips();
+                render();
             });
+
+            document.querySelectorAll('#topn-toggle button').forEach(b =>
+                b.addEventListener('click', () => {
+                    document.querySelectorAll('#topn-toggle button').forEach(x => x.classList.remove('active'));
+                    b.classList.add('active');
+                    state.topN = b.dataset.n ? parseInt(b.dataset.n, 10) : null;
+                    render();
+                }));
+
+            Tresna.autocomplete(
+                document.getElementById('cyc-input'),
+                () => state.cyc.map(c => ({ id: c.id, label: c.izena })),
+                item => {
+                    state.cycFilter = { id: item.id, izena: item.label };
+                    document.getElementById('cyc-input').value = '';
+                    renderChips();
+                    render();
+                }
+            );
+
+            Tresna.autocomplete(
+                document.getElementById('porra-input'),
+                () => state.porrakList.map(p => ({ id: p.id, label: p.izena })),
+                item => {
+                    state.porraHighlight = item.id;
+                    document.getElementById('porra-input').value = '';
+                    renderChips();
+                    render();
+                }
+            );
+
             await render();
         }
 
@@ -70,7 +172,7 @@
             cont.innerHTML = '<p style="opacity:.6;padding:16px;">Kargatzen...</p>';
             const tid = state.txapId;
 
-            const porrak = await Tresna.porrak(tid);  // postuaren arabera ordenatua
+            const porrakAll = await Tresna.porrak(tid);
             const cyc = await Tresna.q(
                 "SELECT t.Txirrindularia_ID AS id, t.Izena AS izena, COUNT(*) AS n " +
                 "FROM PorraApustuak pa JOIN Txirrindulariak t ON t.Txirrindularia_ID = pa.Txirrindularia_ID " +
@@ -78,27 +180,47 @@
             const picks = await Tresna.q(
                 "SELECT Ezizen_ID AS e, Txirrindularia_ID AS t FROM PorraApustuak WHERE Txapelketa_ID = ?", [tid]);
 
+            state.cyc = cyc;
+            state.porrakList = porrakAll;
+
             const pickSet = new Set(picks.map(p => p.e + '-' + p.t));
-            const rows = cyc.filter(c => c.n >= state.minPicks);
+
+            // Zutabe filtroak
+            let porrak = porrakAll;
+            if (state.cycFilter) {
+                porrak = porrak.filter(p => pickSet.has(p.id + '-' + state.cycFilter.id));
+            }
+            if (state.topN) {
+                porrak = porrak.slice(0, state.topN);
+            }
+
             const np = porrak.length;
+            const hlId = state.porraHighlight != null ? String(state.porraHighlight) : null;
 
             let html = '<table class="bero-mapa"><thead><tr>' +
                 '<th class="bm-izena">Txirrindularia</th><th class="bm-n">#</th>' +
-                porrak.map(p => `<th class="bm-zut" title="${p.pos}. ${p.izena} (${p.total})">${p.pos}</th>`).join('') +
+                porrak.map(p => {
+                    const hl = hlId && String(p.id) === hlId ? ' highlighted' : '';
+                    return `<th class="bm-zut${hl}" title="${p.pos}. ${p.izena} (${p.total})">${p.pos}</th>`;
+                }).join('') +
                 '</tr></thead><tbody>';
 
-            rows.forEach(c => {
+            cyc.forEach(c => {
                 html += '<tr><td class="bm-izena">' + c.izena + '</td><td class="bm-n">' + c.n + '</td>';
                 for (let i = 0; i < np; i++) {
                     const picked = pickSet.has(porrak[i].id + '-' + c.id);
+                    const hl = hlId && String(porrak[i].id) === hlId ? ' highlighted' : '';
                     html += picked
-                        ? `<td class="bm-cell on" title="${porrak[i].izena} ✓ ${c.izena}"></td>`
-                        : '<td class="bm-cell"></td>';
+                        ? `<td class="bm-cell on${hl}" title="${porrak[i].izena} ✓ ${c.izena}"></td>`
+                        : `<td class="bm-cell${hl}"></td>`;
                 }
                 html += '</tr>';
             });
             html += '</tbody></table>';
-            document.getElementById('bero-kop').textContent = `${rows.length} txirrindulari × ${np} porra`;
+
+            document.getElementById('bero-kop').textContent =
+                `${cyc.length} txirrindulari × ${np} porra` +
+                (state.cycFilter ? ` (${state.cycFilter.izena} aukeratu dutenak)` : '');
             cont.innerHTML = html;
         }
 

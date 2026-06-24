@@ -71,11 +71,12 @@
 
         async function render() {
             const tid = state.txapId;
+            try {
 
             // porra-tamaina N
             const szRow = await Tresna.q(
                 "SELECT MAX(n) AS sz FROM (SELECT Ezizen_ID, COUNT(*) n FROM PorraApustuak WHERE Txapelketa_ID = ? GROUP BY Ezizen_ID) AS sub", [tid]);
-            const N = (szRow[0] && szRow[0].sz) ? szRow[0].sz : 15;
+            const N = (szRow[0] && szRow[0].sz) ? Number(szRow[0].sz) : 15;
 
             // talde ideala (top N puntuka) + zenbat porrak hartu zuten
             const ideala = await Tresna.q(
@@ -144,6 +145,11 @@
                 '</tbody></table>';
             document.getElementById('onenak').innerHTML = taula(onenak);
             document.getElementById('tranpak').innerHTML = taula(tranpak);
+
+            } catch (err) {
+                document.getElementById('onenak').innerHTML = `<p style="color:red;">Errorea: ${err.message}</p>`;
+                console.error(err);
+            }
         }
 
         document.addEventListener('DOMContentLoaded', init);

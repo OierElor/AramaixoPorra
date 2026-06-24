@@ -57,10 +57,12 @@
             cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
             const tid = state.txapId;
 
+            try {
+
             // porra-tamaina
             const szRow = await Tresna.q(
                 "SELECT MAX(n) AS sz FROM (SELECT Ezizen_ID, COUNT(*) n FROM PorraApustuak WHERE Txapelketa_ID = ? GROUP BY Ezizen_ID) AS sub", [tid]);
-            const N = (szRow[0] && szRow[0].sz) ? szRow[0].sz : 15;
+            const N = (szRow[0] && szRow[0].sz) ? Number(szRow[0].sz) : 15;
 
             // talde ideala: N txirrindulari onenak puntuka
             const ideala = await Tresna.q(
@@ -99,6 +101,11 @@
                         </table>
                     </div>
                 </div>`;
+
+            } catch (err) {
+                cont.innerHTML = `<p style="text-align:center;color:red;">Errorea: ${err.message}</p>`;
+                console.error(err);
+            }
         }
 
         document.addEventListener('DOMContentLoaded', init);

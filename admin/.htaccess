@@ -7,6 +7,9 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /admin/
+    # FastCGI/PHP-FPM-rekin PHP_AUTH_USER ez da automatikoki pasatzen — Authorization header eskuz pasa
+    RewriteCond %{HTTP:Authorization} ^(.+)$
+    RewriteRule ^ - [E=HTTP_AUTHORIZATION:%1]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^api/(.*)$ api.php?_path=$1 [QSA,L]

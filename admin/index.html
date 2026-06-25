@@ -491,8 +491,8 @@ async function startInlineEdit(btn, table, pkCol, pkVal, field) {
     const val = inp.value.trim();
     if (!val || val === orig) { await window.reloadData(); return; }
     try {
-      await api("api/table/" + encodeURIComponent(table), {
-        method: "PUT", body: JSON.stringify({ pk: { [pkCol]: pkVal }, values: { [field]: val } }),
+      await api("api/table-update", {
+        method: "POST", body: JSON.stringify({ table, pk: { [pkCol]: pkVal }, values: { [field]: val } }),
       });
       showToast("✅ Gordeta");
       await reloadData();
@@ -745,8 +745,8 @@ function renderGenericTable() {
       });
       if (!Object.keys(values).length) return;
       try {
-        await api("api/table/" + encodeURIComponent(state.currentTable), {
-          method: "PUT", body: JSON.stringify({pk: pkVal, values}),
+        await api("api/table-update", {
+          method: "POST", body: JSON.stringify({table: state.currentTable, pk: pkVal, values}),
         });
         showToast("Gordeta ✓");
         btn.style.display = "none";

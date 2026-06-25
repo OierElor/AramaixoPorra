@@ -137,6 +137,10 @@ try {
             case $path === 'txirrindulari-swap':
                 $ids = $body['ids'] ?? []; if (!$ids) json_error('ids behar dira');
                 json_out(apply_txirrindulari_swap(array_map('intval', $ids)));
+            case $path === 'table-update':
+                $tn = $body['table'] ?? '';
+                if (!$tn) json_error('table behar da');
+                try { json_out(update_table_row($tn, $body)); } catch (Exception $e) { json_error($e->getMessage()); }
             default: json_error('Not found', 404);
         }
     } elseif ($method === 'PUT') {

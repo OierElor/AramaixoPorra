@@ -1,25 +1,5 @@
 <?php
 // ─── Aramaixo Porra Admin — API sarrera-puntua ──────────────────────────────
-// DIAGNOSTIKOA: edozein PHP errore JSON gisa itzuli (nginx-ek ez dezan interceptatu)
-header('Content-Type: application/json; charset=utf-8');
-ob_start();
-register_shutdown_function(function () {
-    $err = error_get_last();
-    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
-        ob_end_clean();
-        http_response_code(200);
-        echo json_encode(['__debug_fatal' => $err, '__php_version' => PHP_VERSION], JSON_UNESCAPED_UNICODE);
-    } else {
-        ob_end_flush();
-    }
-});
-// PHP bertsioa egiaztatzeko (diagnostikoa)
-if (($_GET['_path'] ?? '') === 'phpinfo') {
-    http_response_code(200);
-    ob_end_clean();
-    echo json_encode(['php_version' => PHP_VERSION, 'php_version_id' => PHP_VERSION_ID]);
-    exit;
-}
 session_start();
 require __DIR__ . '/lib.php';
 
@@ -85,6 +65,11 @@ try {
                 $pid = $_GET['porralaria_id'] ?? null;
                 if (!$pid) json_error('porralaria_id parametroa behar da', 400);
                 json_out(porralaria_ezizenak((int)$pid));
+            case $path === 'data-quality':
+                $unlinked = (int)(db_scalar(
+                    'SELECT COUNT(*) FROM PorraEzizenak e WHERE NOT EXISTS (SELECT 1 FROM PorralariTaldeenEzizenak WHERE Ezizen_ID = e.Ezizen_ID)'
+                ) ?? 0);
+                json_out(['unlinked_ezizenak' => $unlinked]);
             case $path === 'meta':
                 json_out(db_meta());
             case $path === 'undo-state':

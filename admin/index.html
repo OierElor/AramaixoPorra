@@ -35,7 +35,7 @@
     .page-sub{color:var(--muted);font-size:13px;margin-top:3px;}
     .section{display:none;}
     .section.active{display:block;}
-    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:28px;}
     .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
     .stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:6px;}
     .stat-val{font-family:var(--font-head);font-size:28px;font-weight:700;color:var(--text);}
@@ -130,6 +130,13 @@
     .pos-medal-1{color:#f4c430;font-weight:700;}
     .pos-medal-2{color:#c0c0c0;font-weight:700;}
     .pos-medal-3{color:#cd7f32;font-weight:700;}
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;}
+    .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 28px;max-width:440px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+    .confirm-msg{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:20px;white-space:pre-wrap;}
+    .confirm-btns{display:flex;gap:10px;justify-content:flex-end;}
+    .btn-inline-edit{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:2px 5px;border-radius:4px;transition:color .1s;line-height:1;}
+    .btn-inline-edit:hover{color:var(--accent);}
+    .field input:required:not(:placeholder-shown):invalid{border-color:var(--accent);}
     @media(max-width:900px){.sidebar{display:none;}.main{padding:20px;}.stats-row{grid-template-columns:1fr 1fr;}.form-grid{grid-template-columns:1fr;}}
   </style>
 </head>
@@ -166,6 +173,7 @@
         <div class="stat-card"><div class="stat-label">Porralariak</div><div class="stat-val" id="st-porra">—</div></div>
         <div class="stat-card"><div class="stat-label">Txirrindulariak</div><div class="stat-val" id="st-txirri">—</div></div>
         <div class="stat-card"><div class="stat-label">Karrerak</div><div class="stat-val gold" id="st-karrerak">—</div></div>
+        <div class="stat-card"><div class="stat-label">Datu kalitatea</div><div class="stat-val" id="st-kalitate">—</div><div style="font-size:11px;color:var(--muted);margin-top:4px" id="st-kalitate-hint"></div></div>
       </div>
       <div class="card">
         <div class="card-head"><div class="card-title">Azken sailkapen nagusiak</div></div>
@@ -265,10 +273,10 @@
         </button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-        <div class="card"><div class="card-head"><div class="card-title">Txapelketa berria</div></div><div class="card-body"><div class="form-grid"><div class="field"><label>Izena</label><input id="m-txap-izena" placeholder="Tour de France"/></div><div class="field"><label>Urtea</label><input id="m-txap-urtea" type="number" placeholder="2025"/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-txap-btn">Gehitu txapelketa</button></div></div></div>
-        <div class="card"><div class="card-head"><div class="card-title">Porralaria berria</div></div><div class="card-body"><div class="form-grid full"><div class="field"><label>Izena</label><input id="m-porra-izena" placeholder="Porralari izena"/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-porra-btn">Gehitu porralaria</button></div></div></div>
-        <div class="card"><div class="card-head"><div class="card-title">Txirrindularia berria</div></div><div class="card-body"><div class="form-grid full"><div class="field"><label>Izena</label><input id="m-txirri-izena" placeholder="Pogacar Tadej"/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-txirri-btn">Gehitu txirrindularia</button></div></div></div>
-        <div class="card"><div class="card-head"><div class="card-title">Karrera berria</div></div><div class="card-body"><div class="form-grid"><div class="field" style="grid-column:1/-1"><label>Txapelketa</label><select id="m-karrera-txap"><option value="">— Aukeratu —</option></select></div><div class="field"><label>Izena</label><input id="m-karrera-izena" placeholder="7. etapa"/></div><div class="field"><label>Urtea</label><input id="m-karrera-urtea" type="number" placeholder="2025"/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-karrera-btn">Gehitu karrera</button></div></div></div>
+        <div class="card"><div class="card-head"><div class="card-title">Txapelketa berria</div></div><div class="card-body"><div class="form-grid"><div class="field"><label>Izena</label><input id="m-txap-izena" placeholder="Tour de France" required/></div><div class="field"><label>Urtea</label><input id="m-txap-urtea" type="number" placeholder="2025" min="1990" max="2100" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-txap-btn">Gehitu txapelketa</button></div></div></div>
+        <div class="card"><div class="card-head"><div class="card-title">Porralaria berria</div></div><div class="card-body"><div class="form-grid full"><div class="field"><label>Izena</label><input id="m-porra-izena" placeholder="Porralari izena" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-porra-btn">Gehitu porralaria</button></div></div></div>
+        <div class="card"><div class="card-head"><div class="card-title">Txirrindularia berria</div></div><div class="card-body"><div class="form-grid full"><div class="field"><label>Izena</label><input id="m-txirri-izena" placeholder="Pogacar Tadej" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-txirri-btn">Gehitu txirrindularia</button></div></div></div>
+        <div class="card"><div class="card-head"><div class="card-title">Karrera berria</div></div><div class="card-body"><div class="form-grid"><div class="field" style="grid-column:1/-1"><label>Txapelketa</label><select id="m-karrera-txap" required><option value="">— Aukeratu —</option></select></div><div class="field"><label>Izena</label><input id="m-karrera-izena" placeholder="7. etapa" required/></div><div class="field"><label>Urtea</label><input id="m-karrera-urtea" type="number" placeholder="2025" min="1990" max="2100" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-karrera-btn">Gehitu karrera</button></div></div></div>
       </div>
     </section>
 
@@ -431,6 +439,15 @@ Tour De France,2026</pre></div>
 
   </main>
 </div>
+<div id="confirm-overlay" class="confirm-overlay" style="display:none" onclick="if(event.target===this)_confirmResolve(false)">
+  <div class="confirm-box">
+    <div id="confirm-msg" class="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" id="confirm-no">Ez</button>
+      <button class="btn btn-primary" id="confirm-yes">Bai</button>
+    </div>
+  </div>
+</div>
 <div id="toast"><span class="toast-dot">●</span><span id="toast-msg"></span></div>
 <script>
 const state = {
@@ -443,6 +460,71 @@ const state = {
 
 const el = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function debounce(fn, ms) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; }
+
+let _confirmResolve = null;
+function confirmDialog(msg) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    el("confirm-msg").textContent = msg;
+    el("confirm-overlay").style.display = "flex";
+    el("confirm-yes").onclick = () => { el("confirm-overlay").style.display = "none"; resolve(true); };
+    el("confirm-no").onclick  = () => { el("confirm-overlay").style.display = "none"; resolve(false); };
+  });
+}
+
+async function startInlineEdit(btn, table, pkCol, pkVal, field) {
+  const td = btn.closest("td");
+  const span = td.querySelector(".name-text");
+  if (!span) return;
+  const orig = span.textContent;
+  const inp = document.createElement("input");
+  inp.className = "cell-input";
+  inp.value = orig;
+  inp.style.cssText = "width:calc(100% - 30px)";
+  span.replaceWith(inp);
+  btn.textContent = "✓";
+  btn.title = "Gorde";
+  inp.focus();
+  const save = async () => {
+    const val = inp.value.trim();
+    if (!val || val === orig) { await window.reloadData(); return; }
+    try {
+      await api("api/table/" + encodeURIComponent(table), {
+        method: "PUT", body: JSON.stringify({ pk: { [pkCol]: pkVal }, values: { [field]: val } }),
+      });
+      showToast("✅ Gordeta");
+      await reloadData();
+    } catch(e) { showToast(e.message, "err"); await reloadData(); }
+  };
+  btn.onclick = save;
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") save(); if (e.key === "Escape") reloadData(); });
+}
+
+function filterPorraSel(selId, q) {
+  const sel = el(selId);
+  if (!sel) return;
+  fillPorraSel(sel);
+  const lq = q.toLowerCase();
+  sel.querySelectorAll("option").forEach(opt => { opt.hidden = lq ? !opt.textContent.toLowerCase().includes(lq) : false; });
+}
+
+async function loadDataQuality() {
+  try {
+    const dq = await api("api/data-quality");
+    const card = el("st-kalitate");
+    const hint = el("st-kalitate-hint");
+    if (!card) return;
+    if (dq.unlinked_ezizenak === 0) {
+      card.textContent = "✅ Ondo"; card.style.color = "#4ade80";
+      if (hint) hint.textContent = "ezizen guztiak lotuta";
+    } else {
+      card.textContent = dq.unlinked_ezizenak; card.style.color = "var(--accent)";
+      if (hint) hint.textContent = "lotu gabeko ezizen";
+    }
+  } catch(e) { /* silent */ }
+}
 
 function showToast(msg, type="ok") {
   const t = el("toast"); t.className = "show " + type;
@@ -522,6 +604,7 @@ function renderStats() {
   el("st-porra").textContent  = state.porralariak.length;
   el("st-txirri").textContent = state.txirrindulariak.length;
   el("st-karrerak").textContent = state.karrerak.length;
+  loadDataQuality();
 }
 
 // ── Porralariak ───────────────────────────────────────────────────────────────
@@ -530,7 +613,7 @@ function renderPorralariak() {
   const filtered = state.porralariak.filter(p => p.Izena?.toLowerCase().includes(q));
   el("porra-count").textContent = filtered.length + " erregistro";
   el("porra-tbody").innerHTML = filtered.map(p =>
-    `<tr><td class="pk-cell">${esc(p.Porralaria_ID)}</td><td>${esc(p.Izena)}</td><td><span class="badge">${esc(p["Zenbat Porra"] ?? "—")}</span></td></tr>`
+    `<tr><td class="pk-cell">${esc(p.Porralaria_ID)}</td><td><span class="name-text">${esc(p.Izena)}</span><button class="btn-inline-edit" title="Izena editatu" onclick="startInlineEdit(this,'Porralariak','Porralaria_ID',${p.Porralaria_ID},'Izena')">✎</button></td><td><span class="badge">${esc(p["Zenbat Porra"] ?? "—")}</span></td></tr>`
   ).join("") || `<tr><td colspan="3" style="color:var(--muted);padding:24px;text-align:center">Ez dago datürik</td></tr>`;
 }
 
@@ -544,7 +627,7 @@ function renderTxirrindulariak() {
     const swapped = parts.length >= 2 ? [...parts.slice(1), parts[0]].join(" ") : null;
     return `<tr>
       <td class="pk-cell">${esc(t.Txirrindularia_ID)}</td>
-      <td>${esc(t.Izena)}</td>
+      <td><span class="name-text">${esc(t.Izena)}</span><button class="btn-inline-edit" title="Izena editatu" onclick="startInlineEdit(this,'Txirrindulariak','Txirrindularia_ID',${t.Txirrindularia_ID},'Izena')">✎</button></td>
       <td class="row-actions">${swapped && swapped !== t.Izena
         ? `<button class="btn btn-sm btn-ghost" style="font-size:11px;white-space:nowrap"
             onclick="txirriSwapIzena(${t.Txirrindularia_ID}, '${esc(swapped)}')"
@@ -1209,8 +1292,9 @@ function renderEzizenak() {
       <td style="font-weight:600">${esc(r.Ezizena)}</td>
       <td style="color:var(--muted);font-size:12px">${esc(r.Txapelketa||"")}</td>
       <td><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">${chips}</div></td>
-      <td><div style="display:flex;gap:6px;align-items:center">
-        <select id="porra-sel-${r.Ezizen_ID}" data-filled="0" onmousedown="fillPorraSel(this)" onfocus="fillPorraSel(this)" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;outline:none">
+      <td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <input type="text" class="search-input" placeholder="Bilatu..." style="width:100px;flex:0 0 auto;padding:4px 8px;font-size:12px" oninput="filterPorraSel('porra-sel-${r.Ezizen_ID}',this.value)"/>
+        <select id="porra-sel-${r.Ezizen_ID}" data-filled="0" onmousedown="fillPorraSel(this)" onfocus="fillPorraSel(this)" style="flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;outline:none">
           <option value="">— Hautatu —</option>
         </select>
         <button class="btn btn-sm btn-primary" title="Gehitu porralaria (talde-porra egiteko hainbat gehi daitezke)" onclick="ezizenGehitu(${r.Ezizen_ID})">+ Gehitu</button>
@@ -1417,10 +1501,10 @@ function addSariRow(pos, saria) {
   tb.insertAdjacentHTML("beforeend", sariRowHtml(pos, saria ?? ""));
 }
 
-function sariakTemplate(withAfaria) {
+async function sariakTemplate(withAfaria) {
   const tb = el("sariak-tbody");
   if (!tb) return;
-  if (tb.children.length && !confirm("Uneko lerroak ordeztu txantiloiarekin?")) return;
+  if (tb.children.length && !await confirmDialog("Uneko lerroak ordeztu txantiloiarekin?")) return;
   tb.innerHTML = "";
   for (let i = 1; i <= 6; i++) addSariRow(i, "");
   if (withAfaria) addSariRow(7, "Afaria");
@@ -1456,7 +1540,7 @@ function _kalkResult(html) { const r = el("kalk-result"); if (r) r.innerHTML = h
 async function runCalcTxirri() {
   const tid = el("kalk-txap-sel")?.value;
   if (!tid) return showToast("Txapelketa hautatu", "err");
-  if (!confirm("Txirrindulari sailkapen taula osoa berreraikiko da. Jarraitu?")) return;
+  if (!await confirmDialog("Txirrindulari sailkapen taula osoa berreraikiko da. Jarraitu?")) return;
   _kalkResult(`<div style="color:var(--muted);font-size:13px;padding:8px">Kalkulatzen...</div>`);
   try {
     const r = await api("api/calculate/txirri-sailkapena", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(tid) }) });
@@ -1469,7 +1553,7 @@ async function runCalcTxirri() {
 async function runCalcPorralari() {
   const tid = el("kalk-txap-sel")?.value;
   if (!tid) return showToast("Txapelketa hautatu", "err");
-  if (!confirm("Porralari sailkapen taula osoa berreraikiko da. Jarraitu?")) return;
+  if (!await confirmDialog("Porralari sailkapen taula osoa berreraikiko da. Jarraitu?")) return;
   _kalkResult(`<div style="color:var(--muted);font-size:13px;padding:8px">Kalkulatzen...</div>`);
   try {
     const r = await api("api/calculate/porralari-sailkapena", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(tid) }) });
@@ -1482,7 +1566,7 @@ async function runCalcPorralari() {
 async function runCalcBiak() {
   const tid = el("kalk-txap-sel")?.value;
   if (!tid) return showToast("Txapelketa hautatu", "err");
-  if (!confirm("Bi sailkapen taulak osorik berreraikiko dira (txirrindulariak gero porralariak). Jarraitu?")) return;
+  if (!await confirmDialog("Bi sailkapen taulak osorik berreraikiko dira (txirrindulariak gero porralariak). Jarraitu?")) return;
   _kalkResult(`<div style="color:var(--muted);font-size:13px;padding:8px">Txirrindulari sailkapena kalkulatzen...</div>`);
   try {
     const r1 = await api("api/calculate/txirri-sailkapena", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(tid) }) });
@@ -1594,7 +1678,7 @@ async function doMergeExecute(kind, keep_id, drop_id, keep_name, drop_name) {
 
 function bindMergeEvents() {
   el("merge-kind")?.addEventListener("change", ()=>{ renderMergeSection(); el("merge-preview-wrap").innerHTML=""; });
-  el("merge-search")?.addEventListener("input", renderMergeSection);
+  el("merge-search")?.addEventListener("input", debounce(renderMergeSection, 200));
   el("btn-merge-preview")?.addEventListener("click", runMergePreview);
 }
 
@@ -1700,7 +1784,7 @@ async function recalculateZenbatPorra() {
 }
 
 async function normalizeIzenak() {
-  if (!confirm('Txirrindulari eta porralari izen guztiei Title Case formatua emango zaie (adib: "POGACAR TADEJ" → "Pogacar Tadej"). Jarraitu?')) return;
+  if (!await confirmDialog('Txirrindulari eta porralari izen guztiei Title Case formatua emango zaie (adib: "POGACAR TADEJ" → "Pogacar Tadej"). Jarraitu?')) return;
   try {
     const r = await api("api/normalize-izenak", { method: "POST" });
     if (r.ok) {
@@ -1714,14 +1798,14 @@ async function normalizeIzenak() {
 
 async function init() {
   bindDrop();
-  el("porra-search")?.addEventListener("input", renderPorralariak);
-  el("txirri-search")?.addEventListener("input", renderTxirrindulariak);
+  el("porra-search")?.addEventListener("input", debounce(renderPorralariak, 200));
+  el("txirri-search")?.addEventListener("input", debounce(renderTxirrindulariak, 200));
   el("sail-txap-sel")?.addEventListener("change", renderSailkapena);
-  el("sail-search")?.addEventListener("input", renderSailkapena);
-  el("generic-table-search")?.addEventListener("input", renderGenericTable);
+  el("sail-search")?.addEventListener("input", debounce(renderSailkapena, 200));
+  el("generic-table-search")?.addEventListener("input", debounce(renderGenericTable, 200));
   el("dash-txap-sel")?.addEventListener("change", e=>renderDashRanking(e.target.value));
   el("csv-type")?.addEventListener("change", renderCSVSteps);
-  el("ezizen-search")?.addEventListener("input", renderEzizenak);
+  el("ezizen-search")?.addEventListener("input", debounce(renderEzizenak, 200));
   el("ezizen-filter")?.addEventListener("change", renderEzizenak);
   el("banatu-src")?.addEventListener("change", loadBanatuEzizenak);
   el("race-txap-sel")?.addEventListener("change", renderKarreraList);
@@ -1733,10 +1817,29 @@ async function init() {
       t.classList.add("active"); state.sailTab=t.dataset.sltab; renderSailkapena();
     });
   });
-  el("m-txap-btn")?.addEventListener("click", ()=>manualAdd({table:"Txapelketak",data:{Izena:el("m-txap-izena").value,Urtea:Number(el("m-txap-urtea").value)}}));
-  el("m-porra-btn")?.addEventListener("click", ()=>manualAdd({table:"Porralariak",data:{Izena:el("m-porra-izena").value}}));
-  el("m-txirri-btn")?.addEventListener("click", ()=>manualAdd({table:"Txirrindulariak",data:{Izena:el("m-txirri-izena").value}}));
-  el("m-karrera-btn")?.addEventListener("click", ()=>manualAdd({table:"Karrerak",data:{Txapelketa_ID:Number(el("m-karrera-txap").value),Izena:el("m-karrera-izena").value,Urtea:Number(el("m-karrera-urtea").value)}}));
+  el("m-txap-btn")?.addEventListener("click", () => {
+    const iz = el("m-txap-izena").value.trim(), ur = Number(el("m-txap-urtea").value);
+    if (!iz) return showToast("Izena hutsik dago", "err");
+    if (!ur || ur < 1990 || ur > 2100) return showToast("Urtea 1990–2100 artean egon behar da", "err");
+    manualAdd({table:"Txapelketak", data:{Izena:iz, Urtea:ur}});
+  });
+  el("m-porra-btn")?.addEventListener("click", () => {
+    const iz = el("m-porra-izena").value.trim();
+    if (!iz) return showToast("Izena hutsik dago", "err");
+    manualAdd({table:"Porralariak", data:{Izena:iz}});
+  });
+  el("m-txirri-btn")?.addEventListener("click", () => {
+    const iz = el("m-txirri-izena").value.trim();
+    if (!iz) return showToast("Izena hutsik dago", "err");
+    manualAdd({table:"Txirrindulariak", data:{Izena:iz}});
+  });
+  el("m-karrera-btn")?.addEventListener("click", () => {
+    const txap = Number(el("m-karrera-txap").value), iz = el("m-karrera-izena").value.trim(), ur = Number(el("m-karrera-urtea").value);
+    if (!txap) return showToast("Txapelketa hautatu", "err");
+    if (!iz) return showToast("Izena hutsik dago", "err");
+    if (!ur || ur < 1990 || ur > 2100) return showToast("Urtea 1990–2100 artean egon behar da", "err");
+    manualAdd({table:"Karrerak", data:{Txapelketa_ID:txap, Izena:iz, Urtea:ur}});
+  });
   el("btn-undo")?.addEventListener("click", async()=>{
     try{ const r=await api("api/undo",{method:"POST"}); showToast(r.ok?`↩ Desegin: ${r.label}`:r.reason,r.ok?"ok":"err"); await reloadData(); }catch(e){showToast(e.message,"err");}
   });

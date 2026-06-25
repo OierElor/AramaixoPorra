@@ -6,31 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
             history.replaceState(null, '', newPath);
         }
     </script>
+    <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <header>
-        <h1>
-            <a href="../../" style="color: inherit; text-decoration: none;">
-                Aramaixo Porra
-            </a>
-        </h1>
-        <nav class="karrerak">
-            <ul>
-                <li><a class="tour" href="../../tour/">Tour</a></li>
-                <li><a class="giro" href="../../giro/">Giro</a></li>
-                <li><a class="vuelta" href="../../vuelta/">Vuelta</a></li>
-                <li><a class="klasikak" href="../../klasikak/">Klasikak</a></li>
-            </ul>
-        </nav>
-    </header>
     <div class="etapa-navegazioa vuelta">
         <a href="../2024/" class="etapa-arrow vuelta">&#8592;</a>
         <span class="etapa-info vuelta">2025</span>
@@ -42,15 +28,15 @@
                 <h2 class="vuelta">Vuelta a España 2025</h2>
 
                 <div class="download-section">
-                    <a href="/data/CSV/vuelta/vuelta25/Porra%20Vuelta%202025%20porra%20denak.pdf"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Porrak/Porrak%20Vuelta%202025.pdf"
                         class="download-button vuelta" target="_blank">
                         PORRALARIEN LISTA (PDF)
                     </a>
-                    <a href="/data/Arauak%20eta%20Startlist/Arauak%20vuelta%2025.pdf"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Arauak/Arauak%20vuelta%2025.pdf"
                         class="download-button vuelta" target="_blank">
                         ARAUAK (PDF)
                     </a>
-                    <a href="/data/Arauak%20eta%20Startlist/StartList%20vuelta%2025.pdf"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/TxirrindulariZerrenda/Txirrindulari%20Zerrenda%20Vuelta%202025.pdf"
                         class="download-button vuelta" target="_blank">
                         DORTSALAK (PDF)
                     </a>
@@ -109,23 +95,22 @@
                         </div>
                     </div>
                 </div>
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="vuelta" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
 
     <script>
-        // Load CSV data when page loads
-        window.addEventListener('DOMContentLoaded', function () {
-            const porraCsvPath = '/data/CSV/vuelta/vuelta25/Porra sailkapena.csv';
-            const txirrindulariCsvPath = '/data/CSV/vuelta/vuelta25/Txirrindulari sailkapena.csv';
-
-            // Note: csvLoader might need to be capable of handling simple CSVs without specialized metadata if the structure is different.
-            // Assuming csvLoader.loadAndPopulate can handle generic CSVs or we need to check csv-loader.js to see how it handles headers.
-            // If the CSVs have headers, we might rely on the loader to generate them or set them up manually.
-
-            // For now, attempting to load using the existing loader.
-            window.standingsLoader.loadPorra(porraCsvPath, 'porra-table');
-            window.standingsLoader.loadCyclists(txirrindulariCsvPath, 'txirrindulari-table');
+        document.addEventListener('DOMContentLoaded', () => {
+            // Vuelta a España 2025 — Txapelketa_ID=12
+            window.dbLoader.loadPorra(12, 'porra-table');
+            window.dbLoader.loadCyclists(12, 'txirrindulari-table');
+            window.dbLoader.loadStages(12, 'etapak-container', 'vuelta');
         });
     </script>
 </body>

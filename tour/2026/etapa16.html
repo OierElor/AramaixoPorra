@@ -7,31 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/csv-loader.js"></script>
-    <script>
+        <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
             history.replaceState(null, '', newPath);
         }
     </script>
+    <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <header>
-        <h1>
-            <a href="../../" style="color: inherit; text-decoration: none;">
-                Aramaixo Porra
-            </a>
-        </h1>
-        <nav class="karrerak">
-            <ul>
-                <li><a class="tour" href="../../tour/">Tour</a></li>
-                <li><a class="giro" href="../../giro/">Giro</a></li>
-                <li><a class="vuelta" href="../../vuelta/">Vuelta</a></li>
-                <li><a class="klasikak" href="../../klasikak/">Klasikak</a></li>
-            </ul>
-        </nav>
-    </header>
     <div class="etapa-navegazioa tour">
         <a href="../2026/" class="etapa-back-btn tour">2026</a>
         <button onclick="window.location.href='etapa15.html'" aria-label='Aurrekoa' class='etapa-arrow tour'>&#8592;</button>
@@ -39,61 +24,17 @@
         <span class="etapa-info tour">Etapa 16</span>
         <button onclick="window.location.href='etapa17.html'" aria-label='Hurrengoa' class='etapa-arrow tour'>&#8594;</button>
     </div>
-    <main>
+        <main>
         <section>
-            <h2 class="tour">Tour Etapa 16</h2>
-
-            <div class="table-wrapper">
-                <div class="table-content">
-                    <table class="sailkapena-table tour" id="sailkapena-table">
-                        <thead>
-                            <tr>
-                                <th colspan="4" class="etapa-header">Etapa: 16</th>
-                                <th colspan="1" class="etapa-header">...</th>
-                                <th colspan="3" class="etapa-header">Eguna: ...</th>
-                            </tr>
-                            <tr>
-                                <th colspan="8" class="main-title">SAILKAPENA</th>
-                            </tr>
-                            <tr>
-                                <th rowspan="2">Posizioa</th>
-                                <th rowspan="2">Porreoa</th>
-                                <th colspan="2">Puntuak</th>
-                                <th rowspan="2">Posizioa</th>
-                                <th rowspan="2">Porreoa</th>
-                                <th colspan="2">Puntuak</th>
-                            </tr>
-                            <tr>
-                                <th>Gaur</th>
-                                <th>Guztira</th>
-                                <th>Gaur</th>
-                                <th>Guztira</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be loaded from CSV -->
-                        </tbody>
-                    </table>
-                </div>
+            <h2 class="tour">Tour — 16. etapa</h2>
+            <div class="profile-container">
+                <img src="/data/Etapen Profila/tour/tour26/Etapa16.jpg" alt="16. etapa profila"
+                    onerror="this.onerror=null; this.src='/data/Etapen Profila/tour/tour26/Etapa16.png'; this.onerror=function(){this.style.display='none'};">
             </div>
+            <p style="text-align:center; opacity:.6; margin-top:24px;">Ez dago daturik oraindik. Lasterketa amaitzean agertuko dira emaitzak.</p>
         </section>
     </main>
-    <script>
-        // Load CSV data when page loads
-        window.addEventListener('DOMContentLoaded', function () {
-            const csvPath = '/data/CSV/' + 'tour' + '/' + 'tour' + '26/2026_etapa_' + '16' + '.csv';
-            const profileImagePath = '/data/Etapen Profila/' + 'tour' + '/' + 'tour' + '26/Etapa' + '16' + '.jpg';
-            
-            const metadata = {
-                etapa: '16',
-                tokia: '',
-                data: '',
-                profileImagePath: profileImagePath
-            };
-
-            window.csvLoader.loadAndPopulate(csvPath, 'sailkapena-table', metadata);
-        });
-    </script>
+    
 </body>
 
 </html>

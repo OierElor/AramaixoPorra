@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Porra konparatzailea</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+    <script src="/js/layout.js" defer></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Porra konparatzailea</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px;">
+                    Aukeratu 2-4 porra alderatzeko.
+                </p>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="txap-select">Txapelketa</label>
+                        <select id="txap-select"></select>
+                    </div>
+                    <div>
+                        <label>Erakutsi</label>
+                        <div class="grafiko-mota" id="iragazki-toggle">
+                            <button data-f="denak" class="active">Denak</button>
+                            <button data-f="ezberdinak">Ezberdinak</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="porra-input">Gehitu porra (bilatu) — gehienez 4</label>
+                        <span style="display:inline-flex;gap:6px;">
+                            <input id="porra-input" placeholder="Idatzi izena edo hautatu..."
+                                autocomplete="off"
+                                style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
+                            <button id="gehitu-btn" type="button" class="gehitu-btn">+ Gehitu</button>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grafiko-chipak" id="chip-zerrenda"></div>
+
+                <div id="konp-edukia"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const MAX = 4;
+        const state = {
+            txapId: null, porrak: [], karrerak: [],
+            allCums: new Map(), allPos: new Map(),
+            hautatuak: [], filter: 'denak', chartDiff: null, chartPos: null,
+        };
+
+        async function init() {
+            const txs = await Tresna.txapelketak();
+            const sel = document.getElementById('txap-select');
+            sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
+            state.txapId = txs.length ? txs[0].id : null;
+            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); loadPorrak(); });
+            document.querySelectorAll('#iragazki-toggle button').forEach(b =>
+                b.addEventListener('click', () => {
+                    document.querySelectorAll('#iragazki-toggle button').forEach(x => x.classList.remove('active'));
+                    b.classList.add('active'); state.filter = b.dataset.f; renderKonp();
+                }));
+            const porraInp = document.getElementById('porra-input');
+            Tresna.autocomplete(
+                porraInp,
+                () => state.porrak.map(p => ({ id: p.id, label: p.izena })),
+                item => {
+                    if (state.hautatuak.includes(item.id) || state.hautatuak.length >= MAX) return;
+                    porraInp.value = '';
+                    state.hautatuak.push(item.id);
+                    renderChips();
+                    renderKonp();
+                }
+            );
+            document.getElementById('gehitu-btn').addEventListener('click', addFromInput);
+            await loadPorrak();
+        }
+
+        async function loadPorrak() {
+            state.hautatuak = [];
+            state.porrak = await Tresna.porrak(state.txapId);
+            state.karrerak = await Tresna.karrerak(state.txapId);
+            document.getElementById('porra-input').value = '';
+
+            const tid = state.txapId;
+            const N = state.karrerak.length;
+            const kidx = new Map(state.karrerak.map((k, i) => [k.kid, i]));
+
+            // (porra, karrera) -> puntuak, porra guztientzat
+            const raceRows = await Tresna.q(
+                "SELECT pa.Ezizen_ID AS id, k.Karrerak_ID AS kid, SUM(ks.Puntuak) AS pts " +
+                "FROM PorraApustuak pa " +
+                "JOIN KarreraSailkapena ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
+                "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID AND k.Txapelketa_ID = pa.Txapelketa_ID " +
+                "WHERE pa.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> '' " +
+                "GROUP BY pa.Ezizen_ID, k.Karrerak_ID", [tid]);
+
+            const rawMap = new Map();
+            // Hasi porra guztiak zeroekin
+            state.porrak.forEach(p => rawMap.set(p.id, new Array(N).fill(0)));
+            raceRows.forEach(r => {
+                if (!rawMap.has(r.id)) rawMap.set(r.id, new Array(N).fill(0));
+                const j = kidx.get(r.kid);
+                if (j != null) rawMap.get(r.id)[j] = Number(r.pts) || 0;
+            });
+
+            // Bonus-puntuak azken etapan gehitu (txapelketa bukatutakoan bakarrik daude)
+            if (N > 0) {
+                const bonusRows = await Tresna.q(
+                    "SELECT Ezizen_ID AS id, " +
+                    " COALESCE(Puntuak_Mendikoa,0) + COALESCE(Puntuak_Generala,0) AS bonus " +
+                    "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
+                bonusRows.forEach(r => {
+                    const pts = rawMap.get(r.id);
+                    if (pts && Number(r.bonus) > 0) pts[N - 1] += Number(r.bonus);
+                });
+            }
+
+            // Kumulatiboak
+            state.allCums = new Map();
+            rawMap.forEach((pts, id) => {
+                const cum = [];
+                let s = 0;
+                pts.forEach(p => { s += p; cum.push(s); });
+                state.allCums.set(id, cum);
+            });
+
+            // Posizioa karrera bakoitzaren ostean (kumulatiboen arabera)
+            const porraIds = [...rawMap.keys()];
+            state.allPos = new Map(porraIds.map(id => [id, new Array(N).fill(0)]));
+            for (let j = 0; j < N; j++) {
+                const ranked = porraIds.slice().sort((a, b) =>
+                    (state.allCums.get(b)[j] || 0) - (state.allCums.get(a)[j] || 0));
+                ranked.forEach((id, rank) => state.allPos.get(id)[j] = rank + 1);
+            }
+
+            // Erreferentzia: azken saridunaren kumulatiboak → desberdintasuna
+            const sarRow = await Tresna.q(
+                "SELECT MAX(Posizioa) AS n FROM Sariak WHERE Txapelketa_ID = ?", [tid]);
+            state.N_ref = (sarRow[0]?.n) ? Number(sarRow[0].n) : 5;
+            const refCum = [];
+            for (let j = 0; j < N; j++) {
+                const sorted = porraIds.slice().sort((a, b) =>
+                    (state.allCums.get(b)[j] || 0) - (state.allCums.get(a)[j] || 0));
+                refCum.push(sorted.length >= state.N_ref
+                    ? state.allCums.get(sorted[state.N_ref - 1])[j] : 0);
+            }
+            state.allDiffs = new Map();
+            state.allCums.forEach((cum, id) => {
+                state.allDiffs.set(id, cum.map((c, j) => c - refCum[j]));
+            });
+
+            renderChips();
+            document.getElementById('konp-edukia').innerHTML =
+                '<p style="text-align:center;opacity:.6;">Aukeratu gutxienez 2 porra.</p>';
+        }
+
+        function renderChips() {
+            const box = document.getElementById('chip-zerrenda');
+            const sel = state.hautatuak.map(id => state.porrak.find(p => p.id === id)).filter(Boolean);
+            box.innerHTML = sel.length
+                ? sel.map((p, i) => {
+                    const color = Tresna.COLORS[i % Tresna.COLORS.length];
+                    return `<button type="button" class="grafiko-chip" data-id="${p.id}" ` +
+                        `style="border-color:${color};color:${color};">${p.pos}. ${p.izena} ` +
+                        `<span class="chip-x">×</span></button>`;
+                }).join('')
+                : '<span style="opacity:.6;">Gehitu 2-4 porra bilatzailetik.</span>';
+            box.querySelectorAll('.grafiko-chip').forEach(btn =>
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.dataset.id, 10);
+                    state.hautatuak = state.hautatuak.filter(x => x !== id);
+                    renderChips();
+                    renderKonp();
+                }));
+        }
+
+        function addFromInput() {
+            const inp = document.getElementById('porra-input');
+            const val = inp.value.trim().toLowerCase();
+            inp.value = '';
+            if (!val) return;
+            const p = state.porrak.find(x => x.izena.toLowerCase() === val);
+            if (!p || state.hautatuak.includes(p.id) || state.hautatuak.length >= MAX) return;
+            state.hautatuak.push(p.id);
+            renderChips();
+            renderKonp();
+        }
+
+        async function renderKonp() {
+            const cont = document.getElementById('konp-edukia');
+            const sel = state.hautatuak.map(id => state.porrak.find(p => p.id === id)).filter(Boolean);
+            if (sel.length < 2) {
+                cont.innerHTML = '<p style="text-align:center;opacity:.6;">Aukeratu gutxienez 2 porra.</p>';
+                if (state.chartDiff) { state.chartDiff.destroy(); state.chartDiff = null; }
+                if (state.chartPos) { state.chartPos.destroy(); state.chartPos = null; }
+                return;
+            }
+            cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
+
+            const teams = await Promise.all(sel.map(p => Tresna.taldea(state.txapId, p.id)));
+
+            // Txirrindularien taula
+            const ptsByName = new Map();
+            const pickedSets = teams.map(t => {
+                const s = new Set();
+                t.forEach(r => { s.add(r.izena); ptsByName.set(r.izena, r.pts); });
+                return s;
+            });
+            let names = [...ptsByName.keys()];
+            const countPicks = n => pickedSets.reduce((a, s) => a + (s.has(n) ? 1 : 0), 0);
+            if (state.filter === 'ezberdinak') names = names.filter(n => countPicks(n) < sel.length);
+            names.sort((a, b) => countPicks(b) - countPicks(a) || ptsByName.get(b) - ptsByName.get(a));
+
+            const head = `<tr><th>Txirrindularia</th>${sel.map(p => `<th>${p.izena}</th>`).join('')}</tr>`;
+            const body = names.map(n => {
+                const common = countPicks(n) === sel.length;
+                const cells = pickedSets.map(s => s.has(n)
+                    ? `<td class="points-col" style="background:#e8f5e9;">${ptsByName.get(n)}</td>`
+                    : `<td style="opacity:.3;">·</td>`).join('');
+                return `<tr${common ? ' style="font-weight:bold;"' : ''}><td class="name-col">${n}</td>${cells}</tr>`;
+            }).join('');
+
+            const summary = sel.map((p, i) => {
+                const color = Tresna.COLORS[i % Tresna.COLORS.length];
+                return `<div style="text-align:center;">
+                    <div style="font-weight:bold;color:${color};">${p.izena}</div>
+                    <div>${p.pos}. postua · ${p.total} p.</div></div>`;
+            }).join('');
+
+            cont.innerHTML = `
+                <div class="grafiko-oihala" style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;">${summary}</div>
+                <div class="grafiko-oihala">
+                    <h3 class="grafikoak" style="text-align:center;">DESBERDINTASUNA</h3>
+                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">${state.N_ref}. saridunarekiko</p>
+                    <div style="position:relative;height:280px;"><canvas id="konp-diff-grafikoa"></canvas></div>
+                </div>
+                <div class="grafiko-oihala">
+                    <h3 class="grafikoak" style="text-align:center;">POSIZIOA</h3>
+                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">Etapa bakoitzaren osteko sailkapena · marra laranja = azken saria (${state.N_ref}. postua)</p>
+                    <div style="position:relative;height:280px;"><canvas id="konp-pos-grafikoa"></canvas></div>
+                </div>
+                <div class="table-wrapper" style="max-width:760px;margin:16px auto;overflow-x:auto;">
+                    <h3 class="grafikoak" style="text-align:center;">AUKERAK (etapetako puntuak)</h3>
+                    <div class="table-content">
+                        <table class="sailkapena-table klasikak">
+                            <thead>${head}</thead><tbody>${body}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+
+            const fullNames = state.karrerak.map(k => Tresna.karreraLabel(k.izena));
+            const labels = state.karrerak.map((_, i) => i + 1);
+            const commonOpts = {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'bottom' } },
+                scales: { x: { title: { display: true, text: 'Karrera' } } },
+            };
+
+            // Grafika 1: Desberdintasuna
+            const diffDatasets = sel.map((p, i) => {
+                const color = Tresna.COLORS[i % Tresna.COLORS.length];
+                return { label: p.izena, data: state.allDiffs.get(p.id) || [],
+                    borderColor: color, backgroundColor: color,
+                    borderWidth: 2, pointRadius: 2, tension: 0.15 };
+            });
+
+            if (state.chartDiff) state.chartDiff.destroy();
+            state.chartDiff = new Chart(document.getElementById('konp-diff-grafikoa'), {
+                type: 'line',
+                data: { labels, datasets: diffDatasets },
+                options: {
+                    ...commonOpts,
+                    plugins: {
+                        ...commonOpts.plugins,
+                        tooltip: {
+                            callbacks: {
+                                title: items => fullNames[items[0].dataIndex],
+                                label: ctx => {
+                                    const v = ctx.raw;
+                                    return `${ctx.dataset.label}: ${v > 0 ? '+' : ''}${v} p.`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: commonOpts.scales.x,
+                        y: {
+                            title: { display: true, text: `Desberdintasuna (${state.N_ref}. saridunarekiko)` },
+                            grid: {
+                                color: ctx => ctx.tick.value === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.08)',
+                                lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
+                            },
+                        },
+                    },
+                },
+            });
+
+            // Grafika 2: Posizioa + erreferentzia-lerroa azken saridunen postuaren mailan
+            const posDatasets = [
+                ...sel.map((p, i) => {
+                    const color = Tresna.COLORS[i % Tresna.COLORS.length];
+                    return { label: p.izena, data: state.allPos.get(p.id) || [],
+                        borderColor: color, backgroundColor: color,
+                        borderWidth: 2, pointRadius: 2, tension: 0.15 };
+                }),
+                {
+                    label: `${state.N_ref}. postua (azken saria)`,
+                    data: new Array(labels.length).fill(state.N_ref),
+                    borderColor: 'rgba(255,140,0,0.8)', backgroundColor: 'transparent',
+                    borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0,
+                },
+            ];
+
+            if (state.chartPos) state.chartPos.destroy();
+            state.chartPos = new Chart(document.getElementById('konp-pos-grafikoa'), {
+                type: 'line',
+                data: { labels, datasets: posDatasets },
+                options: {
+                    ...commonOpts,
+                    plugins: {
+                        ...commonOpts.plugins,
+                        legend: {
+                            position: 'bottom',
+                            labels: { filter: item => !item.text.includes('azken saria') },
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: items => fullNames[items[0].dataIndex],
+                                label: ctx => {
+                                    if (ctx.dataset.borderDash) return null;
+                                    return `${ctx.dataset.label}: ${ctx.raw}. postua`;
+                                },
+                                filter: ctx => !ctx.dataset.borderDash,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: commonOpts.scales.x,
+                        y: {
+                            reverse: true, min: 1,
+                            title: { display: true, text: 'Posizioa' },
+                            ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v + '.' : '' },
+                            grid: {
+                                color: ctx => ctx.tick.value === state.N_ref
+                                    ? 'rgba(255,140,0,0.5)' : 'rgba(0,0,0,0.08)',
+                                lineWidth: ctx => ctx.tick.value === state.N_ref ? 2 : 1,
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

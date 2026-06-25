@@ -7,31 +7,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Paris - Tours</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/klasikak-results-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
             history.replaceState(null, '', newPath);
         }
     </script>
+    <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <header>
-        <h1>
-            <a href="../../" style="color: inherit; text-decoration: none;">
-                Aramaixo Porra
-            </a>
-        </h1>
-        <nav class="karrerak">
-            <ul>
-                <li><a class="tour" href="../../tour/">Tour</a></li>
-                <li><a class="giro" href="../../giro/">Giro</a></li>
-                <li><a class="vuelta" href="../../vuelta/">Vuelta</a></li>
-                <li><a class="klasikak" href="../../klasikak/">Klasikak</a></li>
-            </ul>
-        </nav>
-    </header>
     <div class="etapa-navegazioa">
         <a href="../2025/" class="etapa-back-btn klasikak">2025</a>
         <button onclick="window.location.href='il-lombardia.html'" aria-label="Aurrekoa"
@@ -60,7 +46,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                                    <!-- CSV-tik kargatuko da -->
+                                    <!-- DB-tik kargatuko da -->
                         </tbody>
                     </table>
                 </div>
@@ -71,11 +57,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            window.klasikakResults.load(
-                '/data/CSV/klasikak/klasikak25/Klasika%20bakoitzaren%20emaitza.csv',
-                'emaitzak-table',
-                26
-            );
+            window.dbLoader.loadKlasikaResults(53, 'emaitzak-table');
         });
     </script>
 </body>

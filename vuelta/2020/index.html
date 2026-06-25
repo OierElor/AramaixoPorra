@@ -6,31 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
             history.replaceState(null, '', newPath);
         }
     </script>
+    <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <header>
-        <h1>
-            <a href="../../" style="color: inherit; text-decoration: none;">
-                Aramaixo Porra
-            </a>
-        </h1>
-        <nav class="karrerak">
-            <ul>
-                <li><a class="tour" href="../../tour/">Tour</a></li>
-                <li><a class="giro" href="../../giro/">Giro</a></li>
-                <li><a class="vuelta" href="../../vuelta/">Vuelta</a></li>
-                <li><a class="klasikak" href="../../klasikak/">Klasikak</a></li>
-            </ul>
-        </nav>
-    </header>
     <div class="etapa-navegazioa vuelta">
         <button class="etapa-arrow vuelta disabled" disabled>&#8592;</button>
         <span class="etapa-info vuelta">2020</span>
@@ -41,11 +27,11 @@
             <section>
                 <h2 class="vuelta">Vuelta a España 2020</h2>
                 <div class="download-section">
-                    <a href="/data/Arauak%20eta%20Startlist/Arauak%20vuelta%2020.pdf"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Arauak/Arauak%20vuelta%2020.pdf"
                         class="download-button vuelta" target="_blank">
                         ARAUAK (PDF)
                     </a>
-                    <a href="/data/Arauak%20eta%20Startlist/StartList%20vuelta%2020.pdf"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/TxirrindulariZerrenda/Txirrindulari%20Zerrenda%20Vuelta%202020.pdf"
                         class="download-button vuelta" target="_blank">
                         DORTSALAK (PDF)
                     </a>
@@ -92,15 +78,22 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="vuelta" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Vuelta 20 data
-            window.standingsLoader.loadPorra('/data/CSV/vuelta/vuelta20/porra%20sailkapena%20vuelta%2020.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/vuelta/vuelta20/txirrindulari%20sailkapena%20vuelta%2020.csv', 'txirrindulari-table');
+            // Vuelta a España 2020 — Txapelketa_ID=7
+            window.dbLoader.loadPorra(7, 'porra-table');
+            window.dbLoader.loadCyclists(7, 'txirrindulari-table');
+            window.dbLoader.loadStages(7, 'etapak-container', 'vuelta');
         });
     </script>
 </body>

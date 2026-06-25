@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Porra ideala</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+    <script src="/js/layout.js" defer></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Porra ideala</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px;">
+                    Puntu gehien atera zituzten txirrindulariekin osatutako porrarik onena, eta benetan
+                    aukeratutakoarekin alderaketa (etapetako puntuak).
+                </p>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="txap-select">Txapelketa</label>
+                        <select id="txap-select"></select>
+                    </div>
+                </div>
+
+                <div id="ideala-edukia"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const state = { txapId: null };
+
+        async function init() {
+            const txs = await Tresna.txapelketak();
+            const sel = document.getElementById('txap-select');
+            sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
+            state.txapId = txs.length ? txs[0].id : null;
+            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); render(); });
+            await render();
+        }
+
+        async function render() {
+            const cont = document.getElementById('ideala-edukia');
+            cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
+            const tid = state.txapId;
+
+            try {
+
+            // porra-tamaina
+            const szRow = await Tresna.q(
+                "SELECT MAX(n) AS sz FROM (SELECT Ezizen_ID, COUNT(*) n FROM PorraApustuak WHERE Txapelketa_ID = ? GROUP BY Ezizen_ID) AS sub", [tid]);
+            const N = (szRow[0] && szRow[0].sz) ? Number(szRow[0].sz) : 15;
+
+            // talde ideala: N txirrindulari onenak puntuka
+            const ideala = await Tresna.q(
+                "SELECT t.Izena AS izena, SUM(ks.Puntuak) AS p " +
+                "FROM KarreraSailkapena ks JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID " +
+                "JOIN Txirrindulariak t ON t.Txirrindularia_ID = ks.Txirrindularia_ID " +
+                "WHERE k.Txapelketa_ID = ? AND k.Kategoria <> '' GROUP BY ks.Txirrindularia_ID " +
+                "ORDER BY p DESC, t.Izena LIMIT ?", [tid, N]);
+            ideala.forEach(r => { r.p = Number(r.p); });
+            const idealPts = ideala.reduce((a, r) => a + r.p, 0);
+
+            // benetako porrak (etapetako puntuak)
+            const porrak = await Tresna.porrak(tid);
+            const totals = porrak.map(p => Number(p.etapaTot)).filter(v => !isNaN(v));
+            const best = porrak.slice().sort((a, b) => Number(b.etapaTot) - Number(a.etapaTot))[0];
+            const bestPts = best ? Number(best.etapaTot) : 0;
+            const avg = totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
+            const gap = idealPts - bestPts;
+
+            const body = ideala.map((r, i) =>
+                `<tr><td class="pos-col">${i + 1}.</td><td class="name-col">${r.izena}</td><td class="points-col">${r.p}</td></tr>`).join('');
+
+            cont.innerHTML = `
+                <div class="grafiko-oihala" style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;text-align:center;">
+                    <div><div style="font-size:1.8em;font-weight:bold;color:#43a047;">${idealPts}</div><div style="opacity:.6;">Porra ideala (${N})</div></div>
+                    <div><div style="font-size:1.8em;font-weight:bold;">${bestPts}</div><div style="opacity:.6;">Benetako onena${best ? '<br><small>' + best.izena + '</small>' : ''}</div></div>
+                    <div><div style="font-size:1.8em;font-weight:bold;">${avg}</div><div style="opacity:.6;">Batez bestekoa</div></div>
+                    <div><div style="font-size:1.8em;font-weight:bold;color:#e53935;">${gap}</div><div style="opacity:.6;">Onenak galdua</div></div>
+                </div>
+                <div class="table-wrapper" style="max-width:560px;margin:14px auto;">
+                    <h3 class="grafikoak" style="text-align:center;">TALDE IDEALA</h3>
+                    <div class="table-content">
+                        <table class="sailkapena-table klasikak">
+                            <thead><tr><th>#</th><th>Txirrindularia</th><th>Puntuak</th></tr></thead>
+                            <tbody>${body}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+
+            } catch (err) {
+                cont.innerHTML = `<p style="text-align:center;color:red;">Errorea: ${err.message}</p>`;
+                console.error(err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

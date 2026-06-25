@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Grafikoak</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+    <script src="/js/layout.js" defer></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Eboluzio grafikoak</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px;">
+                    Txapelketa batean zehar txirrindulari edo porralarien eboluzioa.
+                </p>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="txap-select">Txapelketa</label>
+                        <select id="txap-select"></select>
+                    </div>
+                    <div>
+                        <label>Zer</label>
+                        <div class="grafiko-mota" id="mota-toggle">
+                            <button data-mota="txirrindulari" class="active">Txirrindulariak</button>
+                            <button data-mota="porralari">Porralariak</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Metrika</label>
+                        <div class="grafiko-mota" id="metrika-toggle">
+                            <button data-metrika="puntuak" class="active">Desberdintasuna</button>
+                            <button data-metrika="postua">Postua</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="entitate-input">Gehitu (bilatu izena)</label>
+                        <span style="display:inline-flex;gap:6px;">
+                            <input id="entitate-input" placeholder="Idatzi izena edo hautatu..."
+                                autocomplete="off"
+                                style="padding:8px 10px;border:1px solid #bbb;border-radius:6px;min-width:240px;">
+                            <button id="gehitu-btn" type="button" class="gehitu-btn">+ Gehitu</button>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grafiko-chipak" id="chip-zerrenda"></div>
+
+                <div class="grafiko-oihala">
+                    <div style="position:relative; height:440px;">
+                        <canvas id="grafikoa"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const COLORS = [
+            '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4',
+            '#f032e6', '#bfef45', '#fabed4', '#469990', '#9a6324', '#808000',
+            '#000075', '#e6754b', '#1f78b4', '#33a02c'
+        ];
+
+        const state = {
+            txapId: null,
+            mota: 'txirrindulari',   // 'txirrindulari' | 'porralari'
+            metrika: 'puntuak',      // 'puntuak' | 'postua'
+            karrerak: [],            // [{kid, izena}]
+            entitateak: [],          // [{id, izena, pts:[], cum:[], pos:[], total}]
+            hautatuak: new Set(),
+            chart: null,
+        };
+
+        function karreraLabel(izena) {
+            const p = String(izena).split(' - ');
+            return p.length > 1 ? p[p.length - 1] : izena;
+        }
+
+        async function init() {
+            const rows = await window.dbLoader.query(
+                "SELECT Txapelketa_ID AS id, Izena AS izena, Urtea AS urtea FROM Txapelketak ORDER BY Urtea DESC, Izena");
+            const sel = document.getElementById('txap-select');
+            sel.innerHTML = rows.map(r => `<option value="${r.id}">${r.izena}</option>`).join('');
+            state.txapId = rows.length ? rows[0].id : null;
+
+            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); loadData(); });
+            document.querySelectorAll('#mota-toggle button').forEach(b =>
+                b.addEventListener('click', () => setToggle('mota-toggle', b, 'mota', b.dataset.mota, true)));
+            document.querySelectorAll('#metrika-toggle button').forEach(b =>
+                b.addEventListener('click', () => setToggle('metrika-toggle', b, 'metrika', b.dataset.metrika, false)));
+            const entInp = document.getElementById('entitate-input');
+            Tresna.autocomplete(
+                entInp,
+                () => state.entitateak.map(e => ({ id: e.id, label: e.izena })),
+                item => {
+                    if (!state.hautatuak.has(item.id)) {
+                        state.hautatuak.add(item.id);
+                        entInp.value = '';
+                        renderChips();
+                        renderChart();
+                    } else {
+                        entInp.value = '';
+                    }
+                }
+            );
+            document.getElementById('gehitu-btn').addEventListener('click', addFromInput);
+
+            await loadData();
+        }
+
+        function setToggle(groupId, btn, key, value, reload) {
+            document.querySelectorAll('#' + groupId + ' button').forEach(x => x.classList.remove('active'));
+            btn.classList.add('active');
+            state[key] = value;
+            if (reload) loadData(); else renderChart();
+        }
+
+        async function loadData() {
+            const tid = state.txapId;
+            if (tid == null) return;
+            document.getElementById('chip-zerrenda').innerHTML = '<span style="opacity:.6;">Kargatzen...</span>';
+
+            // 1) Karrerak ordenan (agregatu "Azken Karrera" baztertu: Kategoria hutsa)
+            state.karrerak = await window.dbLoader.query(
+                "SELECT Karrerak_ID AS kid, Izena AS izena FROM Karrerak " +
+                "WHERE Txapelketa_ID = ? AND Kategoria IS NOT NULL AND Kategoria <> '' ORDER BY Karrerak_ID", [tid]);
+            const kidx = new Map(state.karrerak.map((k, i) => [k.kid, i]));
+            const N = state.karrerak.length;
+
+            // 2) (entitate, karrera) -> puntuak
+            let rows;
+            if (state.mota === 'txirrindulari') {
+                rows = await window.dbLoader.query(
+                    "SELECT ks.Txirrindularia_ID AS id, t.Izena AS izena, ks.Karrera_ID AS kid, ks.Puntuak AS pts " +
+                    "FROM KarreraSailkapena ks " +
+                    "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID " +
+                    "JOIN Txirrindulariak t ON t.Txirrindularia_ID = ks.Txirrindularia_ID " +
+                    "WHERE k.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> ''", [tid]);
+            } else {
+                rows = await window.dbLoader.query(
+                    "SELECT pa.Ezizen_ID AS id, ez.Ezizena AS izena, k.Karrerak_ID AS kid, SUM(ks.Puntuak) AS pts " +
+                    "FROM PorraApustuak pa " +
+                    "JOIN KarreraSailkapena ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
+                    "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID AND k.Txapelketa_ID = pa.Txapelketa_ID " +
+                    "JOIN PorraEzizenak ez ON ez.Ezizen_ID = pa.Ezizen_ID " +
+                    "WHERE pa.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> '' " +
+                    "GROUP BY pa.Ezizen_ID, k.Karrerak_ID", [tid]);
+            }
+
+            // 3) entitateak eraiki (puntu-array karrera-ordenan)
+            const map = new Map();
+            rows.forEach(r => {
+                if (!map.has(r.id)) map.set(r.id, { id: r.id, izena: r.izena, pts: new Array(N).fill(0) });
+                const j = kidx.get(r.kid);
+                if (j != null) map.get(r.id).pts[j] = Number(r.pts) || 0;
+            });
+            // Bonus-puntuak azken etapan gehitu (txapelketa bukatutakoan bakarrik daude)
+            if (N > 0) {
+                const bonusRows = state.mota === 'txirrindulari'
+                    ? await window.dbLoader.query(
+                        "SELECT Txirrindularia_ID AS id, " +
+                        " COALESCE(Puntuak_Mendian,0) + COALESCE(Puntuak_Sailkapen_Nag,0) AS bonus " +
+                        "FROM TxapelketaEmaitzaTxirrindulariak WHERE Txapelketa_ID = ?", [tid])
+                    : await window.dbLoader.query(
+                        "SELECT Ezizen_ID AS id, " +
+                        " COALESCE(Puntuak_Mendikoa,0) + COALESCE(Puntuak_Generala,0) AS bonus " +
+                        "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
+                bonusRows.forEach(r => {
+                    const e = map.get(r.id);
+                    if (e && Number(r.bonus) > 0) e.pts[N - 1] += Number(r.bonus);
+                });
+            }
+
+            const ents = [...map.values()];
+            ents.forEach(e => {
+                e.cum = [];
+                let s = 0;
+                for (let j = 0; j < N; j++) { s += e.pts[j]; e.cum.push(s); }
+                e.total = s;
+            });
+            ents.sort((a, b) => b.total - a.total);
+
+            // 4) postua karrera bakoitzean (cum-aren arabera)
+            for (let j = 0; j < N; j++) {
+                const order = [...ents].sort((a, b) => b.cum[j] - a.cum[j]);
+                order.forEach((e, rank) => { (e.pos = e.pos || [])[j] = rank + 1; });
+            }
+
+            // 5) erreferentzia-puntua karrera bakoitzean → desberdintasuna
+            let N_ref;
+            if (state.mota === 'txirrindulari') {
+                const sel = document.getElementById('txap-select');
+                const txName = sel.options[sel.selectedIndex]?.text || '';
+                N_ref = /klasik/i.test(txName) ? 25 : 15;
+            } else {
+                const sarRow = await window.dbLoader.query(
+                    "SELECT MAX(Posizioa) AS n FROM Sariak WHERE Txapelketa_ID = ?", [tid]);
+                N_ref = (sarRow[0]?.n) ? Number(sarRow[0].n) : 5;
+            }
+            const refCum = [];
+            for (let j = 0; j < N; j++) {
+                const sorted = [...ents].sort((a, b) => b.cum[j] - a.cum[j]);
+                refCum.push(sorted.length >= N_ref ? sorted[N_ref - 1].cum[j] : 0);
+            }
+            ents.forEach(e => { e.diff = refCum.map((ref, j) => e.cum[j] - ref); });
+            state.N_ref = N_ref;
+
+            state.entitateak = ents;
+            document.getElementById('entitate-input').value = '';
+            state.hautatuak = new Set(ents.slice(0, 5).map(e => e.id));
+
+            renderChips();
+            renderChart();
+        }
+
+        function renderChips() {
+            const box = document.getElementById('chip-zerrenda');
+            if (!state.entitateak.length) {
+                box.innerHTML = '<span style="opacity:.6;">Ez dago daturik txapelketa honetan.</span>';
+                return;
+            }
+            const sel = state.entitateak.filter(e => state.hautatuak.has(e.id));
+            box.innerHTML = sel.length
+                ? sel.map(e => {
+                    const color = COLORS[state.entitateak.indexOf(e) % COLORS.length];
+                    return `<button type="button" class="grafiko-chip" data-id="${e.id}" ` +
+                        `style="border-color:${color};color:${color};">${e.izena} ` +
+                        `<span style="opacity:.5;">(${e.total})</span> <span class="chip-x">×</span></button>`;
+                }).join('')
+                : '<span style="opacity:.6;">Gehitu izenak bilatzailetik.</span>';
+            box.querySelectorAll('.grafiko-chip').forEach(btn =>
+                btn.addEventListener('click', () => {
+                    state.hautatuak.delete(btn.dataset.id);
+                    renderChips();
+                    renderChart();
+                }));
+        }
+
+        function addFromInput() {
+            const inp = document.getElementById('entitate-input');
+            const val = inp.value.trim().toLowerCase();
+            if (!val) return;
+            const e = state.entitateak.find(x => x.izena.toLowerCase() === val);
+            if (e && !state.hautatuak.has(e.id)) {
+                state.hautatuak.add(e.id);
+                renderChips();
+                renderChart();
+            }
+            inp.value = '';
+        }
+
+        function renderChart() {
+            const ents = state.entitateak.filter(e => state.hautatuak.has(e.id));
+            const fullNames = state.karrerak.map(k => karreraLabel(k.izena));
+            const labels = state.karrerak.map((k, i) => i + 1);
+            const usePos = state.metrika === 'postua';
+
+            const refLabel = state.mota === 'txirrindulari'
+                ? `${state.N_ref}. txirrindularia (talde ideala)`
+                : `${state.N_ref}. porra (azken sariduna)`;
+
+            const datasets = ents.map((e, i) => {
+                const color = COLORS[state.entitateak.indexOf(e) % COLORS.length];
+                return {
+                    label: e.izena,
+                    data: usePos ? e.pos : e.diff,
+                    borderColor: color,
+                    backgroundColor: color,
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    tension: 0.15,
+                };
+            });
+
+            const cfg = {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                title: items => fullNames[items[0].dataIndex],
+                                label: usePos ? undefined : ctx => {
+                                    const v = ctx.raw;
+                                    return `${ctx.dataset.label}: ${v > 0 ? '+' : ''}${v} p.`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Karrera' } },
+                        y: usePos
+                            ? { reverse: true, min: 1, title: { display: true, text: 'Postua' }, ticks: { precision: 0 } }
+                            : {
+                                title: { display: true, text: `Desberdintasuna: ${refLabel}` },
+                                grid: {
+                                    color: ctx => ctx.tick.value === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.08)',
+                                    lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
+                                },
+                            },
+                    },
+                },
+            };
+
+            if (state.chart) state.chart.destroy();
+            state.chart = new Chart(document.getElementById('grafikoa'), cfg);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

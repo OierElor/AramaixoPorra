@@ -6,31 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Klasikak 2025</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
             history.replaceState(null, '', newPath);
         }
     </script>
+    <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <header>
-        <h1>
-            <a href="../../" style="color: inherit; text-decoration: none;">
-                Aramaixo Porra
-            </a>
-        </h1>
-        <nav class="karrerak">
-            <ul>
-                <li><a class="tour" href="../../tour/">Tour</a></li>
-                <li><a class="giro" href="../../giro/">Giro</a></li>
-                <li><a class="vuelta" href="../../vuelta/">Vuelta</a></li>
-                <li><a class="klasikak" href="../../klasikak/">Klasikak</a></li>
-            </ul>
-        </nav>
-    </header>
     <div class="etapa-navegazioa klasikak">
         <a href="../2024/" class="etapa-arrow klasikak">&#8592;</a>
         <span class="etapa-info klasikak">2025</span>
@@ -41,15 +27,15 @@
             <section>
                 <h2 class="klasikak">Klasikak 2025</h2>
                 <div class="download-section">
-                    <a href="/data/CSV/klasikak/klasikak25/porra%20denak%20klasikoak%2025.pdf"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Porrak/Porrak%20Klasikoak%202025.pdf"
                         class="download-button klasikak" target="_blank">
                         PORRALARIEN LISTA (PDF)
                     </a>
-                    <a href="/data/Arauak%20eta%20Startlist/Arauak%20klasikak%2025.pdf"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Arauak/Arauak%20klasikak%2025.pdf"
                         class="download-button klasikak" target="_blank">
                         ARAUAK (PDF)
                     </a>
-                    <a href="/data/Arauak%20eta%20Startlist/StartList%20klasikak%2025.pdf"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/TxirrindulariZerrenda/Txirrindulari%20Zerrenda%20Klasikak%202025.pdf"
                         class="download-button klasikak" target="_blank">
                         DORTSALAK (PDF)
                     </a>
@@ -132,9 +118,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // CSVs for Klasikak 25
-            window.standingsLoader.loadPorra('/data/CSV/klasikak/klasikak25/Porra%20sailkapena.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/klasikak/klasikak25/Txirrindulari%20sailkapena.csv', 'txirrindulari-table');
+            // Klasikak 2025 — Txapelketa_ID=14
+            window.dbLoader.loadPorra(14, 'porra-table');
+            window.dbLoader.loadCyclists(14, 'txirrindulari-table');
         });
     </script>
 </body>

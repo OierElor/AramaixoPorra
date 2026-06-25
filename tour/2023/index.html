@@ -6,31 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/standings-loader.js"></script>
+    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             var newPath = window.location.pathname.slice(0, -5);
             history.replaceState(null, '', newPath);
         }
     </script>
+    <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <header>
-        <h1>
-            <a href="../../" style="color: inherit; text-decoration: none;">
-                Aramaixo Porra
-            </a>
-        </h1>
-        <nav class="karrerak">
-            <ul>
-                <li><a class="tour" href="../../tour/">Tour</a></li>
-                <li><a class="giro" href="../../giro/">Giro</a></li>
-                <li><a class="vuelta" href="../../vuelta/">Vuelta</a></li>
-                <li><a class="klasikak" href="../../klasikak/">Klasikak</a></li>
-            </ul>
-        </nav>
-    </header>
     <div class="etapa-navegazioa tour">
         <button class="etapa-arrow tour disabled" disabled>&#8592;</button>
         <span class="etapa-info tour">2023</span>
@@ -41,11 +27,11 @@
             <section>
                 <h2 class="tour">Tour de France 2023</h2>
                 <div class="download-section">
-                    <a href="/data/Arauak%20eta%20Startlist/Arauak%20tour%2023.pdf" class="download-button tour"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Arauak/Arauak%20tour%2023.pdf" class="download-button tour"
                         target="_blank">
                         ARAUAK (PDF)
                     </a>
-                    <a href="/data/Arauak%20eta%20Startlist/StartList%20tour%2023.pdf" class="download-button tour"
+                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/TxirrindulariZerrenda/Txirrindulari%20Zerrenda%20Tour%202023.pdf" class="download-button tour"
                         target="_blank">
                         DORTSALAK (PDF)
                     </a>
@@ -104,15 +90,22 @@
                     </div>
                 </div>
 
+                <div class="tables-container stacked">
+                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
+                        <h3 class="tour" style="text-align: center;">ETAPAZ ETAPA</h3>
+                        <div id="etapak-container"></div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Loading Tour 23 data
-            window.standingsLoader.loadPorra('/data/CSV/tour/tour23/porra%20sailkapena%20tour%2023.csv', 'porra-table');
-            window.standingsLoader.loadCyclists('/data/CSV/tour/tour23/Txirrindulari%20sailkapena%20tour%2023.csv', 'txirrindulari-table');
+            // Tour de France 2023 — Txapelketa_ID=4
+            window.dbLoader.loadPorra(4, 'porra-table');
+            window.dbLoader.loadCyclists(4, 'txirrindulari-table');
+            window.dbLoader.loadStages(4, 'etapak-container', 'tour');
         });
     </script>
 </body>

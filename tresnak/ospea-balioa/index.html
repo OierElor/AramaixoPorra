@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Ospea vs errentagarritasuna</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/tresna-komuna.js"></script>
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+    <script src="/js/layout.js" defer></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Ospea vs errentagarritasuna</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px;">
+                    Txirrindulari bakoitza: zenbat porrak aukeratu zuten (ospea) eta zenbat puntu eman zuen.
+                    Porra bakoitzean N aukera daude (15 itzulietan, 25 klasiketan), beraz <strong>aukeratzeko
+                    muga</strong>tik (N. onenaren puntuak) behera dauden txirrindulariek ez zuten lekua merezi.
+                </p>
+
+                <div class="grafiko-kontrolak">
+                    <div>
+                        <label for="txap-select">Txapelketa</label>
+                        <select id="txap-select"></select>
+                    </div>
+                </div>
+
+                <div class="grafiko-oihala">
+                    <div style="position:relative; height:440px;"><canvas id="grafikoa"></canvas></div>
+                </div>
+
+                <div class="tables-container stacked" style="margin-top:10px;">
+                    <div class="table-wrapper" style="max-width:520px;margin:10px auto;">
+                        <h3 class="grafikoak" style="text-align:center;">✅ Aukera onenak</h3>
+                        <p style="text-align:center;opacity:.6;font-size:.85em;margin:0;">Talde idealean (lekua merezi), baina gutxik hartu</p>
+                        <div class="table-content" id="onenak"></div>
+                    </div>
+                    <div class="table-wrapper" style="max-width:520px;margin:10px auto;">
+                        <h3 class="grafikoak" style="text-align:center;">⚠️ Tranpak</h3>
+                        <p style="text-align:center;opacity:.6;font-size:.85em;margin:0;">Askok hartu, baina mugatik behera (lekua merezi ez)</p>
+                        <div class="table-content" id="tranpak"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const state = { txapId: null, chart: null };
+
+        async function init() {
+            const txs = await Tresna.txapelketak();
+            const sel = document.getElementById('txap-select');
+            sel.innerHTML = txs.map(t => `<option value="${t.id}">${t.izena}</option>`).join('');
+            state.txapId = txs.length ? txs[0].id : null;
+            sel.addEventListener('change', () => { state.txapId = parseInt(sel.value, 10); render(); });
+            await render();
+        }
+
+        async function render() {
+            const tid = state.txapId;
+            try {
+
+            // porra-tamaina N
+            const szRow = await Tresna.q(
+                "SELECT MAX(n) AS sz FROM (SELECT Ezizen_ID, COUNT(*) n FROM PorraApustuak WHERE Txapelketa_ID = ? GROUP BY Ezizen_ID) AS sub", [tid]);
+            const N = (szRow[0] && szRow[0].sz) ? Number(szRow[0].sz) : 15;
+
+            // talde ideala (top N puntuka) + zenbat porrak hartu zuten
+            const ideala = await Tresna.q(
+                "SELECT t.Izena AS izena, SUM(ks.Puntuak) AS pts, " +
+                " (SELECT COUNT(DISTINCT Ezizen_ID) FROM PorraApustuak WHERE Txapelketa_ID = ? AND Txirrindularia_ID = ks.Txirrindularia_ID) AS auk " +
+                "FROM KarreraSailkapena ks JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID " +
+                "JOIN Txirrindulariak t ON t.Txirrindularia_ID = ks.Txirrindularia_ID " +
+                "WHERE k.Txapelketa_ID = ? AND k.Kategoria <> '' GROUP BY ks.Txirrindularia_ID " +
+                "ORDER BY pts DESC, t.Izena LIMIT ?", [tid, tid, N]);
+            ideala.forEach(r => { r.pts = Number(r.pts); r.auk = Number(r.auk); });
+            const cutoff = ideala.length ? ideala[ideala.length - 1].pts : 0;
+
+            // aukeratutako txirrindulariak (sakabanaketa)
+            const rows = await Tresna.q(
+                "SELECT t.Izena AS izena, COUNT(DISTINCT pa.Ezizen_ID) AS auk, " +
+                " (SELECT COALESCE(SUM(ks.Puntuak),0) FROM KarreraSailkapena ks JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID " +
+                "   WHERE ks.Txirrindularia_ID = pa.Txirrindularia_ID AND k.Txapelketa_ID = ? AND k.Kategoria <> '') AS pts " +
+                "FROM PorraApustuak pa JOIN Txirrindulariak t ON t.Txirrindularia_ID = pa.Txirrindularia_ID " +
+                "WHERE pa.Txapelketa_ID = ? GROUP BY pa.Txirrindularia_ID", [tid, tid]);
+
+            rows.forEach(r => { r.pts = Number(r.pts); r.auk = Number(r.auk); });
+            const points = rows.map(r => ({ x: r.auk, y: r.pts, izena: r.izena }));
+            const maxAuk = Math.max(1, ...rows.map(r => r.auk));
+
+            // kolorea muga-logikarekin: merezi zuena (>=muga) berdez; tranpa (askok hartu, ez merezi) gorriz
+            const colors = rows.map(r => {
+                if (cutoff > 0 && r.pts >= cutoff) return '#2e7d32';
+                if (r.auk >= maxAuk * 0.5) return '#e53935';
+                return '#b0bec5';
+            });
+
+            if (state.chart) state.chart.destroy();
+            state.chart = new Chart(document.getElementById('grafikoa'), {
+                data: {
+                    datasets: [
+                        { type: 'scatter', data: points, backgroundColor: colors, pointRadius: 5, pointHoverRadius: 7, order: 2 },
+                        {
+                            type: 'line', label: `Aukeratzeko muga (${N}. onena: ${cutoff} p)`,
+                            data: [{ x: 0, y: cutoff }, { x: maxAuk, y: cutoff }],
+                            borderColor: '#ff9800', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, order: 1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { filter: it => it.text } },
+                        tooltip: {
+                            filter: it => it.dataset.type !== 'line',
+                            callbacks: { label: c => `${c.raw.izena}: ${c.raw.x} porrak, ${c.raw.y} puntu` },
+                        },
+                    },
+                    scales: {
+                        x: { beginAtZero: true, title: { display: true, text: 'Zenbat porrak aukeratu (ospea)' } },
+                        y: { beginAtZero: true, title: { display: true, text: 'Puntuak' } },
+                    },
+                },
+            });
+
+            // ✅ Onenak: talde idealekoak (merezi zutenak) gutxien aukeratuak
+            const onenak = ideala.slice().sort((a, b) => a.auk - b.auk || b.pts - a.pts).slice(0, 8);
+            // ⚠️ Tranpak: aukeratu bai baina mugatik behera (lekua merezi ez), gehien aukeratuak
+            const tranpak = rows.filter(r => r.pts < cutoff).sort((a, b) => b.auk - a.auk).slice(0, 8);
+            const taula = arr => '<table class="sailkapena-table klasikak"><thead><tr><th>Txirrindularia</th><th>Aukerak</th><th>Puntuak</th></tr></thead><tbody>' +
+                arr.map(r => `<tr><td class="name-col">${r.izena}</td><td>${r.auk}</td><td class="points-col">${r.pts}</td></tr>`).join('') +
+                '</tbody></table>';
+            document.getElementById('onenak').innerHTML = taula(onenak);
+            document.getElementById('tranpak').innerHTML = taula(tranpak);
+
+            } catch (err) {
+                document.getElementById('onenak').innerHTML = `<p style="color:red;">Errorea: ${err.message}</p>`;
+                console.error(err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

@@ -172,6 +172,23 @@
                 const j = kidx.get(r.kid);
                 if (j != null) map.get(r.id).pts[j] = Number(r.pts) || 0;
             });
+            // Bonus-puntuak azken etapan gehitu (txapelketa bukatutakoan bakarrik daude)
+            if (N > 0) {
+                const bonusRows = state.mota === 'txirrindulari'
+                    ? await window.dbLoader.query(
+                        "SELECT Txirrindularia_ID AS id, " +
+                        " COALESCE(Puntuak_Mendian,0) + COALESCE(Puntuak_Sailkapen_Nag,0) AS bonus " +
+                        "FROM TxapelketaEmaitzaTxirrindulariak WHERE Txapelketa_ID = ?", [tid])
+                    : await window.dbLoader.query(
+                        "SELECT Ezizen_ID AS id, " +
+                        " COALESCE(Puntuak_Mendikoa,0) + COALESCE(Puntuak_Generala,0) AS bonus " +
+                        "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
+                bonusRows.forEach(r => {
+                    const e = map.get(r.id);
+                    if (e && Number(r.bonus) > 0) e.pts[N - 1] += Number(r.bonus);
+                });
+            }
+
             const ents = [...map.values()];
             ents.forEach(e => {
                 e.cum = [];

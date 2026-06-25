@@ -1,0 +1,128 @@
+<?php
+// ─── Aramaixo Porra Admin — API sarrera-puntua ──────────────────────────────
+declare(strict_types=0);
+session_start();
+require __DIR__ . '/lib.php';
+
+// ─── HTTP Basic Auth ─────────────────────────────────────────────────────────
+(function () {
+    $cfg = require __DIR__ . '/config.php';
+    $u = $_SERVER['PHP_AUTH_USER'] ?? '';
+    $p = $_SERVER['PHP_AUTH_PW'] ?? '';
+    if (!hash_equals($cfg['auth_user'], $u) || !hash_equals($cfg['auth_pass'], $p)) {
+        header('WWW-Authenticate: Basic realm="Aramaixo Porra Admin"');
+        json_out(['error' => 'Autentifikazioa behar da'], 401);
+    }
+})();
+
+// ─── Router ──────────────────────────────────────────────────────────────────
+$method = $_SERVER['REQUEST_METHOD'];
+$path = trim((string)($_GET['_path'] ?? ''), '/');
+$body = [];
+if (in_array($method, ['POST','PUT'])) {
+    $raw = file_get_contents('php://input');
+    if ($raw) { $body = json_decode($raw, true); if (!is_array($body)) json_error('JSON baliogabea', 400); }
+}
+
+try {
+    if ($method === 'GET') {
+        switch (true) {
+            case $path === 'porralariak':
+                json_out(db_rows('SELECT p.Porralaria_ID, p.Izena, COUNT(ep.Ezizen_ID) AS `Zenbat Porra` FROM `Porralariak` p LEFT JOIN `PorralariTaldeenEzizenak` ep ON p.Porralaria_ID = ep.Porralaria_ID GROUP BY p.Porralaria_ID ORDER BY p.Izena'));
+            case $path === 'txirrindulariak':
+                json_out(db_rows('SELECT * FROM `Txirrindulariak` ORDER BY Izena'));
+            case $path === 'txapelketak':
+                json_out(db_rows('SELECT * FROM `Txapelketak` ORDER BY Urtea DESC, Izena'));
+            case $path === 'karrerak':
+                json_out(db_rows('SELECT * FROM `Karrerak` ORDER BY Urtea DESC, Izena'));
+            case $path === 'txirrindulari-emaitzak':
+                json_out(db_rows('SELECT e.*, t.Izena AS Txirrindularia FROM `TxapelketaEmaitzaTxirrindulariak` e JOIN `Txirrindulariak` t ON e.Txirrindularia_ID = t.Txirrindularia_ID ORDER BY e.Txapelketa_ID, e.Posizioa'));
+            case $path === 'porralari-emaitzak':
+                json_out(db_rows('SELECT e.*, ez.Ezizena, GROUP_CONCAT(p.Izena SEPARATOR ", ") AS Porralaria FROM `TxapelketaEmaitzaPorralariak` e JOIN `PorraEzizenak` ez ON e.Ezizen_ID = ez.Ezizen_ID LEFT JOIN `PorralariTaldeenEzizenak` ep ON ez.Ezizen_ID = ep.Ezizen_ID LEFT JOIN `Porralariak` p ON ep.Porralaria_ID = p.Porralaria_ID GROUP BY e.Txapelketa_ID, e.Ezizen_ID ORDER BY e.Txapelketa_ID, e.Posizioa'));
+            case $path === 'karrera-sailkapena':
+                json_out(db_rows('SELECT ks.*, t.Izena AS Txirrindularia FROM `KarreraSailkapena` ks JOIN `Txirrindulariak` t ON ks.Txirrindularia_ID = t.Txirrindularia_ID ORDER BY ks.Karrera_ID, ks.Puntuak DESC'));
+            case $path === 'karrera-emaitza':
+                $kid = $_GET['karrera_id'] ?? null;
+                if (!$kid) json_error('karrera_id parametroa behar da', 400);
+                $karrera = db_one('SELECT k.*, tx.Izena AS Txapelketa FROM `Karrerak` k JOIN `Txapelketak` tx ON k.Txapelketa_ID = tx.Txapelketa_ID WHERE k.Karrerak_ID = ?', [(int)$kid]);
+                if (!$karrera) json_error('Karrera ez da aurkitu', 404);
+                $sail = db_rows('SELECT ks.Sailkapena, t.Izena AS Txirrindularia, ks.Puntuak FROM `KarreraSailkapena` ks JOIN `Txirrindulariak` t ON ks.Txirrindularia_ID = t.Txirrindularia_ID WHERE ks.Karrera_ID = ? ORDER BY ks.Sailkapena', [(int)$kid]);
+                json_out(['karrera'=>$karrera,'sailkapena'=>$sail]);
+            case $path === 'sariak':
+                $tid = $_GET['txapelketa_id'] ?? null;
+                if (!$tid) json_error('txapelketa_id parametroa behar da', 400);
+                json_out(get_sariak((int)$tid));
+            case $path === 'ezizenak':
+                json_out(api_ezizenak());
+            case $path === 'porralaria-ezizenak':
+                $pid = $_GET['porralaria_id'] ?? null;
+                if (!$pid) json_error('porralaria_id parametroa behar da', 400);
+                json_out(porralaria_ezizenak((int)$pid));
+            case $path === 'meta':
+                json_out(db_meta());
+            case $path === 'undo-state':
+                json_out(undo_stack_state());
+            case strpos($path, 'table/') === 0:
+                $tn = rawurldecode(substr($path, strlen('table/')));
+                try { json_out(read_table($tn)); } catch (Exception $e) { json_error($e->getMessage(), 404); }
+            default:
+                json_error('Not found', 404);
+        }
+    } elseif ($method === 'POST') {
+        switch (true) {
+            case $path === 'insert':
+                $table = $body['table'] ?? ''; $vals = $body['data'] ?? [];
+                if (!$table || !$vals) json_error('table eta data behar dira');
+                try {
+                    $cols = array_keys($vals);
+                    $col_sql = implode(', ', array_map(fn($c)=>quote_ident($c), $cols));
+                    $ph = implode(', ', array_fill(0, count($cols), '?'));
+                    $r = db_exec("INSERT INTO " . quote_ident($table) . " ($col_sql) VALUES ($ph)", array_values($vals));
+                    json_out(['ok'=>true,'id'=>$r['insert_id']]);
+                } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'sariak': json_out(save_sariak($body));
+            case $path === 'csv/fuzzy-check': json_out(csv_fuzzy_check($body));
+            case $path === 'csv/preview': json_out(csv_preview($body));
+            case $path === 'csv/import': json_out(csv_import($body));
+            case $path === 'undo': json_out(do_undo());
+            case $path === 'redo': json_out(do_redo());
+            case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));
+            case $path === 'porralari-split': json_out(porralari_split($body));
+            case $path === 'merge/preview':
+                $kind=$body['kind']??''; $k=$body['keep_id']??null; $d=$body['drop_id']??null;
+                if (!$kind || $k===null || $d===null) json_error('kind, keep_id eta drop_id behar dira');
+                json_out(merge_preview($kind,(int)$k,(int)$d));
+            case $path === 'merge/execute':
+                $kind=$body['kind']??''; $k=$body['keep_id']??null; $d=$body['drop_id']??null;
+                if (!$kind || $k===null || $d===null) json_error('kind, keep_id eta drop_id behar dira');
+                if ($kind==='txirrindulariak') json_out(merge_txirrindulariak((int)$k,(int)$d));
+                elseif ($kind==='porralariak') json_out(merge_porralariak((int)$k,(int)$d));
+                else json_error("Mota ezezaguna: $kind");
+            case $path === 'recalculate-zenbat-porra': json_out(recalculate_zenbat_porra());
+            case $path === 'calculate/txirri-sailkapena':
+                $tid=$body['txapelketa_id']??null; if (!$tid) json_error('txapelketa_id behar da');
+                json_out(calculate_txirri_sailkapena((int)$tid));
+            case $path === 'calculate/porralari-sailkapena':
+                $tid=$body['txapelketa_id']??null; if (!$tid) json_error('txapelketa_id behar da');
+                json_out(calculate_porralari_sailkapena((int)$tid));
+            case $path === 'normalize-izenak': json_out(normalize_izenak());
+            case $path === 'izen-ordenak/get': json_out(get_izen_ordenak());
+            case $path === 'izen-ordenak/apply': json_out(apply_izen_ordenak($body['aldaketak'] ?? []));
+            case $path === 'txirrindulari-ordenak': json_out(get_txirrindulari_ordenak());
+            case $path === 'txirrindulari-swap':
+                $ids = $body['ids'] ?? []; if (!$ids) json_error('ids behar dira');
+                json_out(apply_txirrindulari_swap(array_map('intval', $ids)));
+            default: json_error('Not found', 404);
+        }
+    } elseif ($method === 'PUT') {
+        if (strpos($path, 'table/') === 0) {
+            $tn = rawurldecode(substr($path, strlen('table/')));
+            try { json_out(update_table_row($tn, $body)); } catch (Exception $e) { json_error($e->getMessage()); }
+        }
+        json_error('Not found', 404);
+    } else {
+        json_error('Metodo onartezina', 405);
+    }
+} catch (Exception $e) {
+    json_error($e->getMessage(), 500);
+}

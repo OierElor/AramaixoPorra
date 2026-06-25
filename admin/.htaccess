@@ -1,0 +1,24 @@
+# Aramaixo Porra Admin — Apache konfigurazioa
+
+Options -Indexes
+DirectoryIndex index.php
+
+# api/* eskaerak api.php-ra bideratu (azpi-bidea _path parametroan)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /admin/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/(.*)$ api.php?_path=$1 [QSA,L]
+</IfModule>
+
+# Fitxategi sentikorrak blokeatu
+<Files "config.php">
+    Require all denied
+</Files>
+<Files "config.example.php">
+    Require all denied
+</Files>
+<Files "index.html">
+    Require all denied
+</Files>

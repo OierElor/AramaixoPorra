@@ -205,10 +205,18 @@ class DBLoader {
             const sql = `
                 SELECT
                     ks.Sailkapena AS Posizioa,
+                    h.Dortsala    AS Dortsala,
                     t.Izena       AS Txirrindularia,
-                    ks.Puntuak    AS Puntuak
+                    ks.Puntuak    AS Puntuak,
+                    (SELECT COUNT(*) FROM "PorraApustuak" pa
+                     WHERE pa.Txapelketa_ID = k.Txapelketa_ID
+                       AND pa.Txirrindularia_ID = ks.Txirrindularia_ID) AS Zenbatek
                 FROM "KarreraSailkapena" ks
+                JOIN "Karrerak" k ON k.Karrerak_ID = ks.Karrera_ID
                 JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
+                LEFT JOIN "TxirrindulariakTxapleketanParteHartzea" h
+                    ON h.TxapelketaID = k.Txapelketa_ID
+                   AND h.TxirrindulariaID = ks.Txirrindularia_ID
                 WHERE ks.Karrera_ID = ?
                 ORDER BY ks.Sailkapena
             `;
@@ -220,12 +228,17 @@ class DBLoader {
                 return;
             }
 
-            const hasPuntuak = rows.some(r => this._hasData(r.Puntuak));
+            const hasDortsala = rows.some(r => this._hasData(r.Dortsala));
+            const hasPuntuak  = rows.some(r => this._hasData(r.Puntuak));
+            const hasZenbatek = rows.some(r => this._hasData(r.Zenbatek));
 
             const thead = table.querySelector('thead');
             if (thead) {
-                let h = '<tr><th>Pos</th><th>Txirrindularia</th>';
-                if (hasPuntuak) h += '<th>Puntuak</th>';
+                let h = '<tr><th>Pos</th>';
+                if (hasDortsala) h += '<th>Zbk</th>';
+                h += '<th>Txirrindularia</th>';
+                if (hasPuntuak)  h += '<th>Puntuak</th>';
+                if (hasZenbatek) h += '<th>Zenbatek?</th>';
                 h += '</tr>';
                 thead.innerHTML = h;
             }
@@ -241,8 +254,10 @@ class DBLoader {
                 else if (pos === 2) { tr.style.backgroundColor = '#f0f0f0'; }
                 else if (pos === 3) { tr.style.backgroundColor = '#fde8d0'; }
                 tr.appendChild(this._td(pos, 'pos-col'));
+                if (hasDortsala) tr.appendChild(this._td(row.Dortsala ?? '—'));
                 tr.appendChild(this._td(row.Txirrindularia, 'name-col'));
-                if (hasPuntuak) tr.appendChild(this._td(row.Puntuak, 'points-col'));
+                if (hasPuntuak)  tr.appendChild(this._td(row.Puntuak, 'points-col'));
+                if (hasZenbatek) tr.appendChild(this._td(row.Zenbatek ?? '—'));
                 tbody.appendChild(tr);
             });
 

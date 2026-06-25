@@ -8,11 +8,18 @@ register_shutdown_function(function () {
     if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
         ob_end_clean();
         http_response_code(200);
-        echo json_encode(['__debug_fatal' => $err], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['__debug_fatal' => $err, '__php_version' => PHP_VERSION], JSON_UNESCAPED_UNICODE);
     } else {
         ob_end_flush();
     }
 });
+// PHP bertsioa egiaztatzeko (diagnostikoa)
+if (($_GET['_path'] ?? '') === 'phpinfo') {
+    http_response_code(200);
+    ob_end_clean();
+    echo json_encode(['php_version' => PHP_VERSION, 'php_version_id' => PHP_VERSION_ID]);
+    exit;
+}
 session_start();
 require __DIR__ . '/lib.php';
 

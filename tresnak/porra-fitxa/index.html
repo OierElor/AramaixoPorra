@@ -92,6 +92,18 @@
                 if (j != null) rawMap.get(r.id)[j] = Number(r.pts) || 0;
             });
 
+            // Bonus-puntuak azken etapan gehitu (txapelketa bukatutakoan bakarrik daude)
+            if (N > 0) {
+                const bonusRows = await Tresna.q(
+                    "SELECT Ezizen_ID AS id, " +
+                    " COALESCE(Puntuak_Mendikoa,0) + COALESCE(Puntuak_Generala,0) AS bonus " +
+                    "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
+                bonusRows.forEach(r => {
+                    const pts = rawMap.get(r.id);
+                    if (pts && Number(r.bonus) > 0) pts[N - 1] += Number(r.bonus);
+                });
+            }
+
             state.allCums = new Map();
             rawMap.forEach((pts, id) => {
                 const cum = [];

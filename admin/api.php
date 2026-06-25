@@ -1,8 +1,18 @@
 <?php
 // ─── Aramaixo Porra Admin — API sarrera-puntua ──────────────────────────────
-ini_set('display_errors', '1');
-error_reporting(E_ALL);
-declare(strict_types=0);
+// DIAGNOSTIKOA: edozein PHP errore JSON gisa itzuli (nginx-ek ez dezan interceptatu)
+header('Content-Type: application/json; charset=utf-8');
+ob_start();
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        ob_end_clean();
+        http_response_code(200);
+        echo json_encode(['__debug_fatal' => $err], JSON_UNESCAPED_UNICODE);
+    } else {
+        ob_end_flush();
+    }
+});
 session_start();
 require __DIR__ . '/lib.php';
 

@@ -1,5 +1,7 @@
 <?php
 // ─── Aramaixo Porra Admin — API sarrera-puntua ──────────────────────────────
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
 declare(strict_types=0);
 session_start();
 require __DIR__ . '/lib.php';

@@ -46,13 +46,24 @@ function db_query($sql, $params = []) {
     return $stmt;
 }
 
-// Errenkada guztiak array elkartu gisa
+// Errenkada guztiak array elkartu gisa (mysqlnd gabe ere funtzionatzen du)
 function db_rows($sql, $params = []) {
     $stmt = db_query($sql, $params);
-    $res = mysqli_stmt_get_result($stmt);
+    $meta = mysqli_stmt_result_metadata($stmt);
+    if (!$meta) { mysqli_stmt_close($stmt); return []; }
+    $cols = [];
+    while ($f = mysqli_fetch_field($meta)) $cols[] = $f->name;
+    mysqli_free_result($meta);
+    $vals = array_fill(0, count($cols), null);
+    $refs = [$stmt];
+    foreach ($vals as $i => &$v) $refs[] = &$v;
+    call_user_func_array('mysqli_stmt_bind_result', $refs);
+    mysqli_stmt_store_result($stmt);
     $rows = [];
-    if ($res) {
-        while ($r = mysqli_fetch_assoc($res)) $rows[] = $r;
+    while (mysqli_stmt_fetch($stmt)) {
+        $row = [];
+        foreach ($cols as $i => $name) $row[$name] = $vals[$i];
+        $rows[] = $row;
     }
     mysqli_stmt_close($stmt);
     return $rows;

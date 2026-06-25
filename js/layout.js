@@ -35,6 +35,7 @@
         <footer class="orri-footer">
             <div class="footer-iz">Aramaixo Porra</div>
             <div>Harremanetarako: <a href="mailto:harremana@aramaixoporra.eus">harremana@aramaixoporra.eus</a></div>
+            <div><a href="/admin/" style="opacity:.15;color:inherit;font-size:12px;text-decoration:none;" title="Admin">⚙</a></div>
         </footer>`;
 
     function inject() {

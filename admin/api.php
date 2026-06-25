@@ -1,5 +1,18 @@
 <?php
 // ─── Aramaixo Porra Admin — API sarrera-puntua ──────────────────────────────
+// ob_start: nginx-ek PHP fatal erroreak HTML gisa interpreta ez ditzan (5xx)
+ob_start();
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        ob_end_clean();
+        http_response_code(200);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['error' => 'PHP errore larria: ' . $err['message']], JSON_UNESCAPED_UNICODE);
+    } else {
+        ob_end_flush();
+    }
+});
 session_start();
 require __DIR__ . '/lib.php';
 

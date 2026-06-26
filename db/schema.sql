@@ -29,6 +29,7 @@ CREATE TABLE Porralariak (
 CREATE TABLE Txirrindulariak (
     Txirrindularia_ID INT NOT NULL AUTO_INCREMENT,
     Izena VARCHAR(255) NOT NULL,
+    Izen_Formatua VARCHAR(40) DEFAULT NULL,
     PRIMARY KEY (Txirrindularia_ID),
     UNIQUE KEY uq_txirrindulari (Izena)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

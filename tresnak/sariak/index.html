@@ -80,7 +80,7 @@
             const body = rows.map(r => {
                 const e = euroParse(r.saria); if (e) total += e;
                 const irabazlea = r.porralari
-                    ? `${r.porralari}${r.ezizena ? ' <span style="opacity:.6;font-size:.88em">(${r.ezizena})</span>' : ''}`
+                    ? `${r.porralari}${r.ezizena ? ` <span style="opacity:.6;font-size:.88em">(${r.ezizena})</span>` : ''}`
                     : (r.ezizena ?? '—');
                 let tr = '<tr';
                 if (r.pos === 1) tr += ' style="background:#fff4cc;font-weight:bold;"';

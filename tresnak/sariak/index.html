@@ -68,19 +68,25 @@
             const cont = document.getElementById('sari-edukia');
             if (state.txapId == null) { cont.innerHTML = '<p style="text-align:center;opacity:.6;">Ez dago sari-daturik.</p>'; return; }
             const rows = await Tresna.q(
-                "SELECT s.Posizioa AS pos, s.Saria AS saria, pe.Ezizena AS ezizena, e.Puntuak AS pts " +
+                "SELECT s.Posizioa AS pos, s.Saria AS saria, pe.Ezizena AS ezizena, e.Puntuak AS pts, " +
+                " GROUP_CONCAT(p.Izena, ', ') AS porralari " +
                 "FROM Sariak s " +
                 "LEFT JOIN TxapelketaEmaitzaPorralariak e ON e.Txapelketa_ID = s.Txapelketa_ID AND e.Posizioa = s.Posizioa " +
                 "LEFT JOIN PorraEzizenak pe ON pe.Ezizen_ID = e.Ezizen_ID " +
-                "WHERE s.Txapelketa_ID = ? ORDER BY s.Posizioa", [state.txapId]);
+                "LEFT JOIN PorralariTaldeenEzizenak te ON te.Ezizen_ID = pe.Ezizen_ID " +
+                "LEFT JOIN Porralariak p ON p.Porralaria_ID = te.Porralaria_ID " +
+                "WHERE s.Txapelketa_ID = ? GROUP BY s.Posizioa ORDER BY s.Posizioa", [state.txapId]);
             let total = 0;
             const body = rows.map(r => {
                 const e = euroParse(r.saria); if (e) total += e;
+                const irabazlea = r.porralari
+                    ? `${r.porralari}${r.ezizena ? ' <span style="opacity:.6;font-size:.88em">(${r.ezizena})</span>' : ''}`
+                    : (r.ezizena ?? '—');
                 let tr = '<tr';
                 if (r.pos === 1) tr += ' style="background:#fff4cc;font-weight:bold;"';
                 else if (r.pos === 2) tr += ' style="background:#f0f0f0;"';
                 else if (r.pos === 3) tr += ' style="background:#fde8d0;"';
-                return tr + `><td class="pos-col">${r.pos}.</td><td class="name-col">${r.ezizena ?? '—'}</td>` +
+                return tr + `><td class="pos-col">${r.pos}.</td><td class="name-col">${irabazlea}</td>` +
                     `<td style="font-weight:600;color:#43a047;">${r.saria}</td><td class="points-col">${r.pts ?? '—'}</td></tr>`;
             }).join('');
             cont.innerHTML = `

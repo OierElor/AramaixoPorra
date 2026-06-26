@@ -207,7 +207,7 @@
     <section class="section" id="sec-txapelketak">
       <div class="page-header"><div><div class="page-title">🗓️ Txapelketak</div><div class="page-sub">Txapelketa eta karrera guztiak</div></div></div>
       <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
-      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Mota</th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
     </section>
 
     <!-- SAILKAPENAK -->
@@ -462,6 +462,19 @@ const el = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const _fmtEditData = new Map();
 
+const MOTA_ITZULI = ['Lauzepa','Muinotua','Menditsua','Goi-menditsua','Denbora-proba','Talde denbora-proba'];
+const MOTA_KLASIKA = ['Udaberri irekiera','Esprinta','Flandriar','Harri-zorua','Ardenak','Udako klasika','Mendi-klasika'];
+function motaOps(kat) { return kat === 'Etapa' ? MOTA_ITZULI : MOTA_KLASIKA; }
+
+async function saveMota(sel, kid) {
+  try {
+    await api('api/table-update', { method:'POST', body: JSON.stringify({
+      table:'Karrerak', pk:{Karrerak_ID:kid}, values:{Mota: sel.value || null}
+    })});
+    showToast('✅ Gordeta');
+  } catch(e) { showToast(e.message, 'err'); await reloadData(); }
+}
+
 function debounce(fn, ms) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; }
 
 let _confirmResolve = null;
@@ -685,7 +698,9 @@ function renderTxapelketak() {
   ).join("");
   el("karrerak-tbody").innerHTML = state.karrerak.map(k => {
     const txap = state.txapelketak.find(t => t.Txapelketa_ID === k.Txapelketa_ID);
-    return `<tr><td class="pk-cell">${esc(k.Karrerak_ID)}</td><td>${esc(txap?.Izena || k.Txapelketa_ID)}</td><td>${esc(k.Izena)}</td><td>${esc(k.Urtea)}</td></tr>`;
+    const ops = motaOps(k.Kategoria || '');
+    const motaSel = `<select onchange="saveMota(this,${k.Karrerak_ID})" style="font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text)"><option value="">—</option>${ops.map(m => `<option value="${m}"${k.Mota===m?' selected':''}>${m}</option>`).join('')}</select>`;
+    return `<tr><td class="pk-cell">${esc(k.Karrerak_ID)}</td><td>${esc(txap?.Izena || k.Txapelketa_ID)}</td><td>${esc(k.Izena)}</td><td>${esc(k.Urtea)}</td><td>${motaSel}</td></tr>`;
   }).join("");
 }
 

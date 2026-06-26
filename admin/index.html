@@ -199,7 +199,7 @@
       <div class="page-header"><div><div class="page-title">🚴 Txirrindulariak</div><div class="page-sub">Erregistratutako txirrindulari guztiak</div></div></div>
       <div class="card">
         <div class="toolbar"><input class="search-input" id="txirri-search" placeholder="Bilatu txirrindularia..."/><span style="color:var(--muted);font-size:12px" id="txirri-count"></span></div>
-        <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th></th></tr></thead><tbody id="txirri-tbody"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Formatua</th><th></th></tr></thead><tbody id="txirri-tbody"></tbody></table></div>
       </div>
     </section>
 
@@ -460,6 +460,7 @@ const state = {
 
 const el = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const _fmtEditData = new Map();
 
 function debounce(fn, ms) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; }
 
@@ -500,6 +501,37 @@ async function startInlineEdit(btn, table, pkCol, pkVal, field) {
   };
   btn.onclick = save;
   inp.addEventListener("keydown", e => { if (e.key === "Enter") save(); if (e.key === "Escape") reloadData(); });
+}
+
+function startFormatEdit(btn, tid) {
+  const data = _fmtEditData.get(tid);
+  if (!data) return;
+  const words = data.izena.trim().split(/\s+/);
+  const initToks = data.fmt ? data.fmt.trim().split(/\s+/) : [];
+  const cur = words.map((_, i) => initToks[i] === "Izena" ? "Izena" : "Abizena");
+  const td = btn.closest("td");
+  const renderEditor = () => {
+    td.innerHTML = `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+      ${words.map((w, i) => `<span class="fmt-tok" data-idx="${i}" style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;padding:2px 4px;border-radius:4px;border:1px solid var(--border)">
+        <span style="font-size:10px">${esc(w)}</span>
+        <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:2px;background:${cur[i]==="Izena"?"rgba(74,222,128,.2)":"rgba(244,196,48,.2)"};color:${cur[i]==="Izena"?"#4ade80":"#f4c430"}">${cur[i]==="Izena"?"I":"A"}</span>
+      </span>`).join("")}
+      <button class="btn btn-sm btn-primary fmt-save" style="font-size:11px;padding:3px 8px">💾</button>
+      <button class="btn btn-sm btn-ghost fmt-cancel" style="font-size:11px;padding:3px 6px">✕</button>
+    </div>`;
+    td.querySelectorAll(".fmt-tok").forEach(tok => {
+      tok.addEventListener("click", () => { const i = parseInt(tok.dataset.idx); cur[i] = cur[i]==="Izena"?"Abizena":"Izena"; renderEditor(); });
+    });
+    td.querySelector(".fmt-save")?.addEventListener("click", async () => {
+      try {
+        await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Txirrindulariak", pk:{Txirrindularia_ID:tid}, values:{Izen_Formatua:cur.join(" ")} }) });
+        showToast("✅ Formatua gordeta");
+        await reloadData();
+      } catch(e) { showToast(e.message, "err"); await reloadData(); }
+    });
+    td.querySelector(".fmt-cancel")?.addEventListener("click", () => reloadData());
+  };
+  renderEditor();
 }
 
 function filterPorraSel(selId, q) {
@@ -623,12 +655,19 @@ function renderTxirrindulariak() {
   const q = (el("txirri-search")?.value || "").toLowerCase();
   const filtered = state.txirrindulariak.filter(t => t.Izena?.toLowerCase().includes(q));
   el("txirri-count").textContent = filtered.length + " erregistro";
+  _fmtEditData.clear();
   el("txirri-tbody").innerHTML = filtered.map(t => {
     const parts = t.Izena.trim().split(/\s+/);
     const swapped = parts.length >= 2 ? [...parts.slice(1), parts[0]].join(" ") : null;
+    const fmt = t.Izen_Formatua ?? null;
+    _fmtEditData.set(t.Txirrindularia_ID, { izena: t.Izena, fmt });
+    const fmtBadges = fmt
+      ? fmt.split(" ").map(tok => `<span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:2px;background:${tok==="Izena"?"rgba(74,222,128,.2)":"rgba(244,196,48,.2)"};color:${tok==="Izena"?"#4ade80":"#f4c430"}">${tok==="Izena"?"I":"A"}</span>`).join("<span style='color:var(--muted);font-size:9px'>·</span>")
+      : `<span style="color:var(--accent);font-size:11px">—</span>`;
     return `<tr>
       <td class="pk-cell">${esc(t.Txirrindularia_ID)}</td>
       <td><span class="name-text">${esc(t.Izena)}</span><button class="btn-inline-edit" title="Izena editatu" onclick="startInlineEdit(this,'Txirrindulariak','Txirrindularia_ID',${t.Txirrindularia_ID},'Izena')">✎</button></td>
+      <td style="white-space:nowrap">${fmtBadges} <button class="btn-inline-edit" title="Formatua aldatu" onclick="startFormatEdit(this,${t.Txirrindularia_ID})">⊞</button></td>
       <td class="row-actions">${swapped && swapped !== t.Izena
         ? `<button class="btn btn-sm btn-ghost" style="font-size:11px;white-space:nowrap"
             onclick="txirriSwapIzena(${t.Txirrindularia_ID}, '${esc(swapped)}')"
@@ -636,7 +675,7 @@ function renderTxirrindulariak() {
         : ''
       }</td>
     </tr>`;
-  }).join("") || `<tr><td colspan="3" style="color:var(--muted);padding:24px;text-align:center">Ez dago datürik</td></tr>`;
+  }).join("") || `<tr><td colspan="4" style="color:var(--muted);padding:24px;text-align:center">Ez dago datürik</td></tr>`;
 }
 
 // ── Txapelketak ───────────────────────────────────────────────────────────────

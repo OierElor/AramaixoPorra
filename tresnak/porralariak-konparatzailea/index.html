@@ -30,7 +30,7 @@
 
                 <div class="grafiko-kontrolak">
                     <div>
-                        <label>Txapelketa mota</label>
+                        <label>Lasterketa mota</label>
                         <div class="grafiko-mota" id="mota-toggle">
                             <button data-f="denak" class="active">Denak</button>
                             <button data-f="itzuliak">Itzuliak</button>
@@ -209,7 +209,7 @@
                             <span style="color:${c1};">${state.hautatuak[1].izena}</span>
                         </div>
                         ${draws ? `<div style="opacity:.55;font-size:.85em;margin-top:3px;">${draws} berdinketa</div>` : ''}
-                        <div style="opacity:.55;font-size:.82em;margin-top:2px;">Zuzeneko aurrez-aurrekoa — txapelketa bakoitzean postu onena</div>
+                        <div style="opacity:.55;font-size:.82em;margin-top:2px;">Zuzeneko aurrez-aurrekoa — lasterketa bakoitzean posturik onena</div>
                     </div>`;
                 }
 
@@ -230,7 +230,7 @@
                 }).join('');
 
                 // Taula: txapelketa bakoitzeko zelda bakoitzean porra guztiak erakutsi
-                const thead = `<tr><th>Txapelketa</th>${state.hautatuak.map((p, i) => {
+                const thead = `<tr><th>Lasterketa</th>${state.hautatuak.map((p, i) => {
                     const color = Tresna.COLORS[i % Tresna.COLORS.length];
                     return `<th style="color:${color};">${p.izena}</th>`;
                 }).join('')}</tr>`;

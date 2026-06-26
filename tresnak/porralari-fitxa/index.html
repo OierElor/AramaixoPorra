@@ -109,7 +109,7 @@
             }).join('');
 
             const taula = `<table class="sailkapena-table klasikak"><thead><tr>` +
-                `<th>Txapelketa</th><th>Porra</th><th>Postua</th><th>Puntuak</th>` +
+                `<th>Lasterketa</th><th>Porra</th><th>Postua</th><th>Puntuak</th>` +
                 (baderaSaria ? '<th>Saria</th>' : '') +
                 (baderaTalde ? '<th>Taldekideak</th>' : '') +
                 `</tr></thead><tbody>${body}</tbody></table>`;
@@ -119,7 +119,7 @@
                     <h3 class="grafikoak" style="margin:4px 0;">${p.izena}</h3>
                     <div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;margin:8px 0;">
                         <div><div style="font-size:1.6em;font-weight:bold;">${lerroak.length}</div><div style="opacity:.6;">Porrak</div></div>
-                        <div><div style="font-size:1.6em;font-weight:bold;">${onena != null ? onena + '.' : '—'}</div><div style="opacity:.6;">Postu onena</div></div>
+                        <div><div style="font-size:1.6em;font-weight:bold;">${onena != null ? onena + '.' : '—'}</div><div style="opacity:.6;">Posturik onena</div></div>
                         <div><div style="font-size:1.6em;font-weight:bold;">${mediaItzuli ?? '—'}</div><div style="opacity:.6;">Batez bestekoa (itzuli h.)</div></div>
                         <div><div style="font-size:1.6em;font-weight:bold;">${mediaKlasika ?? '—'}</div><div style="opacity:.6;">Batez bestekoa (klasikak)</div></div>
                         ${sariGuztira > 0 ? `<div><div style="font-size:1.6em;font-weight:bold;color:#43a047;">${sariGuztira} €</div><div style="opacity:.6;">Sariak guztira</div></div>` : ''}

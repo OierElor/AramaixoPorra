@@ -12,10 +12,17 @@ const Tresna = {
         return window.dbLoader.query(sql, params);
     },
 
-    /** Txapelketak (berrienak lehenik). */
+    /** Txapelketak: lasterketa motaz taldekatuta (alfabetikoki), gero urte beheraka. */
     async txapelketak() {
-        return this.q("SELECT Txapelketa_ID AS id, Izena AS izena, Urtea AS urtea " +
-            "FROM Txapelketak ORDER BY Urtea DESC, Izena");
+        const rows = await this.q(
+            "SELECT Txapelketa_ID AS id, Izena AS izena, Urtea AS urtea FROM Txapelketak");
+        rows.sort((a, b) => {
+            const baseA = a.izena.replace(/\s+\d{4}$/, '');
+            const baseB = b.izena.replace(/\s+\d{4}$/, '');
+            if (baseA !== baseB) return baseA.localeCompare(baseB, 'eu');
+            return b.urtea - a.urtea;
+        });
+        return rows;
     },
 
     /** Txapelketako benetako karrerak ordenan (agregatu 'Azken Karrera' kanpo). */
@@ -118,7 +125,8 @@ const Tresna = {
         function populate(query) {
             const all = items();
             const q = (query || '').toLowerCase().trim();
-            visible = q ? all.filter(it => it.label.toLowerCase().includes(q)) : all.slice();
+            visible = (q ? all.filter(it => it.label.toLowerCase().includes(q)) : all.slice())
+                .sort((a, b) => a.label.localeCompare(b.label, 'eu'));
             if (!visible.length) { drop.style.display = 'none'; return; }
             drop.innerHTML = visible.map((it, i) =>
                 `<div class="ac-item" data-i="${i}">${it.label}</div>`).join('');

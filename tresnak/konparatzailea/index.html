@@ -154,10 +154,8 @@
                 ranked.forEach((id, rank) => state.allPos.get(id)[j] = rank + 1);
             }
 
-            // Erreferentzia: azken saridunaren kumulatiboak → desberdintasuna
-            const sarRow = await Tresna.q(
-                "SELECT MAX(Posizioa) AS n FROM Sariak WHERE Txapelketa_ID = ?", [tid]);
-            state.N_ref = (sarRow[0]?.n) ? Number(sarRow[0].n) : 5;
+            // Erreferentzia: N_ref. postuaren kumulatiboak → desberdintasuna
+            state.N_ref = 5;
             const refCum = [];
             for (let j = 0; j < N; j++) {
                 const sorted = porraIds.slice().sort((a, b) =>
@@ -252,12 +250,12 @@
                 <div class="grafiko-oihala" style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;">${summary}</div>
                 <div class="grafiko-oihala">
                     <h3 class="grafikoak" style="text-align:center;">DESBERDINTASUNA</h3>
-                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">${state.N_ref}. saridunarekiko</p>
+                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">${state.N_ref}. postuarekiko</p>
                     <div style="position:relative;height:280px;"><canvas id="konp-diff-grafikoa"></canvas></div>
                 </div>
                 <div class="grafiko-oihala">
                     <h3 class="grafikoak" style="text-align:center;">POSIZIOA</h3>
-                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">Etapa bakoitzaren osteko sailkapena · marra laranja = azken saria (${state.N_ref}. postua)</p>
+                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">Etapa bakoitzaren osteko sailkapena · marra laranja = ${state.N_ref}. postua (erreferentzia)</p>
                     <div style="position:relative;height:280px;"><canvas id="konp-pos-grafikoa"></canvas></div>
                 </div>
                 <div class="table-wrapper" style="max-width:760px;margin:16px auto;overflow-x:auto;">
@@ -307,7 +305,7 @@
                     scales: {
                         x: commonOpts.scales.x,
                         y: {
-                            title: { display: true, text: `Desberdintasuna (${state.N_ref}. saridunarekiko)` },
+                            title: { display: true, text: `Desberdintasuna (${state.N_ref}. postuarekiko)` },
                             grid: {
                                 color: ctx => ctx.tick.value === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.08)',
                                 lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
@@ -317,7 +315,7 @@
                 },
             });
 
-            // Grafika 2: Posizioa + erreferentzia-lerroa azken saridunen postuaren mailan
+            // Grafika 2: Posizioa + erreferentzia-lerroa N_ref. postuaren mailan
             const posDatasets = [
                 ...sel.map((p, i) => {
                     const color = Tresna.COLORS[i % Tresna.COLORS.length];
@@ -326,7 +324,7 @@
                         borderWidth: 2, pointRadius: 2, tension: 0.15 };
                 }),
                 {
-                    label: `${state.N_ref}. postua (azken saria)`,
+                    label: `${state.N_ref}. postua (erreferentzia)`,
                     data: new Array(labels.length).fill(state.N_ref),
                     borderColor: 'rgba(255,140,0,0.8)', backgroundColor: 'transparent',
                     borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0,
@@ -343,7 +341,7 @@
                         ...commonOpts.plugins,
                         legend: {
                             position: 'bottom',
-                            labels: { filter: item => !item.text.includes('azken saria') },
+                            labels: { filter: item => !item.text.includes('erreferentzia') },
                         },
                         tooltip: {
                             callbacks: {

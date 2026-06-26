@@ -130,19 +130,15 @@
         async function fetchHistory(porralariId) {
             return Tresna.q(
                 "SELECT tx.Txapelketa_ID AS txid, tx.Izena AS txap, tx.Urtea AS urtea, " +
-                "  pe.Ezizena AS ezizena, e.Posizioa AS pos, e.Puntuak AS pts, s.Saria AS saria, " +
+                "  pe.Ezizena AS ezizena, e.Posizioa AS pos, e.Puntuak AS pts, " +
                 "  (SELECT COUNT(*) FROM PorraEzizenak WHERE Txapelketa_ID = pe.Txapelketa_ID) AS np " +
                 "FROM PorralariTaldeenEzizenak te " +
                 "JOIN PorraEzizenak pe ON pe.Ezizen_ID = te.Ezizen_ID " +
                 "JOIN Txapelketak tx ON tx.Txapelketa_ID = pe.Txapelketa_ID " +
                 "LEFT JOIN TxapelketaEmaitzaPorralariak e " +
                 "  ON e.Ezizen_ID = pe.Ezizen_ID AND e.Txapelketa_ID = pe.Txapelketa_ID " +
-                "LEFT JOIN Sariak s ON s.Txapelketa_ID = pe.Txapelketa_ID AND s.Posizioa = e.Posizioa " +
                 "WHERE te.Porralaria_ID = ? ORDER BY tx.Urtea ASC, tx.Izena", [porralariId]);
         }
-
-        const parseSari = s => { if (s == null) return null; const v = parseFloat(String(s).replace(',', '.').replace(/[^\d.]/g, '')); return isNaN(v) ? null : v; };
-        const euroFmt = v => v.toLocaleString('eu-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
         async function render() {
             const cont = document.getElementById('konp-edukia');
@@ -187,8 +183,7 @@
                     const podioak = txPoses.filter(x => x <= 3).length;
                     const avgPos = txPoses.length
                         ? (txPoses.reduce((a, b) => a + b, 0) / txPoses.length).toFixed(1) : '—';
-                    const sariGuztira = filtered[i].filter(r => parseSari(r.saria) != null).reduce((a, r) => a + parseSari(r.saria), 0);
-                    return { part: txids.length, garaipenak, podioak, avgPos, sariGuztira };
+                    return { part: txids.length, garaipenak, podioak, avgPos };
                 });
 
                 // Head-to-head: txapelketa bakoitzean postu onena konparatu
@@ -227,7 +222,6 @@
                             <div><div style="font-size:1.4em;font-weight:bold;">${s.garaipenak}</div><div style="opacity:.6;font-size:.82em;">Garaipenak</div></div>
                             <div><div style="font-size:1.4em;font-weight:bold;">${s.podioak}</div><div style="opacity:.6;font-size:.82em;">Podioak</div></div>
                             <div><div style="font-size:1.4em;font-weight:bold;">${s.avgPos}</div><div style="opacity:.6;font-size:.82em;">Batez b. pos.</div></div>
-                            ${s.sariGuztira > 0 ? `<div><div style="font-size:1.4em;font-weight:bold;color:#43a047;">${euroFmt(s.sariGuztira)}</div><div style="opacity:.6;font-size:.82em;">Sariak</div></div>` : ''}
                         </div>
                     </div>`;
                 }).join('');

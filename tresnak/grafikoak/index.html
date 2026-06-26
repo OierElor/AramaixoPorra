@@ -211,9 +211,7 @@
                 const txName = sel.options[sel.selectedIndex]?.text || '';
                 N_ref = /klasik/i.test(txName) ? 25 : 15;
             } else {
-                const sarRow = await window.dbLoader.query(
-                    "SELECT MAX(Posizioa) AS n FROM Sariak WHERE Txapelketa_ID = ?", [tid]);
-                N_ref = (sarRow[0]?.n) ? Number(sarRow[0].n) : 5;
+                N_ref = 5;
             }
             const refCum = [];
             for (let j = 0; j < N; j++) {
@@ -275,7 +273,7 @@
 
             const refLabel = state.mota === 'txirrindulari'
                 ? `${state.N_ref}. txirrindularia (talde ideala)`
-                : `${state.N_ref}. porra (azken sariduna)`;
+                : `${state.N_ref}. porra (erreferentzia)`;
 
             const datasets = ents.map((e, i) => {
                 const color = COLORS[state.entitateak.indexOf(e) % COLORS.length];

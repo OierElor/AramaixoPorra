@@ -55,13 +55,12 @@
         async function porrak(porralariId) {
             return Tresna.q(
                 "SELECT pe.Ezizen_ID AS ezid, tx.Izena AS txap, tx.Urtea AS urtea, pe.Ezizena AS ezizena, " +
-                " e.Posizioa AS pos, e.Puntuak AS pts, s.Saria AS saria, " +
+                " e.Posizioa AS pos, e.Puntuak AS pts, " +
                 " (SELECT COUNT(*) FROM PorraEzizenak WHERE Txapelketa_ID = pe.Txapelketa_ID) AS np " +
                 "FROM PorralariTaldeenEzizenak te " +
                 "JOIN PorraEzizenak pe ON pe.Ezizen_ID = te.Ezizen_ID " +
                 "JOIN Txapelketak tx ON tx.Txapelketa_ID = pe.Txapelketa_ID " +
                 "LEFT JOIN TxapelketaEmaitzaPorralariak e ON e.Ezizen_ID = pe.Ezizen_ID AND e.Txapelketa_ID = pe.Txapelketa_ID " +
-                "LEFT JOIN Sariak s ON s.Txapelketa_ID = pe.Txapelketa_ID AND s.Posizioa = e.Posizioa " +
                 "WHERE te.Porralaria_ID = ? ORDER BY tx.Urtea DESC, tx.Izena", [porralariId]);
         }
 
@@ -91,29 +90,18 @@
             const klasika = r => /klasik/i.test(r.txap);
             const mediaItzuli = bataz(lerroak.filter(r => r.pts != null && !klasika(r)).map(r => Number(r.pts)));
             const mediaKlasika = bataz(lerroak.filter(r => r.pts != null && klasika(r)).map(r => Number(r.pts)));
-            const parseSari = s => { if (s == null) return null; const v = parseFloat(String(s).replace(',', '.').replace(/[^\d.]/g, '')); return isNaN(v) ? null : v; };
-            const isEuroSaria = r => parseSari(r.saria) != null;
-            const sariGuztira = lerroak.filter(isEuroSaria).reduce((a, r) => a + parseSari(r.saria), 0);
-            const euroFmt = v => v.toLocaleString('eu-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-            const baderaSaria = lerroak.some(r => r.saria != null);
 
             const body = lerroak.map(r => {
                 const pos = r.pos != null ? `${r.pos}. <span style="opacity:.5;">/ ${r.np}</span>`
                     : '<span style="opacity:.5;">martxan</span>';
                 const kide = kideMap.get(r.ezid);
-                const sv = parseSari(r.saria);
-                const saria = r.saria != null
-                    ? (sv != null ? `<strong>${euroFmt(sv)}</strong>` : r.saria)
-                    : '—';
                 return `<tr><td class="name-col">${r.txap}</td><td>${r.ezizena}</td>` +
                     `<td>${pos}</td><td class="points-col">${r.pts ?? '—'}</td>` +
-                    (baderaSaria ? `<td class="points-col">${saria}</td>` : '') +
                     (baderaTalde ? `<td style="color:#43a047;">${kide ? '👥 ' + kide : '—'}</td>` : '') + `</tr>`;
             }).join('');
 
             const taula = `<table class="sailkapena-table klasikak"><thead><tr>` +
                 `<th>Lasterketa</th><th>Porra</th><th>Postua</th><th>Puntuak</th>` +
-                (baderaSaria ? '<th>Saria</th>' : '') +
                 (baderaTalde ? '<th>Taldekideak</th>' : '') +
                 `</tr></thead><tbody>${body}</tbody></table>`;
 
@@ -125,7 +113,6 @@
                         <div><div style="font-size:1.6em;font-weight:bold;">${onena != null ? onena + '.' : '—'}</div><div style="opacity:.6;">Posturik onena</div></div>
                         <div><div style="font-size:1.6em;font-weight:bold;">${mediaItzuli ?? '—'}</div><div style="opacity:.6;">Batez bestekoa (itzuli h.)</div></div>
                         <div><div style="font-size:1.6em;font-weight:bold;">${mediaKlasika ?? '—'}</div><div style="opacity:.6;">Batez bestekoa (klasikak)</div></div>
-                        ${sariGuztira > 0 ? `<div><div style="font-size:1.6em;font-weight:bold;color:#43a047;">${euroFmt(sariGuztira)}</div><div style="opacity:.6;">Sariak guztira</div></div>` : ''}
                     </div>
                 </div>
                 <div class="table-wrapper" style="max-width:820px;margin:14px auto;overflow-x:auto;">

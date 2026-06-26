@@ -1806,10 +1806,11 @@ async function loadKarreraEmaitza(karreraId, itemEl) {
 
 async function txirriSwapIzena(tid, izenBerria) {
   try {
-    await api("api/izen-ordenak/apply", {
-      method: "POST",
-      body: JSON.stringify({ aldaketak: [{ Txirrindularia_ID: tid, Izena_Berria: izenBerria }] })
-    });
+    const fmtParts = (_fmtEditData.get(tid)?.fmt ?? "").split(" ").filter(Boolean);
+    const fmtBerria = fmtParts.length >= 2 ? [...fmtParts.slice(1), fmtParts[0]].join(" ") : null;
+    const values = { Izena: izenBerria };
+    if (fmtBerria) values.Izen_Formatua = fmtBerria;
+    await api("api/table-update", { method: "POST", body: JSON.stringify({ table: "Txirrindulariak", pk: { Txirrindularia_ID: tid }, values }) });
     showToast(`✅ "${izenBerria}" gordeta`);
     await reloadData();
   } catch(e) { showToast(e.message, "err"); }

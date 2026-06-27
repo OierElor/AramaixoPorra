@@ -198,7 +198,7 @@
     <section class="section" id="sec-txirrindulariak">
       <div class="page-header"><div><div class="page-title">🚴 Txirrindulariak</div><div class="page-sub">Erregistratutako txirrindulari guztiak</div></div></div>
       <div class="card">
-        <div class="toolbar"><input class="search-input" id="txirri-search" placeholder="Bilatu txirrindularia..."/><span style="color:var(--muted);font-size:12px" id="txirri-count"></span></div>
+        <div class="toolbar"><input class="search-input" id="txirri-search" placeholder="Bilatu txirrindularia..."/><span style="color:var(--muted);font-size:12px" id="txirri-count"></span><button class="btn btn-sm btn-ghost" onclick="swapFormatuGuztiak()" title="Txirrindulari guztien izen-ordena aldatu">⇄ Guztiak</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Formatua</th><th></th></tr></thead><tbody id="txirri-tbody"></tbody></table></div>
       </div>
     </section>
@@ -1803,6 +1803,28 @@ async function loadKarreraEmaitza(karreraId, itemEl) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+
+async function swapFormatuGuztiak() {
+  const swappable = state.txirrindulariak.filter(t => (t.Izena?.trim().split(/\s+/) || []).length >= 2);
+  if (!swappable.length) { showToast('Ez dago aldatzeko txirrindularirik'); return; }
+  const ok = await confirmDialog(`${swappable.length} txirrindulariren izen-ordena aldatuko da (⇄). Jarraitu?`);
+  if (!ok) return;
+  showToast('⏳ Aldatzen...');
+  try {
+    await Promise.all(swappable.map(t => {
+      const parts = t.Izena.trim().split(/\s+/);
+      const izenBerria = [...parts.slice(1), parts[0]].join(' ');
+      const fmtParts = (t.Izen_Formatua ?? '').split(' ').filter(Boolean);
+      const values = { Izena: izenBerria };
+      if (fmtParts.length >= 2) values.Izen_Formatua = [...fmtParts.slice(1), fmtParts[0]].join(' ');
+      return api('api/table-update', { method: 'POST', body: JSON.stringify({
+        table: 'Txirrindulariak', pk: { Txirrindularia_ID: t.Txirrindularia_ID }, values
+      })});
+    }));
+    showToast(`✅ ${swappable.length} txirrindulari aldatu`);
+    await reloadData();
+  } catch(e) { showToast(e.message, 'err'); await reloadData(); }
+}
 
 async function txirriSwapIzena(tid, izenBerria) {
   try {

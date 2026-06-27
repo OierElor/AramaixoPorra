@@ -1825,12 +1825,16 @@ async function ordenaBerdinatu(lehenik) {
   if (!ok) return;
   showToast('⏳ Aldatzen...');
   try {
-    await Promise.all(toUpdate.map(({ t, izenBerria, fmtBerria }) =>
-      api('api/table-update', { method: 'POST', body: JSON.stringify({
-        table: 'Txirrindulariak', pk: { Txirrindularia_ID: t.Txirrindularia_ID },
-        values: { Izena: izenBerria, Izen_Formatua: fmtBerria }
-      })})
-    ));
+    const BATCH = 10;
+    for (let i = 0; i < toUpdate.length; i += BATCH) {
+      showToast(`⏳ ${Math.min(i + BATCH, toUpdate.length)} / ${toUpdate.length}...`);
+      await Promise.all(toUpdate.slice(i, i + BATCH).map(({ t, izenBerria, fmtBerria }) =>
+        api('api/table-update', { method: 'POST', body: JSON.stringify({
+          table: 'Txirrindulariak', pk: { Txirrindularia_ID: t.Txirrindularia_ID },
+          values: { Izena: izenBerria, Izen_Formatua: fmtBerria }
+        })})
+      ));
+    }
     showToast(`✅ ${toUpdate.length} txirrindulari aldatu`);
     await reloadData();
   } catch(e) { showToast(e.message, 'err'); await reloadData(); }

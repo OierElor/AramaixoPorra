@@ -45,13 +45,9 @@ class DBLoader {
                     ez.Ezizena,
                     te.Puntuak,
                     te.Puntuak_Mendikoa,
-                    te.Puntuak_Generala,
-                    s.Saria
+                    te.Puntuak_Generala
                 FROM "TxapelketaEmaitzaPorralariak" te
                 JOIN "PorraEzizenak" ez ON te.Ezizen_ID = ez.Ezizen_ID
-                LEFT JOIN "Sariak" s
-                    ON s.Txapelketa_ID = te.Txapelketa_ID
-                    AND s.Posizioa = te.Posizioa
                 WHERE te.Txapelketa_ID = ?
                 ORDER BY te.Posizioa
             `;
@@ -449,9 +445,8 @@ class DBLoader {
     _fillPorraTable(table, rows) {
         const hasMendikoa = rows.some(r => this._hasData(r.Puntuak_Mendikoa));
         const hasGenerala = rows.some(r => this._hasData(r.Puntuak_Generala));
-        const hasSaria    = rows.some(r => this._hasData(r.Saria));
 
-        this._updatePorraThead(table, hasMendikoa, hasGenerala, hasSaria);
+        this._updatePorraThead(table, hasMendikoa, hasGenerala);
 
         const tbody = table.querySelector('tbody');
         if (!tbody) return;
@@ -464,7 +459,6 @@ class DBLoader {
             tr.appendChild(this._td(row.Puntuak, 'points-col'));
             if (hasMendikoa) tr.appendChild(this._td(row.Puntuak_Mendikoa ?? '—'));
             if (hasGenerala) tr.appendChild(this._td(row.Puntuak_Generala ?? '—'));
-            if (hasSaria)    tr.appendChild(this._td(row.Saria ?? ''));
             tbody.appendChild(tr);
         });
     }
@@ -494,7 +488,7 @@ class DBLoader {
         });
     }
 
-    _updatePorraThead(table, hasMendikoa, hasGenerala, hasSaria) {
+    _updatePorraThead(table, hasMendikoa, hasGenerala) {
         const thead = table.querySelector('thead');
         if (!thead) return;
 
@@ -504,7 +498,6 @@ class DBLoader {
         html += '<th>Puntuak</th>';
         if (hasMendikoa) html += '<th>Mendia</th>';
         if (hasGenerala) html += '<th>Orokorra</th>';
-        if (hasSaria)    html += '<th>Saria</th>';
         html += '</tr>';
 
         thead.innerHTML = html;

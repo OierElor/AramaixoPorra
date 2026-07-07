@@ -1116,3 +1116,115 @@ function update_table_row($table_name, $payload) {
     $r = db_exec("UPDATE $q SET $set_sql WHERE $where_sql", $params);
     return ['ok'=>true,'updated'=>$r['affected']];
 }
+
+function delete_table_row($table_name, $pk_values) {
+    if (!is_array($pk_values)) throw new Exception('Datu baliogabeak');
+    if (!db_table_exists($table_name)) throw new Exception("Taula ez da existitzen: $table_name");
+    $q = quote_ident($table_name);
+    $columns = db_table_columns($table_name);
+    $pk_columns = array_map(fn($c)=>$c['name'], array_filter($columns, fn($c)=>(int)$c['pk']));
+    if (!$pk_columns) throw new Exception('Taula honek ez dauka primary key-rik');
+    foreach ($pk_columns as $col) if (!array_key_exists($col, $pk_values)) throw new Exception('Primary key balioak falta dira');
+    $where_sql = implode(' AND ', array_map(fn($c)=>quote_ident($c).' = ?', $pk_columns));
+    $params = array_map(fn($c)=>$pk_values[$c], $pk_columns);
+    $r = db_exec("DELETE FROM $q WHERE $where_sql", $params);
+    return ['ok'=>true,'deleted'=>$r['affected']];
+}
+
+// ─── Datu-osasuna (txapelketa baten egiaztapenak) ────────────────────────────
+function data_health($txap_id) {
+    $txap_id = (int)$txap_id;
+    $stages_no_results = db_rows(
+        "SELECT k.Karrerak_ID AS id, k.Izena FROM `Karrerak` k
+         WHERE k.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> ''
+           AND NOT EXISTS (SELECT 1 FROM `KarreraSailkapena` ks WHERE ks.Karrera_ID = k.Karrerak_ID)
+         ORDER BY k.Karrerak_ID", [$txap_id]);
+    $bettors_wrong_picks = db_rows(
+        "SELECT ez.Ezizen_ID AS id, ez.Ezizena, COUNT(pa.Txirrindularia_ID) AS n
+         FROM `PorraEzizenak` ez
+         LEFT JOIN `PorraApustuak` pa ON pa.Ezizen_ID = ez.Ezizen_ID AND pa.Txapelketa_ID = ez.Txapelketa_ID
+         WHERE ez.Txapelketa_ID = ?
+         GROUP BY ez.Ezizen_ID, ez.Ezizena HAVING n <> 15
+         ORDER BY n, ez.Ezizena", [$txap_id]);
+    $picked_no_dortsal = db_rows(
+        "SELECT DISTINCT t.Txirrindularia_ID AS id, t.Izena
+         FROM `PorraApustuak` pa JOIN `Txirrindulariak` t ON t.Txirrindularia_ID = pa.Txirrindularia_ID
+         WHERE pa.Txapelketa_ID = ?
+           AND NOT EXISTS (SELECT 1 FROM `TxirrindulariakTxapleketanParteHartzea` h
+                           WHERE h.TxapelketaID = pa.Txapelketa_ID AND h.TxirrindulariaID = pa.Txirrindularia_ID)
+         ORDER BY t.Izena", [$txap_id]);
+    $unlinked_ezizenak = db_rows(
+        "SELECT ez.Ezizen_ID AS id, ez.Ezizena FROM `PorraEzizenak` ez
+         WHERE ez.Txapelketa_ID = ?
+           AND NOT EXISTS (SELECT 1 FROM `PorralariTaldeenEzizenak` l WHERE l.Ezizen_ID = ez.Ezizen_ID)
+         ORDER BY ez.Ezizena", [$txap_id]);
+    $has_results = ((int)db_scalar(
+        "SELECT COUNT(*) FROM `KarreraSailkapena` ks JOIN `Karrerak` k ON k.Karrerak_ID = ks.Karrera_ID
+         WHERE k.Txapelketa_ID = ?", [$txap_id])) > 0;
+    $has_standings = ((int)db_scalar(
+        "SELECT COUNT(*) FROM `TxapelketaSailkapenaPorralariak` WHERE Txapelketa_ID = ?", [$txap_id])) > 0;
+    return [
+        'stages_no_results' => $stages_no_results,
+        'bettors_wrong_picks' => $bettors_wrong_picks,
+        'picked_no_dortsal' => $picked_no_dortsal,
+        'unlinked_ezizenak' => $unlinked_ezizenak,
+        'recalc_needed' => ($has_results && !$has_standings),
+    ];
+}
+
+// Izen bikoiztu susmagarriak: token-multzo berdineko izenak taldekatu (O(n), azkarra).
+function possible_dups($kind) {
+    if ($kind === 'porralariak') {
+        $rows = db_rows('SELECT Porralaria_ID AS id, Izena FROM `Porralariak`');
+    } else {
+        $rows = db_rows('SELECT Txirrindularia_ID AS id, Izena FROM `Txirrindulariak`');
+        $kind = 'txirrindulariak';
+    }
+    $buckets = [];
+    foreach ($rows as $r) {
+        $t = name_tokens($r['Izena']); sort($t);
+        $sig = implode(' ', $t);
+        if ($sig === '') continue;
+        $buckets[$sig][] = ['id'=>(int)$r['id'], 'Izena'=>$r['Izena']];
+    }
+    $groups = [];
+    foreach ($buckets as $items) if (count($items) > 1) $groups[] = $items;
+    return ['kind'=>$kind, 'groups'=>$groups];
+}
+
+// ─── Porra baten apustuak (15 txirrindulariak) ───────────────────────────────
+function porra_picks($ezizen_id, $txap_id) {
+    return db_rows(
+        "SELECT t.Txirrindularia_ID AS id, t.Izena, h.Dortsala
+         FROM `PorraApustuak` pa
+         JOIN `Txirrindulariak` t ON t.Txirrindularia_ID = pa.Txirrindularia_ID
+         LEFT JOIN `TxirrindulariakTxapleketanParteHartzea` h
+           ON h.TxapelketaID = pa.Txapelketa_ID AND h.TxirrindulariaID = pa.Txirrindularia_ID
+         WHERE pa.Ezizen_ID = ? AND pa.Txapelketa_ID = ?
+         ORDER BY h.Dortsala IS NULL, h.Dortsala, t.Izena", [(int)$ezizen_id, (int)$txap_id]);
+}
+
+// ─── Txapelketa baten esportazioa (babeskopia) ───────────────────────────────
+function export_txapelketa($txap_id) {
+    $txap_id = (int)$txap_id;
+    return [
+        'exported_at' => date('c'),
+        'Txapelketa' => db_one('SELECT * FROM `Txapelketak` WHERE Txapelketa_ID = ?', [$txap_id]),
+        'Karrerak' => db_rows('SELECT * FROM `Karrerak` WHERE Txapelketa_ID = ?', [$txap_id]),
+        'PorraEzizenak' => db_rows('SELECT * FROM `PorraEzizenak` WHERE Txapelketa_ID = ?', [$txap_id]),
+        'PorralariTaldeenEzizenak' => db_rows(
+            'SELECT l.*, p.Izena AS Porralaria FROM `PorralariTaldeenEzizenak` l
+             JOIN `PorraEzizenak` ez ON ez.Ezizen_ID = l.Ezizen_ID
+             JOIN `Porralariak` p ON p.Porralaria_ID = l.Porralaria_ID
+             WHERE ez.Txapelketa_ID = ?', [$txap_id]),
+        'PorraApustuak' => db_rows('SELECT * FROM `PorraApustuak` WHERE Txapelketa_ID = ?', [$txap_id]),
+        'KarreraSailkapena' => db_rows(
+            'SELECT ks.* FROM `KarreraSailkapena` ks JOIN `Karrerak` k ON k.Karrerak_ID = ks.Karrera_ID
+             WHERE k.Txapelketa_ID = ?', [$txap_id]),
+        'TxirrindulariakTxapleketanParteHartzea' => db_rows(
+            'SELECT * FROM `TxirrindulariakTxapleketanParteHartzea` WHERE TxapelketaID = ?', [$txap_id]),
+        'TxapelketaEmaitzaPorralariak' => db_rows('SELECT * FROM `TxapelketaEmaitzaPorralariak` WHERE Txapelketa_ID = ?', [$txap_id]),
+        'TxapelketaEmaitzaTxirrindulariak' => db_rows('SELECT * FROM `TxapelketaEmaitzaTxirrindulariak` WHERE Txapelketa_ID = ?', [$txap_id]),
+        'Sariak' => db_table_exists('Sariak') ? db_rows('SELECT * FROM `Sariak` WHERE Txapelketa_ID = ?', [$txap_id]) : [],
+    ];
+}

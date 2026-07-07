@@ -83,6 +83,20 @@ try {
                     'SELECT COUNT(*) FROM PorraEzizenak e WHERE NOT EXISTS (SELECT 1 FROM PorralariTaldeenEzizenak WHERE Ezizen_ID = e.Ezizen_ID)'
                 ) ?? 0);
                 json_out(['unlinked_ezizenak' => $unlinked]);
+            case $path === 'data-health':
+                $tid = $_GET['txapelketa_id'] ?? null;
+                if ($tid === null || $tid === '') json_error('txapelketa_id parametroa behar da', 400);
+                json_out(data_health((int)$tid));
+            case $path === 'possible-dups':
+                json_out(possible_dups($_GET['kind'] ?? 'txirrindulariak'));
+            case $path === 'porra-picks':
+                $eid = $_GET['ezizen_id'] ?? null; $tid = $_GET['txapelketa_id'] ?? null;
+                if (!$eid || !$tid) json_error('ezizen_id eta txapelketa_id behar dira', 400);
+                json_out(porra_picks((int)$eid, (int)$tid));
+            case $path === 'export':
+                $tid = $_GET['txapelketa_id'] ?? null;
+                if ($tid === null || $tid === '') json_error('txapelketa_id parametroa behar da', 400);
+                json_out(export_txapelketa((int)$tid));
             case $path === 'meta':
                 json_out(db_meta());
             case $path === 'undo-state':
@@ -145,6 +159,10 @@ try {
                 $tn = $body['table'] ?? '';
                 if (!$tn) json_error('table behar da');
                 try { json_out(update_table_row($tn, $body)); } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'table-delete':
+                $tn = $body['table'] ?? '';
+                if (!$tn) json_error('table behar da');
+                try { json_out(delete_table_row($tn, $body['pk'] ?? [])); } catch (Exception $e) { json_error($e->getMessage()); }
             default: json_error('Not found', 404);
         }
     } elseif ($method === 'PUT') {

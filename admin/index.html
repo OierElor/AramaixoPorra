@@ -152,12 +152,14 @@
     <div class="nav-item" data-section="txapelketak"><span class="icon">🗓️</span> Txapelketak</div>
     <div class="nav-item" data-section="sailkapenak"><span class="icon">📋</span> Sailkapenak</div>
     <div class="nav-item" data-section="karrera-emaitzak"><span class="icon">🏁</span> Karrera emaitzak</div>
+    <div class="nav-item" data-section="osasuna"><span class="icon">🩺</span> Datu-osasuna</div>
     <div class="nav-item" data-section="taulak"><span class="icon">▦</span> Taula guztiak</div>
     <div class="nav-sub-list" id="table-nav-list"></div>
     <div class="nav-section">Sartu</div>
     <div class="nav-item" data-section="add-manual"><span class="icon">✏️</span> Eskuz sartu</div>
     <div class="nav-item" data-section="add-csv"><span class="icon">📂</span> CSV inportatu</div>
     <div class="nav-item" data-section="tour-excel"><span class="icon">🚴</span> Tour Excel</div>
+    <div class="nav-item" data-section="porra-editatu"><span class="icon">📝</span> Porra editatu</div>
     <div class="nav-item" data-section="sariak"><span class="icon">🏅</span> Sariak</div>
     <div class="nav-item" data-section="kalkulatu"><span class="icon">📊</span> Sailkapenak kalkulatu</div>
     <div class="nav-item" data-section="merge"><span class="icon">🔀</span> Fusionatu</div>
@@ -264,9 +266,14 @@
 
     <!-- TXAPELKETAK -->
     <section class="section" id="sec-txapelketak">
-      <div class="page-header"><div><div class="page-title">🗓️ Txapelketak</div><div class="page-sub">Txapelketa eta karrera guztiak</div></div></div>
+      <div class="page-header"><div><div class="page-title">🗓️ Txapelketak</div><div class="page-sub">Txapelketa eta karrera guztiak</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="txap-export-sel" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-size:13px;outline:none"><option value="">— Txapelketa —</option></select>
+          <button class="btn btn-ghost btn-sm" onclick="exportTxapelketa('txap-export-sel')">⬇ Esportatu (JSON)</button>
+        </div>
+      </div>
       <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
-      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
     </section>
 
     <!-- SAILKAPENAK -->
@@ -419,6 +426,40 @@ Tour De France,2026</pre></div>
       <div style="font-size:12px;color:var(--muted);margin-top:16px;line-height:1.5">
         ℹ️ <strong>Etapa emaitzak</strong> eta <strong>sailkapen finalak</strong> "CSV inportatu" atalean sartzen dira ("Txirrindulari emaitzak (karrera)" eta "Porralari emaitzak (txapelketa)"). Ikusi <code>admin/INPORTATU-GIDA.md</code> gida osoa.
       </div>
+    </section>
+
+    <!-- DATU-OSASUNA -->
+    <section class="section" id="sec-osasuna">
+      <div class="page-header"><div><div class="page-title">🩺 Datu-osasuna</div><div class="page-sub">Txapelketa baten datu-hutsuneak eta akats posibleak</div></div></div>
+      <div class="card"><div class="card-body">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <select id="osasuna-txap" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:240px"><option value="">— Txapelketa aukeratu —</option></select>
+          <button class="btn btn-ghost btn-sm" onclick="loadOsasuna()">🔄 Egiaztatu</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportTxapelketa('osasuna-txap')">⬇ Esportatu (JSON)</button>
+        </div>
+        <div id="osasuna-result" style="margin-top:16px"></div>
+        <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px">Izen bikoiztu susmagarriak (txapelketa guztiak)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="loadDups('txirrindulariak')">🚴 Txirrindulariak</button>
+            <button class="btn btn-ghost btn-sm" onclick="loadDups('porralariak')">🏆 Porralariak</button>
+          </div>
+          <div id="dups-result" style="margin-top:12px"></div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- PORRA EDITATU -->
+    <section class="section" id="sec-porra-editatu">
+      <div class="page-header"><div><div class="page-title">📝 Porra editatu</div><div class="page-sub">Porralari baten apustuak (15 txirrindulariak) ikusi eta zuzendu</div></div></div>
+      <div class="card"><div class="card-body">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <select id="pe-txap" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:220px"><option value="">— Txapelketa aukeratu —</option></select>
+          <input id="pe-bettor-search" placeholder="Bilatu porra/porralaria..." class="search-input" style="min-width:220px" autocomplete="off"/>
+        </div>
+        <div id="pe-bettor-list" style="max-height:200px;overflow:auto"></div>
+        <div id="pe-picks" style="margin-top:16px"></div>
+      </div></div>
     </section>
 
     <!-- SARIAK -->
@@ -700,6 +741,8 @@ function renderCurrentSection() {
     case "ezizenak":         loadEzizenak(); break;
     case "banatu":           renderBanatuSection(); break;
     case "tour-excel":       renderTourExcelSelectors(); break;
+    case "osasuna":          renderOsasunaSelectors(); break;
+    case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
 }
 
@@ -784,10 +827,23 @@ function renderTxapelketak() {
   el("txap-tbody").innerHTML = state.txapelketak.map(t =>
     `<tr><td class="pk-cell">${esc(t.Txapelketa_ID)}</td><td>${esc(t.Izena)}</td><td>${esc(t.Urtea)}</td></tr>`
   ).join("");
+  const exSel = el("txap-export-sel");
+  if (exSel) { const prev = exSel.value; exSel.innerHTML = `<option value="">— Txapelketa —</option>` +
+    state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join(""); if (prev) exSel.value = prev; }
   el("karrerak-tbody").innerHTML = state.karrerak.map(k => {
     const txap = state.txapelketak.find(t => t.Txapelketa_ID === k.Txapelketa_ID);
-    return `<tr><td class="pk-cell">${esc(k.Karrerak_ID)}</td><td>${esc(txap?.Izena || k.Txapelketa_ID)}</td><td>${esc(k.Izena)}</td><td>${esc(k.Urtea)}</td></tr>`;
+    return `<tr><td class="pk-cell">${esc(k.Karrerak_ID)}</td><td>${esc(txap?.Izena || k.Txapelketa_ID)}</td><td>${esc(k.Izena)}</td><td>${esc(k.Urtea)}</td>` +
+      `<td class="row-actions"><button class="btn btn-sm btn-ghost" title="Ezabatu" onclick="deleteKarrera(${k.Karrerak_ID}, this.dataset.iz)" data-iz="${esc(k.Izena)}">🗑</button></td></tr>`;
   }).join("");
+}
+
+async function deleteKarrera(kid, izena) {
+  if (!(await confirmDialog(`"${izena}" karrera ezabatu? Bere emaitzak (KarreraSailkapena) umezurtz gera daitezke.`))) return;
+  try {
+    await api("api/table-delete", { method: "POST", body: JSON.stringify({ table: "Karrerak", pk: { Karrerak_ID: kid } }) });
+    showToast("Ezabatuta ✓");
+    await reloadData();
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 // ── Dashboard ranking ─────────────────────────────────────────────────────────
@@ -866,8 +922,21 @@ function renderGenericTable() {
       return `<td><input class="cell-input" data-col="${esc(col.name)}" value="${esc(row[col.name] ?? "")}" data-orig="${esc(row[col.name] ?? "")}"/></td>`;
     }).join("");
     const pkJson = esc(JSON.stringify(Object.fromEntries(pkCols.map(k => [k, row[k]]))));
-    return `<tr data-pk='${pkJson}'>${cells}<td class="row-actions"><button class="btn btn-sm btn-primary save-row-btn" style="display:none">Gorde</button></td></tr>`;
+    return `<tr data-pk='${pkJson}'>${cells}<td class="row-actions"><button class="btn btn-sm btn-primary save-row-btn" style="display:none">Gorde</button> <button class="btn btn-sm btn-ghost del-row-btn" title="Ezabatu">🗑</button></td></tr>`;
   }).join("");
+
+  el("generic-table-tbody").querySelectorAll(".del-row-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const tr = btn.closest("tr");
+      const pkVal = JSON.parse(tr.dataset.pk);
+      if (!(await confirmDialog("Errenkada hau ezabatu? Erlazionatutako datuak umezurtz gera daitezke."))) return;
+      try {
+        await api("api/table-delete", { method: "POST", body: JSON.stringify({ table: state.currentTable, pk: pkVal }) });
+        showToast("Ezabatuta ✓");
+        await loadGenericTable(state.currentTable);
+      } catch(e) { showToast(e.message, "err"); }
+    });
+  });
 
   el("generic-table-tbody").querySelectorAll(".cell-input").forEach(inp => {
     inp.addEventListener("input", () => {
@@ -1555,6 +1624,169 @@ async function tourDorsImport() {
   } catch(e) { showToast(e.message, "err"); }
 }
 
+// ── Datu-osasuna ─────────────────────────────────────────────────────────────
+function renderOsasunaSelectors() {
+  const s = el("osasuna-txap"); if (!s) return;
+  const prev = s.value;
+  s.innerHTML = `<option value="">— Txapelketa aukeratu —</option>` +
+    state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join("");
+  if (prev) s.value = prev;
+}
+
+function _osasunaCard(title, items, renderItem, okMsg) {
+  const n = items.length;
+  const color = n === 0 ? "#4ade80" : "var(--accent)";
+  const body = n === 0 ? `<div style="color:#4ade80;font-size:12px">✓ ${okMsg}</div>`
+    : `<ul style="margin:6px 0 0 16px;font-size:12px;color:var(--muted);max-height:180px;overflow:auto">${items.slice(0,50).map(renderItem).join("")}</ul>` +
+      (n > 50 ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">… eta ${n-50} gehiago</div>` : "");
+  return `<div class="card" style="margin-bottom:12px"><div class="card-body">
+    <div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:13px">${title}</strong>
+    <span style="font-weight:700;font-size:15px;color:${color}">${n}</span></div>${body}</div></div>`;
+}
+
+async function loadOsasuna() {
+  const tid = el("osasuna-txap")?.value;
+  const res = el("osasuna-result");
+  if (!tid) { res.innerHTML = `<div style="color:var(--muted);font-size:13px">Txapelketa bat aukeratu.</div>`; return; }
+  res.innerHTML = `<div style="color:var(--muted);font-size:13px">Egiaztatzen...</div>`;
+  try {
+    const h = await api("api/data-health?txapelketa_id=" + encodeURIComponent(tid));
+    const recalc = h.recalc_needed
+      ? `<div class="card" style="margin-bottom:12px"><div class="card-body" style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="font-size:13px">Sailkapenak birkalkulatu behar</strong>
+          <span style="color:var(--accent);font-weight:700">⚠ Bai</span></div></div>`
+      : `<div class="card" style="margin-bottom:12px"><div class="card-body" style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="font-size:13px">Sailkapenak kalkulatuta</strong><span style="color:#4ade80;font-weight:700">✓</span></div></div>`;
+    res.innerHTML = recalc +
+      _osasunaCard("Emaitzarik gabeko etapak", h.stages_no_results, k => `<li>${esc(k.Izena)}</li>`, "Etapa guztiek dute emaitza") +
+      _osasunaCard("15 apustu ez dituzten porrak", h.bettors_wrong_picks, b => `<li>${esc(b.Ezizena)} — <strong>${b.n}</strong> apustu</li>`, "Porra guztiek 15 apustu dituzte") +
+      _osasunaCard("Dortsalik gabeko txirrindulariak (aukeratuak)", h.picked_no_dortsal, t => `<li>${esc(t.Izena)}</li>`, "Aukeratutako guztiek dute dortsala") +
+      _osasunaCard("Lotu gabeko ezizenak", h.unlinked_ezizenak, e => `<li>${esc(e.Ezizena)}</li>`, "Ezizen guztiak lotuta daude");
+  } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
+}
+
+async function loadDups(kind) {
+  const res = el("dups-result");
+  res.innerHTML = `<div style="color:var(--muted);font-size:13px">Bilatzen...</div>`;
+  try {
+    const r = await api("api/possible-dups?kind=" + encodeURIComponent(kind));
+    if (!r.groups.length) { res.innerHTML = `<div style="color:#4ade80;font-size:12px">✓ Ez da izen bikoiztu susmagarririk aurkitu.</div>`; return; }
+    res.innerHTML = `<div style="font-size:12px;color:var(--accent2);margin-bottom:6px">⚠ ${r.groups.length} talde susmagarri (token berdinak). Fusionatu atalean batu ditzakezu.</div>` +
+      r.groups.slice(0,50).map(g =>
+        `<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">${g.map(x => `<span>${esc(x.Izena)} <span style="color:var(--muted)">#${x.id}</span></span>`).join(" · ")}</div>`
+      ).join("");
+  } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
+}
+
+async function exportTxapelketa(selId) {
+  const sel = el(selId);
+  const tid = sel?.value;
+  if (!tid) return showToast("Txapelketa bat aukeratu", "err");
+  showToast("⏳ Esportatzen...");
+  try {
+    const data = await api("api/export?txapelketa_id=" + encodeURIComponent(tid));
+    const izena = (data.Txapelketa?.Izena || "txapelketa").replace(/[^\w-]+/g, "_");
+    const urtea = data.Txapelketa?.Urtea || "";
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${izena}-${urtea}-babeskopia.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast("✅ Esportatuta");
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+// ── Porra editatu ────────────────────────────────────────────────────────────
+const peState = { txapId: null, ezizenId: null, ezizena: null, bettors: [] };
+
+function renderPorraEditatuSelectors() {
+  const s = el("pe-txap"); if (!s) return;
+  const prev = s.value;
+  s.innerHTML = `<option value="">— Txapelketa aukeratu —</option>` +
+    state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join("");
+  if (prev) s.value = prev;
+}
+
+async function peLoadBettors() {
+  const tid = el("pe-txap")?.value;
+  peState.txapId = tid ? Number(tid) : null;
+  peState.ezizenId = null;
+  el("pe-picks").innerHTML = "";
+  if (!tid) { el("pe-bettor-list").innerHTML = ""; peState.bettors = []; return; }
+  try {
+    const all = await api("api/ezizenak");
+    peState.bettors = all.filter(e => Number(e.Txapelketa_ID) === Number(tid));
+    peRenderBettorList();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+function peRenderBettorList() {
+  const q = (el("pe-bettor-search")?.value || "").toLowerCase();
+  const list = peState.bettors.filter(b =>
+    b.Ezizena?.toLowerCase().includes(q) || (b.Porralaria || "").toLowerCase().includes(q));
+  el("pe-bettor-list").innerHTML = list.length
+    ? list.map(b => `<div class="pe-bettor-row" style="padding:6px 10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px${peState.ezizenId===b.Ezizen_ID?';background:rgba(230,57,70,.08)':''}" onclick="peSelectBettor(${b.Ezizen_ID}, this.dataset.iz)" data-iz="${esc(b.Ezizena)}">${esc(b.Ezizena)}${b.Porralaria ? ` <span style="color:var(--muted)">· ${esc(b.Porralaria)}</span>` : ` <span style="color:var(--accent);font-size:11px">(lotu gabe)</span>`}</div>`).join("")
+    : `<div style="color:var(--muted);font-size:12px;padding:8px">Ez da porrarik aurkitu.</div>`;
+}
+
+async function peSelectBettor(ezid, ezizena) {
+  peState.ezizenId = ezid; peState.ezizena = ezizena;
+  peRenderBettorList();
+  await peRenderPicks();
+}
+
+async function peRenderPicks() {
+  const cont = el("pe-picks");
+  if (!peState.ezizenId) { cont.innerHTML = ""; return; }
+  cont.innerHTML = `<div style="color:var(--muted);font-size:13px">Kargatzen...</div>`;
+  try {
+    const picks = await api(`api/porra-picks?ezizen_id=${peState.ezizenId}&txapelketa_id=${peState.txapId}`);
+    const warn = picks.length !== 15 ? `<span style="color:var(--accent);font-weight:700"> — ⚠ ${picks.length} (15 espero)</span>` : `<span style="color:#4ade80"> — ${picks.length} ✓</span>`;
+    const rows = picks.map(p =>
+      `<tr><td>${p.Dortsala ?? '—'}</td><td>${esc(p.Izena)}</td>
+        <td class="row-actions"><button class="btn btn-sm btn-ghost" title="Kendu" onclick="peRemovePick(${p.id}, this.dataset.iz)" data-iz="${esc(p.Izena)}">🗑</button></td></tr>`).join("");
+    cont.innerHTML = `
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">${esc(peState.ezizena)}${warn}</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <input id="pe-add-search" placeholder="Txirrindularia gehitu..." class="search-input" style="min-width:240px" autocomplete="off"/>
+      </div>
+      <div id="pe-add-list" style="max-height:160px;overflow:auto;margin-bottom:12px"></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Dortsala</th><th>Txirrindularia</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px">💡 Aldaketak egin ondoren, exekutatu <strong>Sailkapenak kalkulatu</strong>.</div>`;
+    const addInp = el("pe-add-search");
+    addInp?.addEventListener("input", debounce(peRenderAddList, 150));
+  } catch(e) { cont.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
+}
+
+function peRenderAddList() {
+  const q = (el("pe-add-search")?.value || "").toLowerCase().trim();
+  const box = el("pe-add-list");
+  if (!q) { box.innerHTML = ""; return; }
+  const matches = state.txirrindulariak.filter(t => t.Izena.toLowerCase().includes(q)).slice(0, 12);
+  box.innerHTML = matches.map(t =>
+    `<div style="padding:5px 10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px" onclick="peAddPick(${t.Txirrindularia_ID}, this.dataset.iz)" data-iz="${esc(t.Izena)}">${esc(t.Izena)}</div>`).join("")
+    || `<div style="color:var(--muted);font-size:12px;padding:6px">Bat ere ez.</div>`;
+}
+
+async function peAddPick(rid, izena) {
+  try {
+    await api("api/insert", { method: "POST", body: JSON.stringify({ table: "PorraApustuak", data: { Txapelketa_ID: peState.txapId, Ezizen_ID: peState.ezizenId, Txirrindularia_ID: rid } }) });
+    showToast(`✅ ${izena} gehituta`);
+    el("pe-add-search").value = ""; el("pe-add-list").innerHTML = "";
+    await peRenderPicks();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function peRemovePick(rid, izena) {
+  if (!(await confirmDialog(`"${izena}" apustutik kendu?`))) return;
+  try {
+    await api("api/table-delete", { method: "POST", body: JSON.stringify({ table: "PorraApustuak", pk: { Txapelketa_ID: peState.txapId, Ezizen_ID: peState.ezizenId, Txirrindularia_ID: rid } }) });
+    showToast(`✅ ${izena} kenduta`);
+    await peRenderPicks();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
 // ── Ezizenak lotu ────────────────────────────────────────────────────────────
 async function loadEzizenak() {
   try {
@@ -2137,6 +2369,9 @@ async function init() {
   el("generic-table-search")?.addEventListener("input", debounce(renderGenericTable, 200));
   el("dash-txap-sel")?.addEventListener("change", e=>renderDashRanking(e.target.value));
   el("csv-type")?.addEventListener("change", renderCSVSteps);
+  el("osasuna-txap")?.addEventListener("change", loadOsasuna);
+  el("pe-txap")?.addEventListener("change", peLoadBettors);
+  el("pe-bettor-search")?.addEventListener("input", debounce(peRenderBettorList, 150));
   el("ezizen-search")?.addEventListener("input", debounce(renderEzizenak, 200));
   el("ezizen-filter")?.addEventListener("change", renderEzizenak);
   el("banatu-src")?.addEventListener("change", loadBanatuEzizenak);

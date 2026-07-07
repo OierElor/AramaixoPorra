@@ -144,6 +144,7 @@
 <div class="shell">
   <nav class="sidebar">
     <div class="sidebar-logo">Aramaixo <span>Porra</span><small>Admin Panel</small></div>
+    <div class="nav-item" data-section="laguntza"><span class="icon">❓</span> Nola erabili</div>
     <div class="nav-section">Ikus</div>
     <div class="nav-item active" data-section="dashboard"><span class="icon">📊</span> Dashboard</div>
     <div class="nav-item" data-section="porralariak"><span class="icon">🏆</span> Porralariak</div>
@@ -165,6 +166,63 @@
     <div class="nav-item" data-section="banatu"><span class="icon">✂️</span> Banatu porralaria</div>
   </nav>
   <main class="main">
+
+    <!-- LAGUNTZA -->
+    <section class="section" id="sec-laguntza">
+      <div class="page-header"><div><div class="page-title">❓ Nola erabili admin panela</div><div class="page-sub">Atal bakoitza zertarako den eta ohiko lan-fluxua</div></div></div>
+
+      <div class="card" style="margin-bottom:18px"><div class="card-head"><div class="card-title">📌 Zer da hau?</div></div><div class="card-body" style="font-size:13.5px;line-height:1.6;color:var(--text)">
+        Admin panel honek Aramaixo Porra datu-basea kudeatzen du: porralariak, txirrindulariak, txapelketak, apustuak eta emaitzak. Ezkerreko menuak bi multzo ditu: <strong>Ikus</strong> (datuak begiratu eta editatu) eta <strong>Sartu</strong> (datu berriak inportatu eta kalkulatu). Aldaketak <strong>zuzenean datu-basean</strong> gordetzen dira eta webgunean berehala ikusten dira.
+      </div></div>
+
+      <div class="card" style="margin-bottom:18px"><div class="card-head"><div class="card-title">🔄 Ohiko lan-fluxua — txapelketa berri bat</div></div><div class="card-body" style="font-size:13.5px;line-height:1.7;color:var(--text)">
+        <ol style="margin:0;padding-left:20px">
+          <li><strong>Txapelketa sortu</strong> — <em>Eskuz sartu</em> → "Txapelketa berria" (adib. Tour de France, 2026).</li>
+          <li><strong>Etapak (Karrerak) sortu</strong> — <em>Eskuz sartu</em> → "Karrera berria", edo <em>CSV inportatu</em> (Karrerak).</li>
+          <li><strong>Apustuak sartu</strong> — <em>Tour Excel</em> → "Porra denak" itsatsi. Porralariak, ezizenak, apustuak eta dortsalak sortzen ditu.</li>
+          <li><strong>Dortsalak osatu</strong> — <em>Tour Excel</em> → "Txirrindulariak" orriko Dorsalak+Izena.</li>
+          <li><strong>Etapaz etapa: emaitzak sartu</strong> — <em>Karrera emaitzak</em> edo <em>CSV inportatu</em> (Txirrindulari emaitzak (karrera)).</li>
+          <li><strong>Sailkapenak kalkulatu</strong> — <em>Sailkapenak kalkulatu</em> atalean, txapelketa hautatu eta kalkulatu.</li>
+          <li><strong>Bukaeran</strong> — nahi izanez gero, sailkapen finalak <em>CSV inportatu</em> bidez.</li>
+        </ol>
+        <div style="margin-top:10px;font-size:12.5px;color:var(--muted)">📄 Inportatzeko xehetasun osoak: <code>admin/INPORTATU-GIDA.md</code></div>
+      </div></div>
+
+      <div class="card" style="margin-bottom:18px"><div class="card-head"><div class="card-title">👁️ IKUS — datuak begiratu eta editatu</div></div><div class="card-body" style="font-size:13px;line-height:1.6">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+          <div><strong>📊 Dashboard</strong><br><span style="color:var(--muted)">Datu-basearen laburpena: kopuruak eta txapelketa baten porra-sailkapena.</span></div>
+          <div><strong>🏆 Porralariak</strong><br><span style="color:var(--muted)">Porralari (jokalari) guztiak. ✎ botoiaz izena editatu. Bilatzailea du.</span></div>
+          <div><strong>🚴 Txirrindulariak</strong><br><span style="color:var(--muted)">Txirrindulari guztiak eta izen-formatua (I·A). ⇒ I·A / ⇒ A·I botoiez ordena aldatu; ⊞ formatua editatu.</span></div>
+          <div><strong>🗓️ Txapelketak</strong><br><span style="color:var(--muted)">Txapelketak eta bakoitzaren karrerak (etapak). Karrera bakoitzari <strong>Mota</strong> ezar dakioke.</span></div>
+          <div><strong>📋 Sailkapenak</strong><br><span style="color:var(--muted)">Txapelketa baten porralarien emaitza ofizialak.</span></div>
+          <div><strong>🏁 Karrera emaitzak</strong><br><span style="color:var(--muted)">Etapa/lasterketa baten sailkapena editatu (txirrindulari bakoitzaren postua eta puntuak).</span></div>
+          <div><strong>▦ Taula guztiak</strong><br><span style="color:var(--muted)">DB taula gordinak zuzenean editatzeko (aurreratua). ID zutabeak (giltza) ez dira editagarriak.</span></div>
+        </div>
+      </div></div>
+
+      <div class="card" style="margin-bottom:18px"><div class="card-head"><div class="card-title">⬆️ SARTU — datu berriak eta kalkuluak</div></div><div class="card-body" style="font-size:13px;line-height:1.6">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+          <div><strong>✏️ Eskuz sartu</strong><br><span style="color:var(--muted)">Erregistro bakarrak eskuz gehitu: porralaria, txirrindularia, txapelketa, karrera, emaitzak.</span></div>
+          <div><strong>📂 CSV inportatu</strong><br><span style="color:var(--muted)">Bloke bat itsatsi/kargatu, zutabeak mapatu eta inportatu. Aurreikuspena, fuzzy izen-lotura eta Atzera/Aurrera ditu.</span></div>
+          <div><strong>🚴 Tour Excel</strong><br><span style="color:var(--muted)">Tour Excel-eko blokeentzat berariazkoa: apustuak ("Porra denak") eta dortsalak ("Txirrindulariak"). Berriz inportatzea segurua.</span></div>
+          <div><strong>🏅 Sariak</strong><br><span style="color:var(--muted)">Txapelketa bakoitzeko sariak kudeatu (posizioa → saria).</span></div>
+          <div><strong>📊 Sailkapenak kalkulatu</strong><br><span style="color:var(--muted)">Apustuetatik eta karrera-emaitzetatik porralarien eta txirrindularien puntuak kalkulatu. <strong>Emaitzak sartu ondoren exekutatu.</strong></span></div>
+          <div><strong>🔀 Fusionatu</strong><br><span style="color:var(--muted)">Bikoiztutako txirrindulariak edo porralariak batu (bat mantendu, bestea desagertu, loturak berbideratuz).</span></div>
+          <div><strong>🏷️ Ezizenak lotu</strong><br><span style="color:var(--muted)">Porra-ezizena bat porralari batekin lotu (nork jokatu duen jakiteko).</span></div>
+          <div><strong>✂️ Banatu porralaria</strong><br><span style="color:var(--muted)">Porralari bakar batean nahastutako bi pertsona bereizi.</span></div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-head"><div class="card-title">💡 Aholkuak</div></div><div class="card-body" style="font-size:13px;line-height:1.7;color:var(--text)">
+        <ul style="margin:0;padding-left:20px">
+          <li><strong>Izenak lotzea (fuzzy):</strong> inportatzean, sistemak izenak lotzen ditu azentuak eta ordena kontuan hartuta. Antzeko izenak agertzen badira, egiaztatu idazketa-akatsik ez dagoela.</li>
+          <li><strong>Bikoiztuak:</strong> txirrindulari edo porralari bera bitan agertzen bada, <em>Fusionatu</em> erabili.</li>
+          <li><strong>Kalkulua:</strong> emaitza berriak sartu ondoren beti exekutatu <em>Sailkapenak kalkulatu</em>, bestela webguneko puntuak ez dira eguneratuko.</li>
+          <li><strong>Atzera egin:</strong> <em>CSV inportatu</em>-k Atzera/Aurrera du. <em>Tour Excel</em>-ek ez, baina idempotentea da (berriz inportatu edo eskuz zuzendu).</li>
+          <li><strong>Emaitzak gainidaztea:</strong> lehendik dagoen emaitza inportatzean saltatu egiten da. Aldatzeko, <em>Karrera emaitzak</em> edo <em>Taula guztiak</em>-en editatu.</li>
+        </ul>
+      </div></div>
+    </section>
 
     <!-- DASHBOARD -->
     <section class="section active" id="sec-dashboard">

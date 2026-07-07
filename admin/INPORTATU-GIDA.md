@@ -1,125 +1,110 @@
-# Datuak Inportatzeko Gida — `Tour2026Excel.ods` → Web datu-basea
+# Datuak Inportatzeko Gida (bateratua) — Itzuliak eta Klasikoak
 
-Gida honek Excel-eko (`Tour2026Excel.ods`) datuak admin panelaren bidez web datu-basera nola eraman azaltzen du.
+Gida honek admin paneleko **📥 Datuak inportatu** atala azaltzen du. Sistema **bakar** honek bi Excel mota onartzen ditu:
 
-Bi tresna daude:
-- **🚴 Tour Excel** — Excel honen egiturako blokeentzat berariaz egina (apustuak eta dortsalak).
-- **📂 CSV inportatu** — bloke sinpleagoentzat (etapa emaitzak eta sailkapen finalak).
+- **Itzulia** — Tour / Giro / Vuelta (egitura bera). Apustuak "Porra denak" orrian, **15 txirrindulari** porra bakoitzeko.
+- **Klasikoak** — klasiko baten denboraldia. Apustuak "Porrak sartzea" orrian, **25 txirrindulari** porra bakoitzeko.
 
-> **Oharra orokorra:** LibreOffice-tik kopiatzean, itsatsi zuzenean testu-koadroan. Mugatzailea (tab, `;`, `,`) automatikoki antzematen da. Berriz inportatzea **segurua** da: apustuak eta dortsalak ez dira bikoizten.
+> **Gako-printzipioa:** apustuak **dortsalez** lotzen dira txirrindulariekin (ez izenez). Horregatik, txapelketa bakoitzean **startlist-a (dortsala→txirrindularia) APUSTUEN AURRETIK inportatu behar da**. Bi formatuek dortsala dute; sistemak berdin tratatzen ditu.
+
+Atalaren goialdean bi kontrol daude, beti ezarri behar direnak:
+1. **Txapelketa** — zein txapelketari dagozkion datuak.
+2. **Mota** — `Itzulia` edo `Klasikoak`. Honek parser egokia hautatzen du.
 
 ---
 
-## Inportatzeko ORDENA gomendatua
+## Inportazio-ordena (GARRANTZITSUA)
 
 Datuek elkarren mendekotasuna dute. Ordena hau jarraitu:
 
-1. **Txapelketa** sortu (Eskuz sartu → "Txapelketa berria", adib. `Tour de France, 2026`).
-2. **Etapak (Karrerak)** sortu txapelketa horretarako (Eskuz sartu edo CSV).
-3. **Apustuak** inportatu (Tour Excel → 1. blokea). Honek porralariak, ezizenak, apustuak **eta** dortsalak sortzen ditu.
-4. **Dortsalak** osatu (Tour Excel → 2. blokea) — inork aukeratu ez dituen txirrindularien dortsalak ere sartzeko.
-5. Etapaz etapa: **etapa emaitzak** inportatu (CSV inportatu).
-6. **Sailkapenak kalkulatu** (admin → Sailkapenak kalkulatu).
-7. Bukaeran: **sailkapen finalak** inportatu nahi izanez gero (CSV inportatu).
+| # | Blokea | Zertarako |
+|---|--------|-----------|
+| 1 | **Karrerak** | Lasterketak/etapak sortu (DB-n egon behar dute emaitzak sartzeko) |
+| 2 | **Startlist** | Dortsala→txirrindularia mapa (apustuek behar dute) |
+| 3 | **Apustuak** | Porra bakoitzaren txirrindulariak (dortsalez) |
+| 4 | **Karrera emaitzak** | Lasterketaz lasterketa, txirrindularien puntuak |
+| — | *Sailkapenak kalkulatu* | (beste atal bat) porralarien puntuak kalkulatu |
+| 5 | **Sailkapen finalak** | (aukerakoa) porralarien azken sailkapena |
 
 ---
 
-## 1 · Apustuak — "Porra denak" orria  🚴 Tour Excel
+## 1 · Karrerak (lasterketa-zerrenda)
 
-Excel-eko **"Porra denak"** orriak porra bakoitzaren blokea du: porrolariaren izena + aukeratutako 15 txirrindulariak (dortsalarekin).
+Lasterketak/etapak sortzen ditu txapelketa honetan.
 
-**Urratsak:**
-1. LibreOffice-n **"Porra denak"** orria ireki.
-2. Orri OSOA hautatu: `Ctrl+A` (edo goiko ezkerreko izkinako laukitxoa klikatu) eta `Ctrl+C`.
-3. Admin → **🚴 Tour Excel** → **1 · Apustuak**.
-4. **Txapelketa** aukeratu.
-5. Testu-koadroan itsatsi (`Ctrl+V`).
-6. **🔍 Aurreikusi** — zenbat porra, apustu, porralaria berri eta txirrindulari berri sortuko diren erakusten du. Txirrindulari berrien zerrenda eta izen antzekoak agertzen dira (idazketa-akatsak detektatzeko).
-7. Ondo badago, **⬆ Inportatu**.
+- **Itzulia:** lerro bat etapa bakoitzeko, **etapa-izena** soilik. Kategoria automatikoki `Etapa` jartzen da.
+  ```
+  Barcelona - Barcelona
+  Tarragona - Barcelona
+  Granollers - Les Angles
+  ```
+- **Klasikoak:** lerro bat lasterketa bakoitzeko: `izena` **eta** UCI kategoria, tab/koma bidez bereizita. Kategoriak: `Pro`, `S3`, `S4`, `S5`, `T1`.
+  ```
+  Omloop Nieuwsblad	T1
+  Strade Bianche	Pro
+  Milano-Sanremo	Pro
+  ```
 
-**Zer sortzen du:**
-- `Porralariak` — porrolaria berriak (izenaz bat datozenak berrerabiltzen dira).
-- `PorraEzizenak` — porra-ezizena txapelketa honetan.
-- `PorralariTaldeenEzizenak` — ezizena ↔ porrolaria lotura.
-- `PorraApustuak` — porra bakoitzeko 15 apustuak.
-- `TxirrindulariakTxapleketanParteHartzea` — ikusitako dortsalak (bide batez).
+Sakatu **⬆ Sortu karrerak**. Lehendik dauden izenak (izen+urte berdina) baztertu egiten dira.
 
-> Sareta osoa (5 bloke zabaleran, pilatuta) automatikoki zatitzen da. Porra batek 15 txirrindulari ez baditu, abisu bat agertuko da aurreikuspenean.
+> Kategoria hutsik ez utzi: webguneak `Kategoria` duten lasterketak bakarrik zenbatzen ditu puntuaziorako.
 
----
+## 2 · Startlist — dortsalak + izenak
 
-## 2 · Dortsalak — "Txirrindulariak" orria  🚴 Tour Excel
+Txirrindulari bakoitzari dortsala esleitzen dio txapelketa honetan (`TxirrindulariakTxapleketanParteHartzea`), eta falta diren txirrindulariak sortzen ditu.
 
-Apustuek ikusi ez dituzten txirrindularien dortsalak osatzeko (edo dortsal guztiak ziurtatzeko).
+- **Itzulia:** "Txirrindulariak" orritik **`Dorsalak`** eta **`Izena`** zutabeak **soilik** kopiatu:
+  - LibreOffice-n: `Dorsalak` zutabe-goiburua klik → `Ctrl` sakatuta `Izena` zutabe-goiburua klik → `Ctrl+C` → itsatsi.
+  - Talde-izenen lerroak (dortsalik gabe) automatikoki baztertzen dira.
+- **Klasikoak:** "TX zerrenda" orria **oso-osorik** kopiatu (`Ctrl+A`). Hiru zutabe-bloke ditu (Dortsala/Izena) alboz albo; 4-digituko dortsalak bakarrik hartzen dira, talde-goiburuak (2-digitu) baztertuz.
 
-**Urratsak:**
-1. LibreOffice-n **"Txirrindulariak"** orria ireki.
-2. **`Dorsalak`** (A zutabea) eta **`Izena`** (D zutabea) zutabeak **soilik** hautatu:
-   - A zutabearen goiburua klikatu → `Ctrl` sakatuta D zutabearen goiburua klikatu → `Ctrl+C`.
-3. Admin → **🚴 Tour Excel** → **2 · Dortsalak**.
-4. **Txapelketa** aukeratu eta itsatsi.
-5. **🔍 Aurreikusi** → **⬆ Inportatu**.
+**🔍 Aurreikusi** → zenbat dortsala eta zenbat txirrindulari berri. **⬆ Inportatu**.
 
-**Zer egiten du:** txirrindulari bakoitzari dortsala esleitzen dio txapelketa honetan (`TxirrindulariakTxapleketanParteHartzea`). Talde-izenen lerroak (dortsala `0`) eta Excel-erroreak (`#E/E`, `#DIV/0!`) automatikoki baztertzen dira. Txirrindularia existitzen ez bada, sortu egiten da.
+> Klasikoen dortsala **4 digitu** da: lehen 2ak taldea (adib. `01`=Alpecin), azken 2ak txirrindularia. Adib. `0101` = VAN DER POEL. Startlist bat nahikoa da klasiko-denboraldi osorako.
 
-> Zutabe osoa (orri zabal osoa) ere itsats daiteke, baina bi zutabe soilik kopiatzea garbiagoa da.
+## 3 · Apustuak (porrak)
 
----
+Porra bakoitza (porralaria + aukeratutako txirrindulariak) sortzen du: `Porralariak`, `PorraEzizenak`, loturak eta `PorraApustuak`.
 
-## 3 · Etapa emaitzak — "Laburpen taulak" / "Etapak"  📂 CSV inportatu
+- **Itzulia:** "Porra denak" orri **osoa** kopiatu (`Ctrl+A`) eta itsatsi. Sareta (5 bloke zabaleran, pilatuta) automatikoki zatitzen da → porra bakoitzeko 15 dortsal.
+- **Klasikoak:** "Porrak sartzea" orria kopiatu. "Porra izena" zutabetik aurrera porrero bakoitzaren 25 dortsalak irakurtzen dira.
 
-Etapa bakoitzeko sailkapena (`KarreraSailkapena`) sartzeko.
+**🔍 Aurreikusi** → porra kop., apustu kop., porralaria berriak, eta **dortsal ezezagunak**. Dortsal ezezagunak agertzen badira → **2. blokea (startlist) aurretik inportatu** eta berriz saiatu. **⬆ Inportatu** (idempotentea: ez du bikoizten).
 
-**Behar den formatua** (goiburuak barne):
+## 4 · Karrera emaitzak (lasterketaz lasterketa)
 
+Lasterketa baten txirrindularien emaitzak sartzen ditu (`KarreraSailkapena`), dortsalez lotuta.
+
+1. **Karrera** (lasterketa) hautatu goiko zerrendan (1. blokean sortutakoak).
+2. Emaitza-blokea itsatsi: `Posizioa · Dortsala · [Izena] · Puntuak`.
+   - **Klasikoak:** "Sailkapenak erakutsi" orriko **txirrindulari-taula** kopiatu (Posizioa, Zbkia, Txirrindularia, Zenbatek, Puntuak). Kopiatu **bloke garbia**, ez orri osoa.
+   - **Itzulia:** etapa baten emaitzak (Posizioa, Dortsala, Txirrindularia, Puntuak).
+   ```
+   1	1601	POGAČAR Tadej	39	3540
+   2	1501	VAN AERT Wout	38	2165
+   ```
+
+**🔍 Aurreikusi** → zenbat emaitza eta ezezagunak. **⬆ Inportatu** (lasterketa honen emaitzak birjartzen dira).
+
+Emaitzak sartu ondoren, joan **Sailkapenak kalkulatu** atalera eta kalkulatu porralarien puntuak.
+
+## 5 · Sailkapen finalak (aukerakoa)
+
+Porralarien azken sailkapena (`TxapelketaEmaitzaPorralariak`). Ezizenak lehendik egon behar dira (apustuetatik).
+
+Itsatsi **bloke garbia**: `Posizioa · Porreroa · Puntuak`.
 ```
-Sailkapena   Dortsala   Txirrindularia              Puntuak
-1            1          POGACAR Tadej               31
-2            11         VINGEGAARD Jonas            23
-3            41         CARAPAZ Richard            17
-```
-
-**Urratsak:**
-1. "Laburpen taulak" orriko etapa-blokea kopiatu (edo etapa baten emaitzak bloke gisa prestatu).
-2. Admin → **📂 CSV inportatu**.
-3. **Datu mota**: `Txirrindulari emaitzak (karrera)`.
-4. Itsatsi datuak.
-5. **Karrera** (etapa) aukeratu testuinguruan.
-6. Zutabeak mapatu (automatikoki lotzen dira: `Sailkapena`, `Txirrindularia`, `Puntuak`; `Dortsala` baztertu egiten da).
-7. **🔍 Aurreikusi** → izen berrien kasuan fuzzy egiaztapena egin → **⬆ Inportatu**.
-
-> `Sailkapena`, `Txirrindularia` eta `Puntuak` behar dira. Izenak datu-basekoekin lotzen dira (fuzzy matching); bat ez datozenak egiaztatu.
-
----
-
-## 4 · Sailkapen finalak — "Sailkapen taula handiak"  📂 CSV inportatu
-
-Txapelketa amaitutakoan, porrolarien azken sailkapena (`TxapelketaEmaitzaPorralariak`).
-
-**Behar den formatua:**
-
-```
-Posizioa   Porreroa            Puntuak
-1          Keops               184
-2          Ra                  168
-3          Damba               167
+1	Keops	21209
+2	La Diva	20457
 ```
 
-**Urratsak:**
-1. "Sailkapen taula handiak" orritik **`Porreroa`** eta azken **puntu-zutabea** (+ posizioa) kopiatu.
-2. Admin → **📂 CSV inportatu**.
-3. **Datu mota**: `Porralari emaitzak (txapelketa)`.
-4. Itsatsi datuak, **Txapelketa** aukeratu.
-5. Zutabeak mapatu: `Posizioa` ← Posizioa/Sailkapena; `Ezizena` ← Porreroa; `Puntuak` ← puntuak.
-6. **🔍 Aurreikusi** → **⬆ Inportatu**.
-
-> `Porreroa` = porra-ezizena (`Ezizena`). "Porra denak" orriko `Izena` zutabea ere balio du, baina orduan zutabea eskuz mapatu behar da (`Izena` → `Ezizena`), `Izena` lehenetsita txirrindulari-izenari lotzen baitzaio.
-
 ---
 
-## Ohar teknikoak
+## Ohar teknikoak eta akatsen konponketa
 
-- **Izen-lotura (fuzzy matching):** txirrindulari-izenak `ABIZENA Izena` formatuan daude. Sistemak azentuak, herrialde-kodeak eta ordena aldaketak kudeatzen ditu. Bikoiztuak sortuz gero, admin → **🔀 Fusionatu** erabili.
-- **Idempotentzia:** apustuak eta dortsalak berriz inportatzea segurua da. Etapa/sailkapen emaitzak, berriz, existitzen badira **saltatu** egiten dira (ez dira gainidazten) — aldatzeko, lehenik ezabatu edo **Taula guztiak** editorean editatu.
-- **Atzera egin:** CSV inportazioek "Atzera/Aurrera" dute. Tour Excel inportazioek EZ dute atzera-egiterik (idempotenteak dira; berriro inportatu edo eskuz zuzendu).
-- **Puntuazioa:** etapako puntuak (1.=31, 2.=23, 3.=17, 4.=13, 5.=9, 6.=7) `KarreraSailkapena`-n gordetzen dira; porrolarien puntuak "Sailkapenak kalkulatu"-k kalkulatzen ditu apustuetatik.
+- **Dortsal ezezagunak apustuetan** → startlist-a (2. blokea) ez da oraindik inportatu txapelketa horretan, edo dortsal batzuk falta dira. Inportatu startlist osoa eta errepikatu apustuak.
+- **Idempotentzia:** startlist eta apustuak berriz inportatzea segurua da (ez da bikoizten). Emaitzak birjarri egiten dira (DELETE + INSERT).
+- **Dortsalak zenbaki gisa:** hasierako zeroak (`0721`) ez du axola: `0721` eta `721` berdin lotzen dira.
+- **Izen bikoiztuak:** startlist-ak txirrindulari berriak sortzen ditu izenez. Bikoiztuak sortuz gero → **Datu-osasuna** panelean ikusi eta **Fusionatu** atalean batu.
+- **Mota okerra:** apustuak/startlist gaizki irakurtzen badira, egiaztatu **Mota** (Itzulia/Klasikoak) ondo dagoela.
+- **Klasikoen puntuak:** Excel-ak UCI kategoriaren arabera kalkulatzen ditu; DB-ra emaitza gisa (posizioa + puntuak) sartzen dira zuzenean 4. blokean.

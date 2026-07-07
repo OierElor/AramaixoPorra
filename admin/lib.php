@@ -495,82 +495,27 @@ function csv_fuzzy_check($payload) {
     return ['checks'=>$results];
 }
 
-// ─── Tour Excel inportatzailea (apustuak eta dortsalak) ──────────────────────
-// Frontend-ak "Porra denak" sareta parseatuta bidaltzen du:
-//   { txapelketa_id, bettors: [ { izena, riders: [ {dortsala, izena}, ... ] }, ... ] }
-// Idempotentea da: berriz inportatuz gero ez du bikoizten (INSERT IGNORE / upsert).
+// ─── Datuak inportatzeko sistema bateratua (Itzuliak + Klasikoak) ────────────
+// Apustuak DORTSALEZ lotzen dira: aurretik startlist-a (dortsala→txirrindularia)
+// inportatu behar da txapelketa horretan. Idempotentea (INSERT IGNORE / upsert).
 
-function _tour_txap_id($payload) {
+function _imp_txap_id($payload) {
     $tid = $payload['txapelketa_id'] ?? null;
     if ($tid === null || $tid === '') throw new Exception('Txapelketa bat hautatu behar da');
     return (int)$tid;
 }
 
-function tour_porrak_preview($payload) {
-    $bettors = $payload['bettors'] ?? [];
-    $new_porralariak = []; $new_riders = []; $seen_r = [];
-    $bet_count = 0; $warnings = [];
-    foreach ($bettors as $b) {
-        $izena = trim((string)($b['izena'] ?? ''));
-        if ($izena === '') continue;
-        if (find_porralaria_id($izena) === null && !in_array($izena, $new_porralariak, true)) $new_porralariak[] = $izena;
-        $riders = $b['riders'] ?? [];
-        if (count($riders) !== 15) $warnings[] = "$izena: ".count($riders)." txirrindulari (15 espero)";
-        foreach ($riders as $r) {
-            $rn = trim((string)($r['izena'] ?? ''));
-            if ($rn === '') continue;
-            $bet_count++;
-            if (in_array($rn, $seen_r, true)) continue;
-            $seen_r[] = $rn;
-            if (find_txirrindularia_id($rn) === null) {
-                $new_riders[] = ['izena'=>$rn, 'suggestions'=>find_fuzzy_matches(strip_country($rn), 60)];
-            }
-        }
-    }
-    return [
-        'bettors'=>count($bettors),
-        'new_porralariak'=>$new_porralariak,
-        'new_riders'=>$new_riders,
-        'bet_count'=>$bet_count,
-        'warnings'=>$warnings,
-    ];
+// Dortsala → Txirrindularia_ID txapelketa honetan (startlist-etik).
+function find_txirri_by_dortsala($txap_id, $dortsala) {
+    $d = to_int($dortsala);
+    if ($d === null) return null;
+    $row = db_one('SELECT TxirrindulariaID FROM `TxirrindulariakTxapleketanParteHartzea` WHERE TxapelketaID = ? AND Dortsala = ?', [(int)$txap_id, $d]);
+    return $row ? (int)$row['TxirrindulariaID'] : null;
 }
 
-function tour_porrak_import($payload) {
-    $txap = _tour_txap_id($payload);
-    $bettors = $payload['bettors'] ?? [];
-    $merge_map = $payload['merge_map'] ?? [];   // txirrindulari-izena → Txirrindularia_ID (edo null=berri)
-    $created_p = 0; $created_e = 0; $bets = 0; $dortsalak = 0; $errors = [];
-    foreach ($bettors as $b) {
-        $izena = trim((string)($b['izena'] ?? ''));
-        if ($izena === '') continue;
-        try {
-            $pid_before = find_porralaria_id($izena);
-            $pid = ensure_porralaria_id($izena);
-            if ($pid_before === null) $created_p++;
-            $eid_before = find_ezizen_id($txap, $izena);
-            $eid = ensure_ezizen_id($txap, $izena);
-            if ($eid_before === null) $created_e++;
-            db_exec('INSERT IGNORE INTO `PorralariTaldeenEzizenak` (Ezizen_ID, Porralaria_ID) VALUES (?, ?)', [$eid, $pid]);
-            foreach (($b['riders'] ?? []) as $r) {
-                $rn = trim((string)($r['izena'] ?? ''));
-                if ($rn === '') continue;
-                if (array_key_exists($rn, $merge_map) && $merge_map[$rn] !== null) $rid = (int)$merge_map[$rn];
-                else $rid = ensure_txirrindularia_id($rn);
-                $res = db_exec('INSERT IGNORE INTO `PorraApustuak` (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES (?, ?, ?)', [$txap, $eid, $rid]);
-                if (($res['affected'] ?? 0) > 0) $bets++;
-                $dor = to_int($r['dortsala'] ?? null);
-                if ($dor !== null) { upsert_dortsala($txap, $rid, $dor); $dortsalak++; }
-            }
-        } catch (Exception $e) {
-            $errors[] = ['izena'=>$izena, 'reason'=>$e->getMessage()];
-        }
-    }
-    return ['porralariak_berri'=>$created_p, 'ezizenak_berri'=>$created_e, 'apustuak'=>$bets, 'dortsalak'=>$dortsalak, 'errors'=>$errors];
-}
-
-// Dortsalak: { txapelketa_id, riders: [ {dortsala, izena}, ... ] }
-function tour_dortsalak_preview($payload) {
+// ── B · Startlist (dortsala + izena) ────────────────────────────────────────
+// payload: { txapelketa_id, riders: [ {dortsala, izena}, ... ] }
+function import_startlist_preview($payload) {
     $riders = $payload['riders'] ?? [];
     $new_riders = []; $seen = []; $count = 0;
     foreach ($riders as $r) {
@@ -587,8 +532,8 @@ function tour_dortsalak_preview($payload) {
     return ['riders'=>$count, 'new_riders'=>$new_riders];
 }
 
-function tour_dortsalak_import($payload) {
-    $txap = _tour_txap_id($payload);
+function import_startlist($payload) {
+    $txap = _imp_txap_id($payload);
     $riders = $payload['riders'] ?? [];
     $merge_map = $payload['merge_map'] ?? [];
     $set = 0; $created = 0; $errors = [];
@@ -606,6 +551,163 @@ function tour_dortsalak_import($payload) {
         }
     }
     return ['dortsalak'=>$set, 'txirrindulariak_berri'=>$created, 'errors'=>$errors];
+}
+
+// ── C · Apustuak (dortsalez) ────────────────────────────────────────────────
+// payload: { txapelketa_id, mota, bettors: [ { izena, dortsalak: [..] }, ... ] }
+function import_apustuak_preview($payload) {
+    $txap = _imp_txap_id($payload);
+    $bettors = $payload['bettors'] ?? [];
+    $expect = ($payload['mota'] ?? '') === 'klasikoak' ? 25 : 15;
+    $new_porralariak = []; $bet_count = 0; $warnings = [];
+    $unknown = []; $seen_d = [];
+    foreach ($bettors as $b) {
+        $izena = trim((string)($b['izena'] ?? ''));
+        if ($izena === '') continue;
+        if (find_porralaria_id($izena) === null && !in_array($izena, $new_porralariak, true)) $new_porralariak[] = $izena;
+        $dors = $b['dortsalak'] ?? [];
+        if (count($dors) !== $expect) $warnings[] = "$izena: ".count($dors)." dortsal ($expect espero)";
+        foreach ($dors as $d) {
+            $di = to_int($d);
+            if ($di === null) continue;
+            $bet_count++;
+            if (find_txirri_by_dortsala($txap, $di) === null && !in_array($di, $seen_d, true)) {
+                $seen_d[] = $di; $unknown[] = $d;
+            }
+        }
+    }
+    return [
+        'bettors'=>count($bettors),
+        'new_porralariak'=>$new_porralariak,
+        'bet_count'=>$bet_count,
+        'unknown_dortsalak'=>$unknown,
+        'warnings'=>$warnings,
+    ];
+}
+
+function import_apustuak($payload) {
+    $txap = _imp_txap_id($payload);
+    $bettors = $payload['bettors'] ?? [];
+    $created_p = 0; $created_e = 0; $bets = 0; $errors = []; $unknown = [];
+    foreach ($bettors as $b) {
+        $izena = trim((string)($b['izena'] ?? ''));
+        if ($izena === '') continue;
+        try {
+            $pid_before = find_porralaria_id($izena);
+            $pid = ensure_porralaria_id($izena);
+            if ($pid_before === null) $created_p++;
+            $eid_before = find_ezizen_id($txap, $izena);
+            $eid = ensure_ezizen_id($txap, $izena);
+            if ($eid_before === null) $created_e++;
+            db_exec('INSERT IGNORE INTO `PorralariTaldeenEzizenak` (Ezizen_ID, Porralaria_ID) VALUES (?, ?)', [$eid, $pid]);
+            foreach (($b['dortsalak'] ?? []) as $d) {
+                $di = to_int($d);
+                if ($di === null) continue;
+                $rid = find_txirri_by_dortsala($txap, $di);
+                if ($rid === null) { $unknown[$d] = true; continue; }
+                $res = db_exec('INSERT IGNORE INTO `PorraApustuak` (Txapelketa_ID, Ezizen_ID, Txirrindularia_ID) VALUES (?, ?, ?)', [$txap, $eid, $rid]);
+                if (($res['affected'] ?? 0) > 0) $bets++;
+            }
+        } catch (Exception $e) {
+            $errors[] = ['izena'=>$izena, 'reason'=>$e->getMessage()];
+        }
+    }
+    return ['porralariak_berri'=>$created_p, 'ezizenak_berri'=>$created_e, 'apustuak'=>$bets, 'dortsal_ezezagunak'=>array_keys($unknown), 'errors'=>$errors];
+}
+
+// ── D · Karrera emaitzak (dortsalez, edo izen-fallback) ─────────────────────
+// payload: { karrera_id, txapelketa_id, rows: [ {pos, dortsala, izena, puntuak}, ... ] }
+function import_emaitzak_preview($payload) {
+    $txap = _imp_txap_id($payload);
+    $rows = $payload['rows'] ?? [];
+    $count = 0; $unknown = [];
+    foreach ($rows as $r) {
+        $pos = to_int($r['pos'] ?? null);
+        $pts = to_int($r['puntuak'] ?? null);
+        if ($pos === null) continue;
+        $count++;
+        $rid = null;
+        $di = to_int($r['dortsala'] ?? null);
+        if ($di !== null) $rid = find_txirri_by_dortsala($txap, $di);
+        $nm = trim((string)($r['izena'] ?? ''));
+        if ($rid === null && $nm !== '') $rid = find_txirrindularia_id($nm);
+        if ($rid === null) $unknown[] = ($nm !== '' ? $nm : (string)($r['dortsala'] ?? '?'));
+    }
+    return ['rows'=>$count, 'unknown'=>$unknown];
+}
+
+function import_emaitzak($payload) {
+    $txap = _imp_txap_id($payload);
+    $kid = $payload['karrera_id'] ?? null;
+    if (!$kid) throw new Exception('Karrera bat hautatu behar da');
+    $kid = (int)$kid;
+    $rows = $payload['rows'] ?? [];
+    db_exec('DELETE FROM `KarreraSailkapena` WHERE Karrera_ID = ?', [$kid]);
+    $ins = 0; $unknown = []; $errors = [];
+    foreach ($rows as $r) {
+        $pos = to_int($r['pos'] ?? null);
+        $pts = to_int($r['puntuak'] ?? null);
+        if ($pos === null) continue;
+        if ($pts === null) $pts = 0;
+        $rid = null;
+        $di = to_int($r['dortsala'] ?? null);
+        if ($di !== null) $rid = find_txirri_by_dortsala($txap, $di);
+        $nm = trim((string)($r['izena'] ?? ''));
+        if ($rid === null && $nm !== '') $rid = ensure_txirrindularia_id($nm);
+        if ($rid === null) { $unknown[] = (string)($r['dortsala'] ?? '?'); continue; }
+        try {
+            db_exec('INSERT IGNORE INTO `KarreraSailkapena` (Karrera_ID, Txirrindularia_ID, Puntuak, Sailkapena) VALUES (?, ?, ?, ?)', [$kid, $rid, $pts, $pos]);
+            $ins++;
+        } catch (Exception $e) { $errors[] = $e->getMessage(); }
+    }
+    return ['sartuta'=>$ins, 'dortsal_ezezagunak'=>$unknown, 'errors'=>$errors];
+}
+
+// ── E · Sailkapen finalak (porralari emaitzak) ──────────────────────────────
+// payload: { txapelketa_id, rows: [ {pos, porrero, puntuak}, ... ] }
+function import_sailkapenak($payload) {
+    $txap = _imp_txap_id($payload);
+    $rows = $payload['rows'] ?? [];
+    $ins = 0; $errors = []; $unknown = [];
+    foreach ($rows as $r) {
+        $pos = to_int($r['pos'] ?? null);
+        $pts = to_int($r['puntuak'] ?? null);
+        $ez = trim((string)($r['porrero'] ?? ''));
+        if ($pos === null || $ez === '' || $pts === null) continue;
+        $eid = find_ezizen_id($txap, $ez);
+        if ($eid === null) { $unknown[] = $ez; continue; }
+        try {
+            db_exec('DELETE FROM `TxapelketaEmaitzaPorralariak` WHERE Txapelketa_ID = ? AND Ezizen_ID = ?', [$txap, $eid]);
+            db_exec('INSERT INTO `TxapelketaEmaitzaPorralariak` (Txapelketa_ID, Ezizen_ID, Posizioa, Puntuak) VALUES (?, ?, ?, ?)', [$txap, $eid, $pos, $pts]);
+            $ins++;
+        } catch (Exception $e) { $errors[] = $e->getMessage(); }
+    }
+    return ['sartuta'=>$ins, 'ezizen_ezezagunak'=>$unknown, 'errors'=>$errors];
+}
+
+// ── A · Karrerak (lasterketa-zerrenda) ──────────────────────────────────────
+// payload: { txapelketa_id, urtea, races: [ {izena, kategoria}, ... ] }
+function import_karrerak($payload) {
+    $txap = _imp_txap_id($payload);
+    $urtea = to_int($payload['urtea'] ?? null);
+    if ($urtea === null) {
+        $row = db_one('SELECT Urtea FROM `Txapelketak` WHERE Txapelketa_ID = ?', [$txap]);
+        $urtea = $row ? (int)$row['Urtea'] : (int)date('Y');
+    }
+    $races = $payload['races'] ?? [];
+    $ins = 0; $skip = 0; $errors = [];
+    foreach ($races as $r) {
+        $izena = trim((string)($r['izena'] ?? ''));
+        if ($izena === '') continue;
+        $kat = trim((string)($r['kategoria'] ?? 'Etapa'));
+        try {
+            $exists = db_one('SELECT Karrerak_ID FROM `Karrerak` WHERE Izena = ? AND Urtea = ? AND Txapelketa_ID = ?', [$izena, $urtea, $txap]);
+            if ($exists) { $skip++; continue; }
+            db_exec('INSERT INTO `Karrerak` (Txapelketa_ID, Izena, Urtea, Kategoria) VALUES (?, ?, ?, ?)', [$txap, $izena, $urtea, $kat]);
+            $ins++;
+        } catch (Exception $e) { $errors[] = ['izena'=>$izena, 'reason'=>$e->getMessage()]; }
+    }
+    return ['sortuta'=>$ins, 'lehendik'=>$skip, 'errors'=>$errors];
 }
 
 // ─── Undo / Redo (session) ───────────────────────────────────────────────────

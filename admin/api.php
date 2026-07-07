@@ -120,13 +120,14 @@ try {
                     json_out(['ok'=>true,'id'=>$r['insert_id']]);
                 } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'sariak': json_out(save_sariak($body));
-            case $path === 'csv/fuzzy-check': json_out(csv_fuzzy_check($body));
-            case $path === 'csv/preview': json_out(csv_preview($body));
-            case $path === 'csv/import': json_out(csv_import($body));
-            case $path === 'tour/porrak-preview': json_out(tour_porrak_preview($body));
-            case $path === 'tour/porrak': json_out(tour_porrak_import($body));
-            case $path === 'tour/dortsalak-preview': json_out(tour_dortsalak_preview($body));
-            case $path === 'tour/dortsalak': json_out(tour_dortsalak_import($body));
+            case $path === 'import/startlist-preview': json_out(import_startlist_preview($body));
+            case $path === 'import/startlist': json_out(import_startlist($body));
+            case $path === 'import/apustuak-preview': json_out(import_apustuak_preview($body));
+            case $path === 'import/apustuak': json_out(import_apustuak($body));
+            case $path === 'import/emaitzak-preview': json_out(import_emaitzak_preview($body));
+            case $path === 'import/emaitzak': json_out(import_emaitzak($body));
+            case $path === 'import/sailkapenak': json_out(import_sailkapenak($body));
+            case $path === 'import/karrerak': json_out(import_karrerak($body));
             case $path === 'undo': json_out(do_undo());
             case $path === 'redo': json_out(do_redo());
             case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));

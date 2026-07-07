@@ -156,6 +156,7 @@
     <div class="nav-section">Sartu</div>
     <div class="nav-item" data-section="add-manual"><span class="icon">✏️</span> Eskuz sartu</div>
     <div class="nav-item" data-section="add-csv"><span class="icon">📂</span> CSV inportatu</div>
+    <div class="nav-item" data-section="tour-excel"><span class="icon">🚴</span> Tour Excel</div>
     <div class="nav-item" data-section="sariak"><span class="icon">🏅</span> Sariak</div>
     <div class="nav-item" data-section="kalkulatu"><span class="icon">📊</span> Sailkapenak kalkulatu</div>
     <div class="nav-item" data-section="merge"><span class="icon">🔀</span> Fusionatu</div>
@@ -318,6 +319,47 @@ Tour De France,2026</pre></div>
 1,Keops,21209
 2,La Diva,20457</pre></div>
         </div></div>
+      </div>
+    </section>
+
+    <!-- TOUR EXCEL -->
+    <section class="section" id="sec-tour-excel">
+      <div class="page-header"><div><div class="page-title">🚴 Tour Excel inportatu</div><div class="page-sub">Tour2026Excel.ods orrietako blokeak zuzenean itsatsi eta inportatu</div></div></div>
+
+      <!-- APUSTUAK (Porra denak) -->
+      <div class="card" style="margin-bottom:20px"><div class="card-head"><div class="card-title">1 · Apustuak — "Porra denak" orria</div></div><div class="card-body">
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px">
+          LibreOffice-n <strong>"Porra denak"</strong> orri osoa hautatu (Ctrl+A) eta kopiatu; behean itsatsi. Sareta osoa (porra guztiak) automatikoki zatituko da. Porra bakoitzeko: <strong>Izena</strong> + aukeratutako <strong>15 txirrindulariak</strong> (dortsalarekin). Porralaria, ezizena, apustuak eta dortsalak sortuko dira. Berriz inportatzea segurua da (ez da bikoizten).
+        </div>
+        <div class="field" style="margin-bottom:10px"><label>Txapelketa</label>
+          <select id="tour-porrak-txap" style="width:100%;max-width:360px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"><option value="">— Aukeratu —</option></select>
+        </div>
+        <textarea id="tour-porrak-paste" placeholder="Itsatsi hemen 'Porra denak' orria..." style="width:100%;height:130px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="tourPorrakPreview()">🔍 Aurreikusi</button>
+          <button class="btn btn-primary btn-sm" onclick="tourPorrakImport()">⬆ Inportatu</button>
+        </div>
+        <div id="tour-porrak-result" style="margin-top:12px"></div>
+      </div></div>
+
+      <!-- DORTSALAK (Txirrindulariak) -->
+      <div class="card"><div class="card-head"><div class="card-title">2 · Dortsalak — "Txirrindulariak" orria</div></div><div class="card-body">
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px">
+          <strong>"Txirrindulariak"</strong> orritik <strong>Dorsalak</strong> eta <strong>Izena</strong> zutabeak kopiatu (talde-izenen lerroak baztertu egiten dira automatikoki, dortsalik ez dutelako). Txirrindulari bakoitzaren dortsala txapelketa honetan ezarriko da.
+        </div>
+        <div class="field" style="margin-bottom:10px"><label>Txapelketa</label>
+          <select id="tour-dors-txap" style="width:100%;max-width:360px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none"><option value="">— Aukeratu —</option></select>
+        </div>
+        <textarea id="tour-dors-paste" placeholder="Dorsalak &lt;tab&gt; Izena&#10;1&#9;POGACAR Tadej&#10;2&#9;DEL TORO Isaac" style="width:100%;height:110px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="tourDorsPreview()">🔍 Aurreikusi</button>
+          <button class="btn btn-primary btn-sm" onclick="tourDorsImport()">⬆ Inportatu</button>
+        </div>
+        <div id="tour-dors-result" style="margin-top:12px"></div>
+      </div></div>
+
+      <div style="font-size:12px;color:var(--muted);margin-top:16px;line-height:1.5">
+        ℹ️ <strong>Etapa emaitzak</strong> eta <strong>sailkapen finalak</strong> "CSV inportatu" atalean sartzen dira ("Txirrindulari emaitzak (karrera)" eta "Porralari emaitzak (txapelketa)"). Ikusi <code>admin/INPORTATU-GIDA.md</code> gida osoa.
       </div>
     </section>
 
@@ -599,6 +641,7 @@ function renderCurrentSection() {
     case "kalkulatu":        renderKalkulatuTxapSel(); break;
     case "ezizenak":         loadEzizenak(); break;
     case "banatu":           renderBanatuSection(); break;
+    case "tour-excel":       renderTourExcelSelectors(); break;
   }
 }
 
@@ -1298,6 +1341,160 @@ function handleFile(file) {
     renderCSVSteps();
   };
   reader.readAsText(file);
+}
+
+// ── Tour Excel inportatu ─────────────────────────────────────────────────────
+function renderTourExcelSelectors() {
+  const opts = `<option value="">— Aukeratu —</option>` +
+    state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join("");
+  ["tour-porrak-txap","tour-dors-txap"].forEach(id => {
+    const s = el(id); if (s) { const prev = s.value; s.innerHTML = opts; if (prev) s.value = prev; }
+  });
+}
+
+// Testu itsatsia 2D sareta bihurtu (tab/;/, mugatzaileak auto-detektatu).
+function tourParseGrid(text) {
+  const lines = text.replace(/^﻿/, "").split(/\r?\n/);
+  const sample = lines.find(l => l.trim()) || "";
+  const counts = { "\t": (sample.match(/\t/g)||[]).length, ";": (sample.match(/;/g)||[]).length, ",": (sample.match(/,/g)||[]).length };
+  const delim = Object.keys(counts).reduce((a,b) => counts[b] > counts[a] ? b : a, "\t");
+  return lines.map(line => {
+    const cols = []; let cur = "", inQ = false;
+    for (const ch of line) {
+      if (ch === '"') inQ = !inQ;
+      else if (ch === delim && !inQ) { cols.push(cur.trim()); cur = ""; }
+      else cur += ch;
+    }
+    cols.push(cur.trim()); return cols;
+  });
+}
+
+// "Porra denak" sareta → [{izena, riders:[{dortsala, izena}]}]. Blokeak "Porra"
+// etiketa-lerroen bidez detektatzen dira (5 bloke zabaleran, bertikalki pilatuta).
+function parsePorraGrid(text) {
+  const grid = tourParseGrid(text);
+  const bettors = [];
+  for (let r = 0; r < grid.length; r++) {
+    const row = grid[r];
+    // Blokeen hasiera-zutabeak: 'Porra' etiketa duten zeldak, ondoren 'Izena'
+    const starts = [];
+    for (let c = 0; c < row.length; c++) {
+      if ((row[c]||"").toLowerCase() === "porra" && (row[c+1]||"").toLowerCase() === "izena") starts.push(c);
+    }
+    if (!starts.length) continue;
+    const dataRow = grid[r+1] || [];
+    for (const c of starts) {
+      const izena = (dataRow[c+1] || "").trim();
+      if (!izena) continue;
+      // Txirrindulari lerroak: 'Dortsala/Txirrindularia' azpigoiburuaren ostean, lerro hutsa arte
+      const riders = [];
+      let rr = r + 2;
+      // azpigoiburu-lerroa saltatu
+      if (((grid[rr]||[])[c+1]||"").toLowerCase() === "txirrindularia") rr++;
+      for (; rr < grid.length; rr++) {
+        const rrow = grid[rr] || [];
+        const dor = (rrow[c] || "").trim();
+        const rn = (rrow[c+1] || "").trim();
+        if (!dor && !rn) break;               // bloke amaiera
+        if (rn.toLowerCase() === "porra") break;
+        if (!rn) continue;
+        riders.push({ dortsala: dor, izena: rn });
+      }
+      bettors.push({ izena, riders });
+    }
+  }
+  return bettors;
+}
+
+// Dortsalak paste → [{dortsala, izena}]. Onena: "Dorsalak" eta "Izena" zutabeak
+// bakarrik kopiatzea. Talde-lerroak (dortsala=0), etiketak eta Excel erroreak baztertzen dira.
+const _TOUR_DORS_SKIP = new Set(["izena","guztira","dorsalak","erretiratua","partaideak","porrero","porreroa","txirrindularia"]);
+function _tourIsTeamOrErr(name) {
+  return name.includes("|") || name.includes(" - ") || name.includes("#") || /\bteam\b/i.test(name);
+}
+function parseDortsalak(text) {
+  const grid = tourParseGrid(text);
+  const out = [];
+  for (const row of grid) {
+    if (!row.length) continue;
+    // Dortsala = lehen 1-3 digituko zelda ez-hutsa (0 ez; talde-lerroek 0 dute)
+    let dor = null;
+    for (const cell of row) { const v = (cell||"").trim(); if (/^\d{1,3}$/.test(v) && v !== "0") { dor = v; break; } }
+    if (!dor) continue;
+    // Izena = azken zelda ez-hutsa eta ez-numerikoa (etapa-puntuak zenbakiak dira)
+    let name = null;
+    for (let k = row.length - 1; k >= 0; k--) { const v = (row[k]||"").trim(); if (v && !/^-?\d+([.,]\d+)?$/.test(v)) { name = v; break; } }
+    if (!name || _TOUR_DORS_SKIP.has(name.toLowerCase()) || _tourIsTeamOrErr(name)) continue;
+    out.push({ dortsala: dor, izena: name });
+  }
+  return out;
+}
+
+function _tourRiderWarnHtml(newRiders) {
+  if (!newRiders.length) return `<div style="color:#4ade80;font-size:12px">✓ Txirrindulari guztiak datu-basean daude.</div>`;
+  const items = newRiders.slice(0, 40).map(nr => {
+    const sug = (nr.suggestions||[]).slice(0,3).map(s => `${esc(s.Izena)} (${s.score})`).join(", ");
+    return `<li><strong>${esc(nr.izena)}</strong>${sug ? ` <span style="color:var(--muted)">— antzekoak: ${sug}</span>` : ""}</li>`;
+  }).join("");
+  return `<div style="font-size:12px;color:var(--accent2);margin-top:6px">⚠ ${newRiders.length} txirrindulari berri sortuko dira (ez daude datu-basean):</div>
+    <ul style="font-size:12px;color:var(--muted);margin:4px 0 0 18px;max-height:160px;overflow:auto">${items}</ul>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">Antzekoak agertzen badira, egiaztatu izenak; fusionatzeko "Fusionatu" atala erabili inportatu ondoren.</div>`;
+}
+
+async function tourPorrakPreview() {
+  const txap = el("tour-porrak-txap")?.value;
+  const bettors = parsePorraGrid(el("tour-porrak-paste")?.value || "");
+  const res = el("tour-porrak-result");
+  if (!bettors.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da porrarik antzeman. Egiaztatu 'Porra denak' orri osoa itsatsi duzula.</div>`; return; }
+  try {
+    const r = await api("api/tour/porrak-preview", { method:"POST", body: JSON.stringify({ txapelketa_id: txap ? Number(txap) : null, bettors }) });
+    const warn = (r.warnings||[]).length ? `<div style="font-size:12px;color:var(--accent2);margin-top:6px">⚠ ${r.warnings.length} porrak ez dute 15 txirrindulari:<br>${r.warnings.slice(0,10).map(esc).join("<br>")}</div>` : "";
+    res.innerHTML = `<div style="font-size:13px;line-height:1.7">
+      <strong>${r.bettors}</strong> porra · <strong>${r.bet_count}</strong> apustu<br>
+      <strong>${r.new_porralariak.length}</strong> porralaria berri · <strong>${r.new_riders.length}</strong> txirrindulari berri</div>
+      ${_tourRiderWarnHtml(r.new_riders)}${warn}`;
+  } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">${esc(e.message)}</div>`; }
+}
+
+async function tourPorrakImport() {
+  const txap = el("tour-porrak-txap")?.value;
+  if (!txap) return showToast("Txapelketa bat hautatu", "err");
+  const bettors = parsePorraGrid(el("tour-porrak-paste")?.value || "");
+  if (!bettors.length) return showToast("Ez da porrarik antzeman", "err");
+  if (!(await confirmDialog(`${bettors.length} porra inportatuko dira. Jarraitu?`))) return;
+  showToast("⏳ Inportatzen...");
+  try {
+    const r = await api("api/tour/porrak", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), bettors }) });
+    el("tour-porrak-result").innerHTML = `<div style="color:#4ade80;font-size:13px;line-height:1.7">✅ Inportatuta:<br>
+      ${r.porralariak_berri} porralaria berri · ${r.ezizenak_berri} ezizen berri<br>
+      ${r.apustuak} apustu berri · ${r.dortsalak} dortsala ezarrita</div>${(r.errors||[]).length ? `<div style="color:var(--accent);font-size:12px">${r.errors.length} errore</div>` : ""}`;
+    showToast(`✅ ${r.apustuak} apustu inportatuta`);
+    await reloadData();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function tourDorsPreview() {
+  const riders = parseDortsalak(el("tour-dors-paste")?.value || "");
+  const res = el("tour-dors-result");
+  if (!riders.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da dortsalik antzeman.</div>`; return; }
+  try {
+    const r = await api("api/tour/dortsalak-preview", { method:"POST", body: JSON.stringify({ riders }) });
+    res.innerHTML = `<div style="font-size:13px"><strong>${r.riders}</strong> dortsala antzemanda · <strong>${r.new_riders.length}</strong> txirrindulari berri</div>${_tourRiderWarnHtml(r.new_riders)}`;
+  } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">${esc(e.message)}</div>`; }
+}
+
+async function tourDorsImport() {
+  const txap = el("tour-dors-txap")?.value;
+  if (!txap) return showToast("Txapelketa bat hautatu", "err");
+  const riders = parseDortsalak(el("tour-dors-paste")?.value || "");
+  if (!riders.length) return showToast("Ez da dortsalik antzeman", "err");
+  showToast("⏳ Inportatzen...");
+  try {
+    const r = await api("api/tour/dortsalak", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), riders }) });
+    el("tour-dors-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.dortsalak} dortsala ezarrita · ${r.txirrindulariak_berri} txirrindulari berri</div>`;
+    showToast(`✅ ${r.dortsalak} dortsala ezarrita`);
+    await reloadData();
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 // ── Ezizenak lotu ────────────────────────────────────────────────────────────

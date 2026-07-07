@@ -109,6 +109,10 @@ try {
             case $path === 'csv/fuzzy-check': json_out(csv_fuzzy_check($body));
             case $path === 'csv/preview': json_out(csv_preview($body));
             case $path === 'csv/import': json_out(csv_import($body));
+            case $path === 'tour/porrak-preview': json_out(tour_porrak_preview($body));
+            case $path === 'tour/porrak': json_out(tour_porrak_import($body));
+            case $path === 'tour/dortsalak-preview': json_out(tour_dortsalak_preview($body));
+            case $path === 'tour/dortsalak': json_out(tour_dortsalak_import($body));
             case $path === 'undo': json_out(do_undo());
             case $path === 'redo': json_out(do_redo());
             case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));

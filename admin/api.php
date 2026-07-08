@@ -97,6 +97,8 @@ try {
                 $tid = $_GET['txapelketa_id'] ?? null;
                 if ($tid === null || $tid === '') json_error('txapelketa_id parametroa behar da', 400);
                 json_out(export_txapelketa((int)$tid));
+            case $path === 'proposals':
+                json_out(['proposals' => read_proposals()]);
             case $path === 'meta':
                 json_out(db_meta());
             case $path === 'undo-state':
@@ -128,6 +130,8 @@ try {
             case $path === 'import/emaitzak': json_out(import_emaitzak($body));
             case $path === 'import/sailkapenak': json_out(import_sailkapenak($body));
             case $path === 'import/karrerak': json_out(import_karrerak($body));
+            case $path === 'proposals/clear': json_out(clear_proposals());
+            case $path === 'proposals/delete': json_out(delete_proposal($body['idx'] ?? -1));
             case $path === 'undo': json_out(do_undo());
             case $path === 'redo': json_out(do_redo());
             case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));

@@ -1330,3 +1330,54 @@ function export_txapelketa($txap_id) {
         'Sariak' => db_table_exists('Sariak') ? db_rows('SELECT * FROM `Sariak` WHERE Txapelketa_ID = ?', [$txap_id]) : [],
     ];
 }
+
+// ─── Zuzenketa-proposamenak (testu-fitxategia, DB gabe) ──────────────────────
+// api/proposal.php-k admin/zuzenketak.log-en eransten ditu; hemen irakurtzen dira.
+function _proposals_file() { return __DIR__ . '/zuzenketak.log'; }
+
+function read_proposals() {
+    $f = _proposals_file();
+    if (!is_file($f)) return [];
+    $content = file_get_contents($f);
+    if ($content === false || trim($content) === '') return [];
+    $blocks = preg_split('/\n=====\n/', $content);
+    $out = [];
+    foreach ($blocks as $i => $block) {
+        $block = trim($block, "\n");
+        if ($block === '') continue;
+        $lines = explode("\n", $block);
+        $head = array_shift($lines);
+        $data = ''; $mota = 'bestelakoa'; $ip = '';
+        if (preg_match('/^\[(.*?)\]\s*MOTA:\s*(.*?)\s*\|\s*IP:\s*(.*)$/', $head, $m)) {
+            $data = $m[1]; $mota = $m[2]; $ip = $m[3];
+            $testua = implode("\n", $lines);
+        } else {
+            $testua = $block;
+        }
+        $out[] = ['idx' => $i, 'data' => $data, 'mota' => $mota, 'ip' => $ip, 'testua' => $testua];
+    }
+    return array_reverse($out); // berrienak lehenengo
+}
+
+function count_proposals() { return count(read_proposals()); }
+
+function clear_proposals() {
+    $f = _proposals_file();
+    if (is_file($f)) file_put_contents($f, '', LOCK_EX);
+    return ['ok' => true];
+}
+
+function delete_proposal($idx) {
+    $f = _proposals_file();
+    if (!is_file($f)) return ['ok' => true];
+    $content = file_get_contents($f);
+    if ($content === false) return ['ok' => false, 'reason' => 'Ezin irakurri'];
+    $blocks = preg_split('/\n=====\n/', $content);
+    $idx = (int)$idx;
+    if (!array_key_exists($idx, $blocks)) return ['ok' => false, 'reason' => 'Aurkitu ez'];
+    unset($blocks[$idx]);
+    $rebuilt = '';
+    foreach ($blocks as $b) { $b = trim($b, "\n"); if ($b === '') continue; $rebuilt .= $b . "\n=====\n"; }
+    file_put_contents($f, $rebuilt, LOCK_EX);
+    return ['ok' => true];
+}

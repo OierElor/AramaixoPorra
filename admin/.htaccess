@@ -25,3 +25,6 @@ DirectoryIndex index.php
 <Files "index.html">
     Require all denied
 </Files>
+<FilesMatch "\.log$">
+    Require all denied
+</FilesMatch>

@@ -153,6 +153,7 @@
     <div class="nav-item" data-section="sailkapenak"><span class="icon">📋</span> Sailkapenak</div>
     <div class="nav-item" data-section="karrera-emaitzak"><span class="icon">🏁</span> Karrera emaitzak</div>
     <div class="nav-item" data-section="osasuna"><span class="icon">🩺</span> Datu-osasuna</div>
+    <div class="nav-item" data-section="zuzenketak"><span class="icon">📮</span> Zuzenketak <span class="badge" id="nav-zuzenketak-badge" style="display:none;margin-left:auto"></span></div>
     <div class="nav-item" data-section="taulak"><span class="icon">▦</span> Taula guztiak</div>
     <div class="nav-sub-list" id="table-nav-list"></div>
     <div class="nav-section">Sartu</div>
@@ -423,6 +424,15 @@
           <div id="dups-result" style="margin-top:12px"></div>
         </div>
       </div></div>
+    </section>
+
+    <!-- ZUZENKETAK -->
+    <section class="section" id="sec-zuzenketak">
+      <div class="page-header"><div><div class="page-title">📮 Zuzenketak</div><div class="page-sub">Porralariek bidalitako zuzenketa-proposamenak</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="clearProposals()">🧹 Garbitu dena</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Proposamenak eskuz konpondu behar dira lehendik dauden tresnekin: <strong>Porra editatu</strong>, <strong>Fusionatu</strong>, <strong>Ezizenak lotu</strong> edo izena editatu (Porralariak). Konponduta, kendu (🗑).</div>
+      <div id="zuzenketak-list"></div>
     </section>
 
     <!-- PORRA EDITATU -->
@@ -718,6 +728,7 @@ function renderCurrentSection() {
     case "banatu":           renderBanatuSection(); break;
     case "import":           renderImportSelectors(); break;
     case "osasuna":          renderOsasunaSelectors(); break;
+    case "zuzenketak":       loadProposals(); break;
     case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
 }
@@ -758,6 +769,7 @@ function renderStats() {
   el("st-txirri").textContent = state.txirrindulariak.length;
   el("st-karrerak").textContent = state.karrerak.length;
   loadDataQuality();
+  loadProposalsBadge();
 }
 
 // ── Porralariak ───────────────────────────────────────────────────────────────
@@ -1831,6 +1843,63 @@ async function exportTxapelketa(selId) {
     URL.revokeObjectURL(url);
     showToast("✅ Esportatuta");
   } catch(e) { showToast(e.message, "err"); }
+}
+
+// ── Zuzenketak (proposamenak) ────────────────────────────────────────────────
+const _MOTA_KOLOREAK = {
+  "apustu okerra": "var(--accent)", "izen aldaketa": "#f4c430",
+  "porra-lotura": "#4ade80", "fusioa": "#60a5fa", "bestelakoa": "var(--muted)"
+};
+async function loadProposals() {
+  const cont = el("zuzenketak-list");
+  cont.innerHTML = `<div style="color:var(--muted);font-size:13px">Kargatzen...</div>`;
+  try {
+    const r = await api("api/proposals");
+    const list = r.proposals || [];
+    updateProposalsBadge(list.length);
+    if (!list.length) { cont.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:24px;text-align:center">Ez dago proposamenik.</div>`; return; }
+    cont.innerHTML = list.map(p => {
+      const kolorea = _MOTA_KOLOREAK[p.mota] || "var(--muted)";
+      return `<div class="card" style="margin-bottom:10px"><div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div><span class="badge" style="background:${kolorea};color:#111">${esc(p.mota)}</span>
+            <span style="color:var(--muted);font-size:12px;margin-left:8px">${esc(p.data)}</span></div>
+          <button class="btn btn-sm btn-ghost" onclick="deleteProposal(${p.idx})" title="Kendu">🗑</button>
+        </div>
+        <div style="margin-top:8px;font-size:13.5px;white-space:pre-wrap;line-height:1.5">${esc(p.testua)}</div>
+      </div></div>`;
+    }).join("");
+  } catch(e) { cont.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
+}
+
+async function deleteProposal(idx) {
+  if (!(await confirmDialog("Proposamen hau kendu? (konponduta badago)"))) return;
+  try {
+    await api("api/proposals/delete", { method: "POST", body: JSON.stringify({ idx }) });
+    showToast("Kenduta ✓");
+    await loadProposals();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function clearProposals() {
+  if (!(await confirmDialog("Proposamen GUZTIAK ezabatu?"))) return;
+  try {
+    await api("api/proposals/clear", { method: "POST", body: "{}" });
+    showToast("Garbituta ✓");
+    await loadProposals();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+function updateProposalsBadge(n) {
+  const b = el("nav-zuzenketak-badge");
+  if (!b) return;
+  if (n > 0) { b.textContent = n; b.style.display = ""; }
+  else b.style.display = "none";
+}
+
+async function loadProposalsBadge() {
+  try { const r = await api("api/proposals"); updateProposalsBadge((r.proposals || []).length); }
+  catch(_) {}
 }
 
 // ── Porra editatu ────────────────────────────────────────────────────────────

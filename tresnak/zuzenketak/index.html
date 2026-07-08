@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Zuzenketak proposatu</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+    <script src="/js/layout.js" defer></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Zuzenketak proposatu</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px; max-width:640px; margin-left:auto; margin-right:auto;">
+                    Akatsen bat ikusi duzu? Jakinarazi eta administratzaileak berrikusiko du. Idatzi ahalik eta argien
+                    (aipatu <strong>porra edo porralari izena</strong>, txapelketa, e.a.).
+                </p>
+
+                <div class="grafiko-oihala" style="max-width:640px; margin:20px auto;">
+                    <div style="margin-bottom:14px;">
+                        <label for="mota" style="display:block; font-weight:600; margin-bottom:6px;">Zuzenketa mota</label>
+                        <select id="mota" style="width:100%; padding:9px 10px; border:1px solid #bbb; border-radius:6px; font-size:15px;">
+                            <option value="apustu okerra">Apustu bat gaizki dago</option>
+                            <option value="izen aldaketa">Porralari baten izena aldatu</option>
+                            <option value="porra-lotura">Porra baten lotura zuzendu (ze porralarirena den)</option>
+                            <option value="fusioa">Bi porralari benetan bat dira</option>
+                            <option value="bestelakoa">Bestelakoa</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom:6px;">
+                        <label for="testua" style="display:block; font-weight:600; margin-bottom:6px;">Zuzenketaren azalpena</label>
+                        <textarea id="testua" rows="7" maxlength="1000" placeholder="Adibidez: 'Keops' porran Pogačar txirrindularia falta da, Vingegaard ordez egon beharko luke."
+                            style="width:100%; padding:10px; border:1px solid #bbb; border-radius:6px; font-size:15px; font-family:inherit; resize:vertical;"></textarea>
+                        <div style="text-align:right; font-size:12px; opacity:.6;"><span id="kontagailua">0</span>/1000</div>
+                    </div>
+
+                    <!-- Honeypot: erabiltzaileek ez dute ikusten; botek betetzen dute -->
+                    <input type="text" id="hp" tabindex="-1" autocomplete="off"
+                        style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" aria-hidden="true">
+
+                    <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <button id="bidali-btn" style="padding:10px 20px; border:none; border-radius:6px; background:#43a047; color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Bidali proposamena</button>
+                        <span id="emaitza" style="font-size:14px;"></span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const testua = document.getElementById('testua');
+        const kont = document.getElementById('kontagailua');
+        testua.addEventListener('input', () => { kont.textContent = testua.value.length; });
+
+        const btn = document.getElementById('bidali-btn');
+        const emaitza = document.getElementById('emaitza');
+
+        btn.addEventListener('click', async () => {
+            const txt = testua.value.trim();
+            if (!txt) { emaitza.textContent = '⚠ Idatzi azalpena.'; emaitza.style.color = '#e53935'; return; }
+            btn.disabled = true;
+            emaitza.style.color = 'inherit';
+            emaitza.textContent = 'Bidaltzen...';
+            try {
+                const res = await fetch('/api/proposal.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mota: document.getElementById('mota').value,
+                        testua: txt,
+                        hp: document.getElementById('hp').value,
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) throw new Error(data.error || 'Errorea');
+                emaitza.style.color = '#43a047';
+                emaitza.textContent = '✅ Eskerrik asko! Adminak berrikusiko du.';
+                testua.value = ''; kont.textContent = '0';
+            } catch (e) {
+                emaitza.style.color = '#e53935';
+                emaitza.textContent = '⚠ ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -532,11 +532,36 @@ function import_startlist_preview($payload) {
     return ['riders'=>$count, 'new_riders'=>$new_riders];
 }
 
+// Izen_Formatua sortu izenetik: tokenak ("Izena"/"Abizena") hitzeko.
+//  'auto' → maiuskulazko hitzak = Abizena, besteak = Izena (Excel: "ABIZENA Izena")
+//  'abizena_izena' → azken hitza Izena, gainerakoak Abizena
+//  'izena_abizena' → lehen hitza Izena, gainerakoak Abizena
+//  'none'/'' → NULL (formaturik ez)
+function izen_formatua_sortu($name, $mode) {
+    if ($mode === null || $mode === '' || $mode === 'none') return null;
+    $parts = preg_split('/\s+/u', trim($name));
+    $n = count($parts);
+    if ($n < 1 || $parts[0] === '') return null;
+    if ($n === 1) return 'Izena';
+    if ($mode === 'izena_abizena') { $t = array_fill(0, $n, 'Abizena'); $t[0] = 'Izena'; return implode(' ', $t); }
+    if ($mode === 'abizena_izena') { $t = array_fill(0, $n, 'Abizena'); $t[$n-1] = 'Izena'; return implode(' ', $t); }
+    // auto
+    $t = array_map(function($p){
+        $isCaps = ($p === mb_strtoupper($p, 'UTF-8')) && preg_match('/\p{L}/u', $p);
+        return $isCaps ? 'Abizena' : 'Izena';
+    }, $parts);
+    if (count(array_unique($t)) < 2) { $t = array_fill(0, $n, 'Abizena'); $t[$n-1] = 'Izena'; }
+    return implode(' ', $t);
+}
+
 function import_startlist($payload) {
     $txap = _imp_txap_id($payload);
     $riders = $payload['riders'] ?? [];
     // merge_map: izena → Txirrindularia_ID (existitzen denari lotu) | 'skip' (baztertu) | null (lehenetsia)
     $merge_map = $payload['merge_map'] ?? [];
+    // format_mode = izen-formatu globala berrientzat; format_map = izenez-izeneko gainidazketak
+    $format_mode = $payload['format_mode'] ?? 'auto';
+    $format_map = $payload['format_map'] ?? [];
     $set = 0; $created = 0; $lotuta = 0; $baztertuta = 0; $errors = [];
     foreach ($riders as $r) {
         $rn = trim((string)($r['izena'] ?? ''));
@@ -546,7 +571,17 @@ function import_startlist($payload) {
             $mv = array_key_exists($rn, $merge_map) ? $merge_map[$rn] : null;
             if ($mv === 'skip') { $baztertuta++; continue; }
             if ($mv !== null && $mv !== '') { $rid = (int)$mv; $lotuta++; }
-            else { if (find_txirrindularia_id($rn) === null) $created++; $rid = ensure_txirrindularia_id($rn); }
+            else {
+                $existing = find_txirrindularia_id($rn);
+                if ($existing === null) {
+                    $created++;
+                    $fmt = izen_formatua_sortu($rn, $format_map[$rn] ?? $format_mode);
+                    $res = db_exec('INSERT INTO `Txirrindulariak` (Izena, Izen_Formatua) VALUES (?, ?)', [$rn, $fmt]);
+                    $rid = (int)$res['insert_id'];
+                } else {
+                    $rid = $existing;
+                }
+            }
             upsert_dortsala($txap, $rid, $dor);
             $set++;
         } catch (Exception $e) {

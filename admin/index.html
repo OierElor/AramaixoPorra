@@ -374,7 +374,18 @@
       <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">2 · Startlist — dortsalak + izenak</div></div><div class="card-body">
         <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px"><strong>Itzulia</strong>: "Txirrindulariak" orriko <em>Dorsalak + Izena</em> zutabeak. <strong>Klasikoak</strong>: "TX zerrenda" orria oso-osorik. Talde-lerroak automatikoki baztertzen dira.</div>
         <textarea id="imp-startlist-paste" placeholder="Itsatsi startlist-a..." style="width:100%;height:110px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="impStartlistPreview()">🔍 Aurreikusi</button><button class="btn btn-primary btn-sm" onclick="impStartlist()">⬆ Inportatu</button></div>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="impStartlistPreview()">🔍 Aurreikusi</button>
+          <button class="btn btn-primary btn-sm" onclick="impStartlist()">⬆ Inportatu</button>
+          <label style="font-size:12px;color:var(--muted);margin-left:6px">Izen-formatua (berrientzat):
+            <select id="imp-startlist-format" style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text)">
+              <option value="auto">Auto (maiuskulak = abizena)</option>
+              <option value="abizena_izena">Abizena · Izena</option>
+              <option value="izena_abizena">Izena · Abizena</option>
+              <option value="none">Gabe</option>
+            </select>
+          </label>
+        </div>
         <div id="imp-startlist-result" style="margin-top:10px"></div>
       </div></div>
 
@@ -1653,6 +1664,13 @@ function _startlistResolveHtml(newRiders) {
         <option value="skip">🚫 Ez sartu</option>
         <option value="search">🔍 Beste bat lotu…</option>
       </select>
+      <select class="sl-format" data-idx="${i}" title="Izen-formatua" style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--muted)">
+        <option value="">(globala)</option>
+        <option value="auto">Auto</option>
+        <option value="abizena_izena">A·I</option>
+        <option value="izena_abizena">I·A</option>
+        <option value="none">Gabe</option>
+      </select>
       <span class="sl-search-wrap" data-idx="${i}" style="display:none;position:relative">
         <input class="sl-search" data-idx="${i}" oninput="slSearchInput(${i})" placeholder="Bilatu…" autocomplete="off" style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text);width:180px">
         <div class="sl-search-list" data-idx="${i}" style="position:absolute;z-index:10;background:var(--bg);border:1px solid var(--border);border-radius:4px;max-height:150px;overflow:auto;min-width:200px"></div>
@@ -1669,6 +1687,9 @@ function slOnChange(i) {
   if (!sel || !wrap) return;
   if (sel.value === "search") { wrap.style.display = ""; wrap.querySelector(".sl-search")?.focus(); }
   else { wrap.style.display = "none"; const box = wrap.querySelector(".sl-search-list"); if (box) box.innerHTML = ""; }
+  // Izen-formatua "sortu berria" denean bakarrik du zentzua
+  const fmt = document.querySelector(`.sl-format[data-idx="${i}"]`);
+  if (fmt) fmt.style.display = sel.value === "create" ? "" : "none";
 }
 
 function slSearchInput(i) {
@@ -1732,16 +1753,24 @@ async function impStartlist() {
   if (!riders.length) return showToast("Ez da dortsalik antzeman", "err");
   // Aurreikuspeneko ebazpen-aukerak → merge_map (izena → ID | 'skip'; 'create' = lehenetsia, kanpo)
   const merge_map = {};
+  const format_map = {};
   document.querySelectorAll(".sl-resolve").forEach(sel => {
-    const nr = slNewRiders[Number(sel.dataset.idx)];
+    const idx = Number(sel.dataset.idx);
+    const nr = slNewRiders[idx];
     if (!nr) return;
     const v = sel.value;
     if (v === "skip") merge_map[nr.izena] = "skip";
     else if (v !== "create" && v !== "search") merge_map[nr.izena] = Number(v);
+    else {
+      // 'create' (edo 'search' ebatzi gabe) → sortu; izen-formatu gainidazketa badago, gorde
+      const fmt = document.querySelector(`.sl-format[data-idx="${idx}"]`)?.value;
+      if (fmt) format_map[nr.izena] = fmt;
+    }
   });
+  const format_mode = el("imp-startlist-format")?.value || "auto";
   showToast("⏳ Inportatzen...");
   try {
-    const r = await api("api/import/startlist", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), riders, merge_map }) });
+    const r = await api("api/import/startlist", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), riders, merge_map, format_mode, format_map }) });
     el("imp-startlist-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.dortsalak} dortsala ezarrita · ${r.txirrindulariak_berri} berri` +
       `${r.lotuta ? ` · ${r.lotuta} lotuta` : ""}${r.baztertuta ? ` · ${r.baztertuta} baztertuta` : ""}</div>`;
     showToast(`✅ ${r.dortsalak} dortsala ezarrita`);

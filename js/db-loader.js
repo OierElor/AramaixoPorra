@@ -135,8 +135,10 @@ class DBLoader {
             JOIN "PorraEzizenak" ez ON ez.Ezizen_ID = sp.Ezizen_ID
             WHERE sp.Txapelketa_ID = ?
               AND sp.Azken_Karrera_ID = (
-                  SELECT MAX(Azken_Karrera_ID) FROM "TxapelketaSailkapenaPorralariak"
-                  WHERE Txapelketa_ID = ?)
+                  SELECT s2.Azken_Karrera_ID FROM "TxapelketaSailkapenaPorralariak" s2
+                  JOIN "Karrerak" k ON k.Karrerak_ID = s2.Azken_Karrera_ID
+                  WHERE s2.Txapelketa_ID = ?
+                  ORDER BY (k.Ordena IS NULL) DESC, k.Ordena DESC, k.Karrerak_ID DESC LIMIT 1)
             ORDER BY sp.Puntuak_Totalean DESC, ez.Ezizena
         `;
         const rows = await this._query(sql, [txapelketaId, txapelketaId]);
@@ -160,8 +162,10 @@ class DBLoader {
                 ON h.TxapelketaID = st.Txapelketa_ID AND h.TxirrindulariaID = st.Txirrindularia_ID
             WHERE st.Txapelketa_ID = ?
               AND st.Azken_Karrera_ID = (
-                  SELECT MAX(Azken_Karrera_ID) FROM "TxapelketaSailkapenaTxirrindulariak"
-                  WHERE Txapelketa_ID = ?)
+                  SELECT s2.Azken_Karrera_ID FROM "TxapelketaSailkapenaTxirrindulariak" s2
+                  JOIN "Karrerak" k ON k.Karrerak_ID = s2.Azken_Karrera_ID
+                  WHERE s2.Txapelketa_ID = ?
+                  ORDER BY (k.Ordena IS NULL) DESC, k.Ordena DESC, k.Karrerak_ID DESC LIMIT 1)
             ORDER BY st.Puntuak_Totalean DESC, t.Izena
         `;
         let rows = await this._query(evoSql, [txapelketaId, txapelketaId]);
@@ -270,7 +274,7 @@ class DBLoader {
     async loadStageByNumber(txapelketaId, n, tableId) {
         const k = await this._query(
             "SELECT Karrerak_ID AS id FROM Karrerak WHERE Txapelketa_ID = ? " +
-            "AND Kategoria IS NOT NULL AND Kategoria <> '' ORDER BY Karrerak_ID LIMIT 1 OFFSET ?",
+            "AND Kategoria IS NOT NULL AND Kategoria <> '' ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID LIMIT 1 OFFSET ?",
             [txapelketaId, n - 1]);
         const table = document.getElementById(tableId);
         if (!k.length) {
@@ -362,7 +366,7 @@ class DBLoader {
                 SELECT k.Karrerak_ID AS id, k.Izena AS izena
                 FROM "Karrerak" k
                 WHERE k.Txapelketa_ID = ? AND k.Kategoria = 'Etapa'
-                ORDER BY k.Karrerak_ID
+                ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID
             `, [txapelketaId]);
 
             if (stages.length === 0) {

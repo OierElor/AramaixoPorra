@@ -748,16 +748,22 @@ function import_etapak($payload) {
     $create_missing = array_key_exists('create_missing', $payload) ? (bool)$payload['create_missing'] : true;
     $trow = db_one('SELECT Urtea FROM `Txapelketak` WHERE Txapelketa_ID = ?', [$txap]);
     $urtea = $trow ? (int)$trow['Urtea'] : (int)date('Y');
+    $next_ordena = (int)(db_scalar('SELECT COALESCE(MAX(Ordena),0) FROM `Karrerak` WHERE Txapelketa_ID = ?', [$txap]) ?? 0);
     $done = []; $karrerak_sortuta = 0; $unmatched = []; $unknown_all = [];
     foreach ($stages as $s) {
         $izena = trim((string)($s['izena'] ?? ''));
         if ($izena === '') continue;
+        // Ordena: etapa-zenbakia (Etapak orritik) edo hurrengo sekuentziala
+        $ordena = to_int($s['zenbakia'] ?? null);
         $kid = find_karrera_by_izena($txap, $izena);
         if ($kid === null) {
             if (!$create_missing) { $unmatched[] = $izena; continue; }
-            $res = db_exec('INSERT INTO `Karrerak` (Txapelketa_ID, Izena, Urtea, Kategoria) VALUES (?, ?, ?, ?)', [$txap, $izena, $urtea, 'Etapa']);
+            if ($ordena === null) { $next_ordena++; $ordena = $next_ordena; }
+            $res = db_exec('INSERT INTO `Karrerak` (Txapelketa_ID, Izena, Urtea, Kategoria, Ordena) VALUES (?, ?, ?, ?, ?)', [$txap, $izena, $urtea, 'Etapa', $ordena]);
             $kid = (int)$res['insert_id'];
             $karrerak_sortuta++;
+        } elseif ($ordena !== null) {
+            db_exec('UPDATE `Karrerak` SET Ordena = ? WHERE Karrerak_ID = ?', [$ordena, $kid]);
         }
         db_exec('DELETE FROM `KarreraSailkapena` WHERE Karrera_ID = ?', [$kid]);
         $ins = 0;
@@ -808,6 +814,8 @@ function import_karrerak($payload) {
         $urtea = $row ? (int)$row['Urtea'] : (int)date('Y');
     }
     $races = $payload['races'] ?? [];
+    // Ordena: lehendik dagoen maximotik jarraitu (paste-aren ordenean erantsi)
+    $next_ordena = (int)(db_scalar('SELECT COALESCE(MAX(Ordena),0) FROM `Karrerak` WHERE Txapelketa_ID = ?', [$txap]) ?? 0);
     $ins = 0; $skip = 0; $errors = [];
     foreach ($races as $r) {
         $izena = trim((string)($r['izena'] ?? ''));
@@ -816,7 +824,8 @@ function import_karrerak($payload) {
         try {
             $exists = db_one('SELECT Karrerak_ID FROM `Karrerak` WHERE Izena = ? AND Urtea = ? AND Txapelketa_ID = ?', [$izena, $urtea, $txap]);
             if ($exists) { $skip++; continue; }
-            db_exec('INSERT INTO `Karrerak` (Txapelketa_ID, Izena, Urtea, Kategoria) VALUES (?, ?, ?, ?)', [$txap, $izena, $urtea, $kat]);
+            $next_ordena++;
+            db_exec('INSERT INTO `Karrerak` (Txapelketa_ID, Izena, Urtea, Kategoria, Ordena) VALUES (?, ?, ?, ?, ?)', [$txap, $izena, $urtea, $kat, $next_ordena]);
             $ins++;
         } catch (Exception $e) { $errors[] = ['izena'=>$izena, 'reason'=>$e->getMessage()]; }
     }
@@ -1116,7 +1125,7 @@ function recalculate_zenbat_porra() {
 // ─── Sailkapenak kalkulatu ───────────────────────────────────────────────────
 function calculate_txirri_sailkapena($txap_id) {
     try {
-        $races = array_map(fn($r)=>(int)$r['Karrerak_ID'], db_rows('SELECT Karrerak_ID FROM `Karrerak` WHERE Txapelketa_ID = ? ORDER BY Karrerak_ID', [$txap_id]));
+        $races = array_map(fn($r)=>(int)$r['Karrerak_ID'], db_rows('SELECT Karrerak_ID FROM `Karrerak` WHERE Txapelketa_ID = ? ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID', [$txap_id]));
         if (!$races) return ['ok'=>false,'reason'=>'Txapelketa honek ez du karrerarik'];
         db_begin();
         db_exec('DELETE FROM `TxapelketaSailkapenaTxirrindulariak` WHERE Txapelketa_ID = ?', [$txap_id]);

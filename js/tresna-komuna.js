@@ -29,7 +29,7 @@ const Tresna = {
     async karrerak(tid) {
         return this.q("SELECT Karrerak_ID AS kid, Izena AS izena FROM Karrerak " +
             "WHERE Txapelketa_ID = ? AND Kategoria IS NOT NULL AND Kategoria <> '' " +
-            "ORDER BY Karrerak_ID", [tid]);
+            "ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID", [tid]);
     },
 
     karreraLabel(izena) {

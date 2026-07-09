@@ -272,7 +272,7 @@
         </div>
       </div>
       <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
-      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Ordena</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
     </section>
 
     <!-- SAILKAPENAK -->
@@ -851,11 +851,25 @@ function renderTxapelketak() {
   const exSel = el("txap-export-sel");
   if (exSel) { const prev = exSel.value; exSel.innerHTML = `<option value="">— Txapelketa —</option>` +
     state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join(""); if (prev) exSel.value = prev; }
-  el("karrerak-tbody").innerHTML = state.karrerak.map(k => {
+  const _ord = k => (k.Ordena == null ? 1e9 : Number(k.Ordena));
+  const sortedK = [...state.karrerak].sort((a, b) =>
+    a.Txapelketa_ID - b.Txapelketa_ID || _ord(a) - _ord(b) || a.Karrerak_ID - b.Karrerak_ID);
+  el("karrerak-tbody").innerHTML = sortedK.map(k => {
     const txap = state.txapelketak.find(t => t.Txapelketa_ID === k.Txapelketa_ID);
     return `<tr><td class="pk-cell">${esc(k.Karrerak_ID)}</td><td>${esc(txap?.Izena || k.Txapelketa_ID)}</td><td>${esc(k.Izena)}</td><td>${esc(k.Urtea)}</td>` +
+      `<td><input type="number" value="${k.Ordena ?? ''}" onchange="saveKarreraOrdena(this, ${k.Karrerak_ID})" style="width:56px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center"></td>` +
       `<td class="row-actions"><button class="btn btn-sm btn-ghost" title="Ezabatu" onclick="deleteKarrera(${k.Karrerak_ID}, this.dataset.iz)" data-iz="${esc(k.Izena)}">🗑</button></td></tr>`;
   }).join("");
+}
+
+async function saveKarreraOrdena(inp, kid) {
+  const v = inp.value.trim();
+  try {
+    await api("api/table-update", { method: "POST", body: JSON.stringify({ table: "Karrerak", pk: { Karrerak_ID: kid }, values: { Ordena: v === "" ? null : Number(v) } }) });
+    showToast("Ordena gordeta ✓");
+    const k = state.karrerak.find(x => x.Karrerak_ID === kid);
+    if (k) k.Ordena = v === "" ? null : Number(v);
+  } catch(e) { showToast(e.message, "err"); await reloadData(); }
 }
 
 async function deleteKarrera(kid, izena) {
@@ -1875,6 +1889,9 @@ function parseEtapak(text) {
   if (hi < 0) hi = g.findIndex(r => r.filter(c => /[A-Za-zÀ-ÿ]/.test(c||"") && !_ETAPAK_SKIP.has((c||"").trim().toLowerCase())).length >= 2);
   if (hi < 0) return [];
   const names = g[hi];
+  // "Etapak" errenkada (etapa-zenbakiak) → Ordena; egon ez badaiteke, null
+  const ei = g.findIndex(r => r.length && (r[0]||"").trim().toLowerCase() === "etapak");
+  const nums = ei >= 0 ? g[ei] : null;
   const stageCols = [];
   for (let c = 0; c < names.length; c++) {
     const nm = (names[c]||"").trim();
@@ -1889,12 +1906,13 @@ function parseEtapak(text) {
   const stages = [];
   for (const c of stageCols) {
     const nm = (names[c]||"").trim();
+    const zbk = nums && /^\d+$/.test((nums[c]||"").trim()) ? Number(nums[c]) : null;
     const results = [];
     for (let p = 0; p < posRows.length; p++) {
       const d = (posRows[p][c]||"").trim();
       if (/^\d{1,4}$/.test(d)) results.push({ pos: p + 1, dortsala: d });
     }
-    if (results.length) stages.push({ izena: nm, results });
+    if (results.length) stages.push({ izena: nm, zenbakia: zbk, results });
   }
   return stages;
 }

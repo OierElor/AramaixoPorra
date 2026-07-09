@@ -1791,7 +1791,8 @@ async function impApustuakPreview() {
       ? `<div style="font-size:12px;color:var(--accent);margin-top:6px">⚠ ${r.unknown_dortsalak.length} dortsal ezezagun (startlist falta?): ${r.unknown_dortsalak.slice(0,20).map(esc).join(", ")}</div>`
       : `<div style="font-size:12px;color:#4ade80;margin-top:6px">✓ Dortsal guztiak startlist-ean daude.</div>`;
     const warn = (r.warnings||[]).length ? `<div style="font-size:12px;color:var(--accent2);margin-top:6px">⚠ ${r.warnings.length} porrak tamaina okerra:<br>${r.warnings.slice(0,10).map(esc).join("<br>")}</div>` : "";
-    res.innerHTML = `<div style="font-size:13px;line-height:1.7"><strong>${r.bettors}</strong> porra · <strong>${r.bet_count}</strong> apustu · <strong>${r.new_porralariak.length}</strong> porralaria berri</div>${unk}${warn}`;
+    const lg = (r.lotu_gabe||[]).length ? `<div style="font-size:12px;color:var(--accent2);margin-top:6px">ℹ ${r.lotu_gabe.length} ezizen lotu gabe geratuko dira (ez da porralaririk sortuko). "Ezizenak lotu" atalean lotu gero.</div>` : "";
+    res.innerHTML = `<div style="font-size:13px;line-height:1.7"><strong>${r.bettors}</strong> porra · <strong>${r.bet_count}</strong> apustu</div>${unk}${lg}${warn}`;
   } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">${esc(e.message)}</div>`; }
 }
 
@@ -1805,7 +1806,8 @@ async function impApustuak() {
   try {
     const r = await api("api/import/apustuak", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), mota, bettors }) });
     const unk = (r.dortsal_ezezagunak||[]).length ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.dortsal_ezezagunak.length} dortsal ezezagun baztertuta (startlist inportatu eta berriz saiatu)</div>` : "";
-    el("imp-apustuak-result").innerHTML = `<div style="color:#4ade80;font-size:13px;line-height:1.7">✅ ${r.porralariak_berri} porralaria berri · ${r.ezizenak_berri} ezizen · ${r.apustuak} apustu</div>${unk}`;
+    const lg = r.lotu_gabe ? `<div style="color:var(--accent2);font-size:12px">ℹ ${r.lotu_gabe} ezizen lotu gabe ("Ezizenak lotu" atalean lotu)</div>` : "";
+    el("imp-apustuak-result").innerHTML = `<div style="color:#4ade80;font-size:13px;line-height:1.7">✅ ${r.ezizenak_berri} ezizen · ${r.apustuak} apustu · ${r.lotuta} lotuta</div>${lg}${unk}`;
     showToast(`✅ ${r.apustuak} apustu inportatuta`);
     await reloadData();
   } catch(e) { showToast(e.message, "err"); }
@@ -2636,13 +2638,11 @@ async function recalculateZenbatPorra() {
 }
 
 async function normalizeIzenak() {
-  if (!await confirmDialog('Txirrindulari eta porralari izen guztiei Title Case formatua emango zaie (adib: "POGACAR TADEJ" → "Pogacar Tadej"). Jarraitu?')) return;
+  if (!await confirmDialog('Txirrindulari izen guztiei Title Case formatua emango zaie (adib: "POGACAR TADEJ" → "Pogacar Tadej"). Porralariei EZ die eragingo. Jarraitu?')) return;
   try {
     const r = await api("api/normalize-izenak", { method: "POST" });
     if (r.ok) {
-      const t = r.changed.txirrindulariak;
-      const p = r.changed.porralariak;
-      showToast(`✅ ${t} txirrindulari eta ${p} porralari aldatu`);
+      showToast(`✅ ${r.changed.txirrindulariak} txirrindulari aldatu`);
       await reloadData();
     }
   } catch(e) { showToast(e.message, "err"); }

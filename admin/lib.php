@@ -597,12 +597,13 @@ function import_apustuak_preview($payload) {
     $txap = _imp_txap_id($payload);
     $bettors = $payload['bettors'] ?? [];
     $expect = ($payload['mota'] ?? '') === 'klasikoak' ? 25 : 15;
-    $new_porralariak = []; $bet_count = 0; $warnings = [];
+    $lotu_gabe = []; $bet_count = 0; $warnings = [];
     $unknown = []; $seen_d = [];
     foreach ($bettors as $b) {
         $izena = trim((string)($b['izena'] ?? ''));
         if ($izena === '') continue;
-        if (find_porralaria_id($izena) === null && !in_array($izena, $new_porralariak, true)) $new_porralariak[] = $izena;
+        // Porralaririk ez da sortuko: existitzen ez direnak lotu gabe geratuko dira
+        if (find_porralaria_id($izena) === null && !in_array($izena, $lotu_gabe, true)) $lotu_gabe[] = $izena;
         $dors = $b['dortsalak'] ?? [];
         if (count($dors) !== $expect) $warnings[] = "$izena: ".count($dors)." dortsal ($expect espero)";
         foreach ($dors as $d) {
@@ -616,7 +617,7 @@ function import_apustuak_preview($payload) {
     }
     return [
         'bettors'=>count($bettors),
-        'new_porralariak'=>$new_porralariak,
+        'lotu_gabe'=>$lotu_gabe,
         'bet_count'=>$bet_count,
         'unknown_dortsalak'=>$unknown,
         'warnings'=>$warnings,
@@ -626,18 +627,23 @@ function import_apustuak_preview($payload) {
 function import_apustuak($payload) {
     $txap = _imp_txap_id($payload);
     $bettors = $payload['bettors'] ?? [];
-    $created_p = 0; $created_e = 0; $bets = 0; $errors = []; $unknown = [];
+    // Porralaririk EZ da sortzen: existitzen bada lotu, bestela ezizena lotu gabe utzi
+    // (adminak "Ezizenak lotu" bidez lotuko du gero).
+    $created_e = 0; $bets = 0; $lotuta = 0; $lotu_gabe = 0; $errors = []; $unknown = [];
     foreach ($bettors as $b) {
         $izena = trim((string)($b['izena'] ?? ''));
         if ($izena === '') continue;
         try {
-            $pid_before = find_porralaria_id($izena);
-            $pid = ensure_porralaria_id($izena);
-            if ($pid_before === null) $created_p++;
             $eid_before = find_ezizen_id($txap, $izena);
             $eid = ensure_ezizen_id($txap, $izena);
             if ($eid_before === null) $created_e++;
-            db_exec('INSERT IGNORE INTO `PorralariTaldeenEzizenak` (Ezizen_ID, Porralaria_ID) VALUES (?, ?)', [$eid, $pid]);
+            $pid = find_porralaria_id($izena);
+            if ($pid !== null) {
+                db_exec('INSERT IGNORE INTO `PorralariTaldeenEzizenak` (Ezizen_ID, Porralaria_ID) VALUES (?, ?)', [$eid, $pid]);
+                $lotuta++;
+            } else {
+                $lotu_gabe++;
+            }
             foreach (($b['dortsalak'] ?? []) as $d) {
                 $di = to_int($d);
                 if ($di === null) continue;
@@ -650,7 +656,7 @@ function import_apustuak($payload) {
             $errors[] = ['izena'=>$izena, 'reason'=>$e->getMessage()];
         }
     }
-    return ['porralariak_berri'=>$created_p, 'ezizenak_berri'=>$created_e, 'apustuak'=>$bets, 'dortsal_ezezagunak'=>array_keys($unknown), 'errors'=>$errors];
+    return ['ezizenak_berri'=>$created_e, 'lotuta'=>$lotuta, 'lotu_gabe'=>$lotu_gabe, 'apustuak'=>$bets, 'dortsal_ezezagunak'=>array_keys($unknown), 'errors'=>$errors];
 }
 
 // ── D · Karrera emaitzak (dortsalez, edo izen-fallback) ─────────────────────
@@ -1175,14 +1181,11 @@ function apply_izen_ordenak($aldaketak) {
 }
 
 function normalize_izenak() {
-    $changed = ['txirrindulariak'=>0,'porralariak'=>0];
+    // Txirrindulariei bakarrik eragiten die (porralariei ez).
+    $changed = ['txirrindulariak'=>0];
     foreach (db_rows('SELECT Txirrindularia_ID, Izena FROM `Txirrindulariak`') as $row) {
         $new = mb_convert_case($row['Izena'], MB_CASE_TITLE, 'UTF-8');
         if ($new !== $row['Izena']) { db_exec('UPDATE `Txirrindulariak` SET Izena = ? WHERE Txirrindularia_ID = ?', [$new, $row['Txirrindularia_ID']]); $changed['txirrindulariak']++; }
-    }
-    foreach (db_rows('SELECT Porralaria_ID, Izena FROM `Porralariak`') as $row) {
-        $new = mb_convert_case($row['Izena'], MB_CASE_TITLE, 'UTF-8');
-        if ($new !== $row['Izena']) { db_exec('UPDATE `Porralariak` SET Izena = ? WHERE Porralaria_ID = ?', [$new, $row['Porralaria_ID']]); $changed['porralariak']++; }
     }
     return ['ok'=>true,'changed'=>$changed];
 }

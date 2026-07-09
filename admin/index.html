@@ -407,6 +407,27 @@
         <div id="imp-emaitzak-result" style="margin-top:10px"></div>
       </div></div>
 
+      <!-- D2 · ETAPAK (ITZULIAK) BATERA -->
+      <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">4b · Etapak batera (itzuliak — "Etapak" orria)</div></div><div class="card-body">
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Itzuliaren <strong>"Etapak"</strong> orria itsatsi (osoa edo zati bat). Datuak dituzten etapak automatikoki antzematen dira; bakoitza bere karrerarekin lotzen da <strong>izenaz</strong> (Helmuga). Postuen arabera puntuak ematen dira. Etaparik gabeko zutabeak eta puntu-taulak baztertu egiten dira.</div>
+        <textarea id="imp-etapak-paste" placeholder="Itsatsi 'Etapak' orria..." style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
+        <div style="display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="impEtapakPreview()">🔍 Aurreikusi</button>
+          <button class="btn btn-primary btn-sm" onclick="impEtapak()">⬆ Inportatu hautatutakoak</button>
+          <label style="font-size:12px;color:var(--muted)">Puntuak (1.–6.):
+            <span style="display:inline-flex;gap:3px">
+              <input class="etapak-pt" value="31" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="etapak-pt" value="23" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="etapak-pt" value="17" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="etapak-pt" value="13" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="etapak-pt" value="9" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="etapak-pt" value="7" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+            </span>
+          </label>
+        </div>
+        <div id="imp-etapak-result" style="margin-top:10px"></div>
+      </div></div>
+
       <!-- E · SAILKAPEN FINALAK -->
       <div class="card"><div class="card-head"><div class="card-title">5 · Sailkapen finalak (porralariak)</div></div><div class="card-body">
         <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Porralari sailkapena: <code>Posizioa · Porreroa · Puntuak</code>. Ezizenak lehendik egon behar dira (apustuetatik).</div>
@@ -1838,6 +1859,78 @@ async function impEmaitzak() {
     const unk = (r.dortsal_ezezagunak||[]).length ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.dortsal_ezezagunak.length} baztertuta</div>` : "";
     el("imp-emaitzak-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.sartuta} emaitza sartuta</div>${unk}`;
     showToast(`✅ ${r.sartuta} emaitza`);
+    await reloadData();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+// ── D2 · Etapak batera (itzuliak) ────────────────────────────────────────────
+let etapakStages = [];
+// "Etapak" orria → [{izena, results:[{pos, dortsala}]}]. "Etapak" errenkadako etapa-zenbakiek
+// benetako etapa-zutabeak markatzen dituzte (puntu-taulak baztertuz).
+function parseEtapak(text) {
+  const g = tourParseGrid(text);
+  const findRow = lab => g.findIndex(r => r.length && (r[0]||"").trim().toLowerCase() === lab);
+  const ei = findRow("etapak"), hi = findRow("helmuga");
+  if (ei < 0 || hi < 0) return [];
+  const stageCols = [];
+  for (let c = 1; c < g[ei].length; c++) if (/^\d+$/.test((g[ei][c]||"").trim())) stageCols.push(c);
+  const names = g[hi];
+  const posRows = {};
+  for (let r = hi + 1; r < Math.min(hi + 12, g.length); r++) {
+    const k = (g[r][0]||"").trim();
+    if (/^[1-6]$/.test(k)) posRows[Number(k)] = g[r];
+    else if (Object.keys(posRows).length) break;
+  }
+  const stages = [];
+  for (const c of stageCols) {
+    const nm = (names[c]||"").trim();
+    if (!nm) continue;
+    const results = [];
+    for (let p = 1; p <= 6; p++) {
+      const row = posRows[p];
+      const d = row && c < row.length ? (row[c]||"").trim() : "";
+      if (/^\d{1,4}$/.test(d)) results.push({ pos: p, dortsala: d });
+    }
+    if (results.length) stages.push({ izena: nm, results });
+  }
+  return stages;
+}
+
+async function impEtapakPreview() {
+  const txap = impTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
+  etapakStages = parseEtapak(el("imp-etapak-paste")?.value || "");
+  const res = el("imp-etapak-result");
+  if (!etapakStages.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da etaparik antzeman (datuekin).</div>`; return; }
+  try {
+    const r = await api("api/import/etapak-preview", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), stages: etapakStages }) });
+    const rows = (r.stages||[]).map((s, i) => {
+      const matched = s.karrera_id != null;
+      const unk = (s.unknown||[]).length ? ` <span style="color:var(--accent)">⚠ ${s.unknown.length} dortsal ezezagun</span>` : "";
+      const mark = matched ? `<span style="color:#4ade80">✓ lotua</span>` : `<span style="color:var(--accent)">✗ karrera ez da aurkitu</span>`;
+      return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <input type="checkbox" class="etapak-sel" data-idx="${i}" ${matched ? "checked" : "disabled"}>
+        <strong style="min-width:220px">${esc(s.izena)}</strong>
+        <span style="color:var(--muted)">${s.n} postu</span> · ${mark}${unk}</div>`;
+    }).join("");
+    res.innerHTML = `<div style="font-size:12px;color:var(--accent2);margin-top:6px">${r.stages.length} etapa antzemanda. Hautatu inportatzekoak:</div>
+      <div style="margin:6px 0;max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:6px 10px">${rows}</div>`;
+  } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">${esc(e.message)}</div>`; }
+}
+
+async function impEtapak() {
+  const txap = impTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
+  const sel = [...document.querySelectorAll(".etapak-sel:checked")].map(c => etapakStages[Number(c.dataset.idx)]).filter(Boolean);
+  if (!sel.length) return showToast("Aurreikusi eta hautatu etapak lehenik", "err");
+  const puntuak = [...document.querySelectorAll(".etapak-pt")].map(i => Number(i.value) || 0);
+  if (!(await confirmDialog(`${sel.length} etaparen emaitzak birjarriko dira (postuak: ${puntuak.join("·")}). Jarraitu?`))) return;
+  showToast("⏳ Inportatzen...");
+  try {
+    const r = await api("api/import/etapak", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), stages: sel, puntuak }) });
+    const um = (r.lotu_gabe||[]).length ? `<div style="color:var(--accent);font-size:12px">✗ ${r.lotu_gabe.length} etapa lotu gabe: ${r.lotu_gabe.slice(0,8).map(esc).join(", ")}</div>` : "";
+    const unk = (r.dortsal_ezezagunak||[]).length ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.dortsal_ezezagunak.length} dortsal ezezagun baztertuta</div>` : "";
+    const tot = (r.egindakoak||[]).reduce((a, x) => a + x.sartuta, 0);
+    el("imp-etapak-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.egindakoak.length} etapa · ${tot} emaitza sartuta</div>${um}${unk}`;
+    showToast(`✅ ${r.egindakoak.length} etapa inportatuta`);
     await reloadData();
   } catch(e) { showToast(e.message, "err"); }
 }

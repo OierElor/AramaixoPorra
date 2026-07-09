@@ -707,6 +707,67 @@ function import_emaitzak($payload) {
     return ['sartuta'=>$ins, 'dortsal_ezezagunak'=>$unknown, 'errors'=>$errors];
 }
 
+// ── D2 · Etapak (itzuli-emaitzak batera, "Etapak" orria) ────────────────────
+// Etapa bakoitza dortsalez eta postuz; puntuak eskalatik (postuaren arabera).
+// Karrera izenez lotzen da (Helmuga = Karreraren izena).
+function find_karrera_by_izena($txap_id, $izena) {
+    $row = db_one('SELECT Karrerak_ID FROM `Karrerak` WHERE Txapelketa_ID = ? AND Izena = ?', [(int)$txap_id, $izena]);
+    if ($row) return (int)$row['Karrerak_ID'];
+    $norm = normalize_name($izena);
+    if ($norm === '') return null;
+    foreach (db_rows('SELECT Karrerak_ID, Izena FROM `Karrerak` WHERE Txapelketa_ID = ?', [(int)$txap_id]) as $r) {
+        if (normalize_name($r['Izena']) === $norm) return (int)$r['Karrerak_ID'];
+    }
+    return null;
+}
+
+// payload: { txapelketa_id, stages: [ {izena, results:[{pos,dortsala}]}, ... ] }
+function import_etapak_preview($payload) {
+    $txap = _imp_txap_id($payload);
+    $stages = $payload['stages'] ?? [];
+    $out = [];
+    foreach ($stages as $s) {
+        $izena = trim((string)($s['izena'] ?? ''));
+        if ($izena === '') continue;
+        $kid = find_karrera_by_izena($txap, $izena);
+        $unknown = [];
+        foreach (($s['results'] ?? []) as $res) {
+            $di = to_int($res['dortsala'] ?? null);
+            if ($di !== null && find_txirri_by_dortsala($txap, $di) === null) $unknown[] = (string)($res['dortsala'] ?? '');
+        }
+        $out[] = ['izena'=>$izena, 'karrera_id'=>$kid, 'n'=>count($s['results'] ?? []), 'unknown'=>$unknown];
+    }
+    return ['stages'=>$out];
+}
+
+// payload: { txapelketa_id, stages:[{izena, results:[{pos,dortsala}]}], puntuak:[6 zenbaki] }
+function import_etapak($payload) {
+    $txap = _imp_txap_id($payload);
+    $stages = $payload['stages'] ?? [];
+    $puntuak = $payload['puntuak'] ?? [31,23,17,13,9,7];
+    $done = []; $unmatched = []; $unknown_all = [];
+    foreach ($stages as $s) {
+        $izena = trim((string)($s['izena'] ?? ''));
+        if ($izena === '') continue;
+        $kid = find_karrera_by_izena($txap, $izena);
+        if ($kid === null) { $unmatched[] = $izena; continue; }
+        db_exec('DELETE FROM `KarreraSailkapena` WHERE Karrera_ID = ?', [$kid]);
+        $ins = 0;
+        foreach (($s['results'] ?? []) as $res) {
+            $pos = to_int($res['pos'] ?? null);
+            $di = to_int($res['dortsala'] ?? null);
+            if ($pos === null || $di === null) continue;
+            $rid = find_txirri_by_dortsala($txap, $di);
+            if ($rid === null) { $unknown_all[(string)($res['dortsala'] ?? '')] = true; continue; }
+            $pts = ($pos >= 1 && $pos <= count($puntuak)) ? (int)$puntuak[$pos-1] : 0;
+            db_exec('INSERT IGNORE INTO `KarreraSailkapena` (Karrera_ID, Txirrindularia_ID, Puntuak, Sailkapena) VALUES (?, ?, ?, ?)', [$kid, $rid, $pts, $pos]);
+            $ins++;
+        }
+        $done[] = ['izena'=>$izena, 'sartuta'=>$ins];
+    }
+    return ['egindakoak'=>$done, 'lotu_gabe'=>$unmatched, 'dortsal_ezezagunak'=>array_keys($unknown_all)];
+}
+
 // ── E · Sailkapen finalak (porralari emaitzak) ──────────────────────────────
 // payload: { txapelketa_id, rows: [ {pos, porrero, puntuak}, ... ] }
 function import_sailkapenak($payload) {

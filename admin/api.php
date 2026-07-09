@@ -128,6 +128,8 @@ try {
             case $path === 'import/apustuak': json_out(import_apustuak($body));
             case $path === 'import/emaitzak-preview': json_out(import_emaitzak_preview($body));
             case $path === 'import/emaitzak': json_out(import_emaitzak($body));
+            case $path === 'import/etapak-preview': json_out(import_etapak_preview($body));
+            case $path === 'import/etapak': json_out(import_etapak($body));
             case $path === 'import/sailkapenak': json_out(import_sailkapenak($body));
             case $path === 'import/karrerak': json_out(import_karrerak($body));
             case $path === 'proposals/clear': json_out(clear_proposals());

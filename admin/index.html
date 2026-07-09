@@ -1639,15 +1639,57 @@ function parseDortsalak(text) {
   return out;
 }
 
-function _tourRiderWarnHtml(newRiders) {
+// Startlist aurreikuspena: txirrindulari berri bakoitzeko ebazpen-kontrola.
+let slNewRiders = [];
+function _startlistResolveHtml(newRiders) {
   if (!newRiders.length) return `<div style="color:#4ade80;font-size:12px">✓ Txirrindulari guztiak datu-basean daude.</div>`;
-  const items = newRiders.slice(0, 40).map(nr => {
-    const sug = (nr.suggestions||[]).slice(0,3).map(s => `${esc(s.Izena)} (${s.score})`).join(", ");
-    return `<li><strong>${esc(nr.izena)}</strong>${sug ? ` <span style="color:var(--muted)">— antzekoak: ${sug}</span>` : ""}</li>`;
+  const rows = newRiders.map((nr, i) => {
+    const sug = (nr.suggestions||[]).map(s => `<option value="${s.Txirrindularia_ID}">🔗 ${esc(s.Izena)} (${s.score})</option>`).join("");
+    return `<div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;flex-wrap:wrap">
+      <strong style="min-width:180px">${esc(nr.izena)}</strong>
+      <select class="sl-resolve" data-idx="${i}" onchange="slOnChange(${i})" style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text)">
+        <option value="create">➕ Sortu berria</option>
+        ${sug}
+        <option value="skip">🚫 Ez sartu</option>
+        <option value="search">🔍 Beste bat lotu…</option>
+      </select>
+      <span class="sl-search-wrap" data-idx="${i}" style="display:none;position:relative">
+        <input class="sl-search" data-idx="${i}" oninput="slSearchInput(${i})" placeholder="Bilatu…" autocomplete="off" style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text);width:180px">
+        <div class="sl-search-list" data-idx="${i}" style="position:absolute;z-index:10;background:var(--bg);border:1px solid var(--border);border-radius:4px;max-height:150px;overflow:auto;min-width:200px"></div>
+      </span>
+    </div>`;
   }).join("");
-  return `<div style="font-size:12px;color:var(--accent2);margin-top:6px">⚠ ${newRiders.length} txirrindulari berri sortuko dira (ez daude datu-basean):</div>
-    <ul style="font-size:12px;color:var(--muted);margin:4px 0 0 18px;max-height:160px;overflow:auto">${items}</ul>
-    <div style="font-size:11px;color:var(--muted);margin-top:4px">Antzekoak agertzen badira, egiaztatu izenak; fusionatzeko "Fusionatu" atala erabili inportatu ondoren.</div>`;
+  return `<div style="font-size:12px;color:var(--accent2);margin-top:6px">⚠ ${newRiders.length} txirrindulari berri (ez daude datu-basean). Bakoitzeko: sortu, lotu edo baztertu:</div>
+    <div style="margin:6px 0;max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:6px 10px">${rows}</div>`;
+}
+
+function slOnChange(i) {
+  const sel = document.querySelector(`.sl-resolve[data-idx="${i}"]`);
+  const wrap = document.querySelector(`.sl-search-wrap[data-idx="${i}"]`);
+  if (!sel || !wrap) return;
+  if (sel.value === "search") { wrap.style.display = ""; wrap.querySelector(".sl-search")?.focus(); }
+  else { wrap.style.display = "none"; const box = wrap.querySelector(".sl-search-list"); if (box) box.innerHTML = ""; }
+}
+
+function slSearchInput(i) {
+  const q = (document.querySelector(`.sl-search[data-idx="${i}"]`)?.value || "").toLowerCase().trim();
+  const box = document.querySelector(`.sl-search-list[data-idx="${i}"]`);
+  if (!box) return;
+  if (!q) { box.innerHTML = ""; return; }
+  const matches = state.txirrindulariak.filter(t => t.Izena.toLowerCase().includes(q)).slice(0, 10);
+  box.innerHTML = matches.map(t =>
+    `<div style="padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer" onclick="slPick(${i}, ${t.Txirrindularia_ID}, this.dataset.iz)" data-iz="${esc(t.Izena)}">${esc(t.Izena)}</div>`).join("")
+    || `<div style="padding:4px 8px;color:var(--muted)">Bat ere ez.</div>`;
+}
+
+function slPick(i, id, izena) {
+  const sel = document.querySelector(`.sl-resolve[data-idx="${i}"]`);
+  if (!sel) return;
+  let opt = [...sel.options].find(o => o.value === String(id));
+  if (!opt) { opt = new Option("🔗 " + izena, id); sel.add(opt, [...sel.options].find(o => o.value === "skip") || null); }
+  sel.value = String(id);
+  const wrap = document.querySelector(`.sl-search-wrap[data-idx="${i}"]`);
+  if (wrap) { wrap.style.display = "none"; wrap.querySelector(".sl-search-list").innerHTML = ""; wrap.querySelector(".sl-search").value = ""; }
 }
 
 // ── A · Karrerak ─────────────────────────────────────────────────────────────
@@ -1675,10 +1717,12 @@ async function impKarrerak() {
 async function impStartlistPreview() {
   const riders = parseStartlist(el("imp-startlist-paste")?.value || "", impMota());
   const res = el("imp-startlist-result");
+  slNewRiders = [];
   if (!riders.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da dortsalik antzeman.</div>`; return; }
   try {
     const r = await api("api/import/startlist-preview", { method:"POST", body: JSON.stringify({ riders }) });
-    res.innerHTML = `<div style="font-size:13px"><strong>${r.riders}</strong> dortsala · <strong>${r.new_riders.length}</strong> txirrindulari berri</div>${_tourRiderWarnHtml(r.new_riders)}`;
+    slNewRiders = r.new_riders || [];
+    res.innerHTML = `<div style="font-size:13px"><strong>${r.riders}</strong> dortsala · <strong>${r.new_riders.length}</strong> txirrindulari berri</div>${_startlistResolveHtml(slNewRiders)}`;
   } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">${esc(e.message)}</div>`; }
 }
 
@@ -1686,10 +1730,20 @@ async function impStartlist() {
   const txap = impTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
   const riders = parseStartlist(el("imp-startlist-paste")?.value || "", impMota());
   if (!riders.length) return showToast("Ez da dortsalik antzeman", "err");
+  // Aurreikuspeneko ebazpen-aukerak → merge_map (izena → ID | 'skip'; 'create' = lehenetsia, kanpo)
+  const merge_map = {};
+  document.querySelectorAll(".sl-resolve").forEach(sel => {
+    const nr = slNewRiders[Number(sel.dataset.idx)];
+    if (!nr) return;
+    const v = sel.value;
+    if (v === "skip") merge_map[nr.izena] = "skip";
+    else if (v !== "create" && v !== "search") merge_map[nr.izena] = Number(v);
+  });
   showToast("⏳ Inportatzen...");
   try {
-    const r = await api("api/import/startlist", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), riders }) });
-    el("imp-startlist-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.dortsalak} dortsala ezarrita · ${r.txirrindulariak_berri} txirrindulari berri</div>`;
+    const r = await api("api/import/startlist", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), riders, merge_map }) });
+    el("imp-startlist-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.dortsalak} dortsala ezarrita · ${r.txirrindulariak_berri} berri` +
+      `${r.lotuta ? ` · ${r.lotuta} lotuta` : ""}${r.baztertuta ? ` · ${r.baztertuta} baztertuta` : ""}</div>`;
     showToast(`✅ ${r.dortsalak} dortsala ezarrita`);
     await reloadData();
   } catch(e) { showToast(e.message, "err"); }

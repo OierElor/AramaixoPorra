@@ -535,14 +535,17 @@ function import_startlist_preview($payload) {
 function import_startlist($payload) {
     $txap = _imp_txap_id($payload);
     $riders = $payload['riders'] ?? [];
+    // merge_map: izena → Txirrindularia_ID (existitzen denari lotu) | 'skip' (baztertu) | null (lehenetsia)
     $merge_map = $payload['merge_map'] ?? [];
-    $set = 0; $created = 0; $errors = [];
+    $set = 0; $created = 0; $lotuta = 0; $baztertuta = 0; $errors = [];
     foreach ($riders as $r) {
         $rn = trim((string)($r['izena'] ?? ''));
         $dor = to_int($r['dortsala'] ?? null);
         if ($rn === '' || $dor === null) continue;
         try {
-            if (array_key_exists($rn, $merge_map) && $merge_map[$rn] !== null) $rid = (int)$merge_map[$rn];
+            $mv = array_key_exists($rn, $merge_map) ? $merge_map[$rn] : null;
+            if ($mv === 'skip') { $baztertuta++; continue; }
+            if ($mv !== null && $mv !== '') { $rid = (int)$mv; $lotuta++; }
             else { if (find_txirrindularia_id($rn) === null) $created++; $rid = ensure_txirrindularia_id($rn); }
             upsert_dortsala($txap, $rid, $dor);
             $set++;
@@ -550,7 +553,7 @@ function import_startlist($payload) {
             $errors[] = ['izena'=>$rn, 'reason'=>$e->getMessage()];
         }
     }
-    return ['dortsalak'=>$set, 'txirrindulariak_berri'=>$created, 'errors'=>$errors];
+    return ['dortsalak'=>$set, 'txirrindulariak_berri'=>$created, 'lotuta'=>$lotuta, 'baztertuta'=>$baztertuta, 'errors'=>$errors];
 }
 
 // ── C · Apustuak (dortsalez) ────────────────────────────────────────────────

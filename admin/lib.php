@@ -745,12 +745,20 @@ function import_etapak($payload) {
     $txap = _imp_txap_id($payload);
     $stages = $payload['stages'] ?? [];
     $puntuak = $payload['puntuak'] ?? [31,23,17,13,9,7];
-    $done = []; $unmatched = []; $unknown_all = [];
+    $create_missing = array_key_exists('create_missing', $payload) ? (bool)$payload['create_missing'] : true;
+    $trow = db_one('SELECT Urtea FROM `Txapelketak` WHERE Txapelketa_ID = ?', [$txap]);
+    $urtea = $trow ? (int)$trow['Urtea'] : (int)date('Y');
+    $done = []; $karrerak_sortuta = 0; $unmatched = []; $unknown_all = [];
     foreach ($stages as $s) {
         $izena = trim((string)($s['izena'] ?? ''));
         if ($izena === '') continue;
         $kid = find_karrera_by_izena($txap, $izena);
-        if ($kid === null) { $unmatched[] = $izena; continue; }
+        if ($kid === null) {
+            if (!$create_missing) { $unmatched[] = $izena; continue; }
+            $res = db_exec('INSERT INTO `Karrerak` (Txapelketa_ID, Izena, Urtea, Kategoria) VALUES (?, ?, ?, ?)', [$txap, $izena, $urtea, 'Etapa']);
+            $kid = (int)$res['insert_id'];
+            $karrerak_sortuta++;
+        }
         db_exec('DELETE FROM `KarreraSailkapena` WHERE Karrera_ID = ?', [$kid]);
         $ins = 0;
         foreach (($s['results'] ?? []) as $res) {
@@ -765,7 +773,7 @@ function import_etapak($payload) {
         }
         $done[] = ['izena'=>$izena, 'sartuta'=>$ins];
     }
-    return ['egindakoak'=>$done, 'lotu_gabe'=>$unmatched, 'dortsal_ezezagunak'=>array_keys($unknown_all)];
+    return ['egindakoak'=>$done, 'karrerak_sortuta'=>$karrerak_sortuta, 'lotu_gabe'=>$unmatched, 'dortsal_ezezagunak'=>array_keys($unknown_all)];
 }
 
 // ── E · Sailkapen finalak (porralari emaitzak) ──────────────────────────────

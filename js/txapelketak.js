@@ -1,26 +1,30 @@
 /**
- * Itzuli handien konfigurazioa (Tour / Giro / Vuelta) — EGIA-ITURRI BAKARRA.
+ * Txapelketa guztien konfigurazioa — EGIA-ITURRI BAKARRA.
+ * Itzuli handiak (Tour / Giro / Vuelta) eta Klasikak, denak egitura berarekin.
  *
- * Urte berri bat gehitzeko: sarrera bat gehitu `urteak`-en eta orri-stub-ak kopiatu.
- *   { id, arauak, dortsalak, porrak, profilaDir, profilaIrudia }
+ * Urte berri bat gehitzeko: sarrera bat gehitu `urteak`-en eta orri-stub bat kopiatu.
+ *   { id, arauak, dortsalak, porrak, profilaDir, profilaIrudia, irudiak }
  *
  *  - id            : Txapelketa_ID. `null` bada (edo DBan karrerarik ez badu),
  *                    sailkapen-taulak EZ dira erakusten.
  *  - arauak/dortsalak/porrak : PDF fitxategi-izena (URL-kodetua). Ez badago, kendu.
- *  - profilaDir    : ibilbide/etapa irudien karpeta (akordeoiko etapa-profiletarako ere).
- *  - profilaIrudia : ibilbide osoaren irudia.
+ *  - profilaDir    : karrera-irudien karpeta (`irudiBase`-tik zintzilik).
+ *  - profilaIrudia : ibilbide osoaren irudia, orriaren goialdean (itzuliak).
+ *  - irudiak       : klasikoetan bakarrik. { Karrerak_ID: 'fitxategia.png' }.
+ *                    Ez badago, itzulien patroia erabiltzen da: `Etapa{N}.jpg|.png`.
  */
 (function () {
     'use strict';
 
-    window.ITZULIAK = {
+    window.TXAPELKETAK = {
         pdfBase: '/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/',
         irudiBase: '/data/Etapen Profila/',
 
         kirolak: {
-            tour:   { izena: 'Tour de France' },
-            giro:   { izena: "Giro d'Italia" },
-            vuelta: { izena: 'Vuelta a España' },
+            tour:     { izena: 'Tour de France',  karrerakIzenburua: 'ETAPAZ ETAPA' },
+            giro:     { izena: "Giro d'Italia",   karrerakIzenburua: 'ETAPAZ ETAPA' },
+            vuelta:   { izena: 'Vuelta a España', karrerakIzenburua: 'ETAPAZ ETAPA' },
+            klasikak: { izena: 'Klasikak',        karrerakIzenburua: 'LASTERKETAK' },
         },
 
         urteak: {
@@ -112,29 +116,89 @@
                 profilaDir: 'vuelta/vuelta26',
                 profilaIrudia: 'IbilbideOsoa.jpg',
             },
+
+            // ── Klasikak ─────────────────────────────────────────────────────
+            // Lasterketa bakoitzak bere ibilbide-irudia du eta izenak ez dira
+            // sistematikoak, beraz Karrerak_ID → fitxategia mapa behar da.
+            'klasikak/2024': {
+                id: 13,
+                porrak: 'Porrak%20Klasikoak%202024.pdf',
+                arauak: 'Arauak%20klasikak%2024.pdf',
+                dortsalak: 'Txirrindulari%20Zerrenda%20Klasikak%202024.pdf',
+            },
+            'klasikak/2025': {
+                id: 14,
+                porrak: 'Porrak%20Klasikoak%202025.pdf',
+                arauak: 'Arauak%20klasikak%2025.pdf',
+                dortsalak: 'Txirrindulari%20Zerrenda%20Klasikak%202025.pdf',
+            },
+            'klasikak/2026': {
+                id: 15,
+                porrak: 'Porrak%20Klasikoak%202026.pdf',
+                arauak: 'Arauak%20klasikak%202026.pdf',
+                dortsalak: 'Txirrindulari%20zerrenda%20klasikak%202026.pdf',
+                profilaDir: 'klasikak/klasikak26',
+                irudiak: {
+                    54: 'Omloop Nieuwsblad.png',
+                    55: 'Strade Bianche.png',
+                    56: 'Milano - Torino.png',
+                    57: 'Milano - Sanremo.png',
+                    58: 'Brugge-De Panne.png',
+                    59: 'E3 Saxo.png',
+                    // 60 Gent-Wevelgem: irudirik ez
+                    61: 'a treves de flades.png',
+                    62: 'Tour de flandes.png',
+                    336: 'paris roubaix.png',
+                    337: 'Braranconne.png',
+                    338: 'Amstel.png',
+                    339: 'fleche wallonne.png',
+                    340: 'liege.png',
+                    341: 'Frankfurt.png',
+                    // 342 Brussels Cycling Classic, 343 Copenhagen Sprint: irudirik ez
+                },
+            },
         },
     };
 
-    /** Bidetik kirola/urtea atera: "/tour/2026/", "/tour/2026", "/tour/2026/index.html" */
-    window.ITZULIAK.bidea = function () {
+    /** Bidetik kirola/urtea atera: "/tour/2026/", "/klasikak/2026", ".../index.html" */
+    window.TXAPELKETAK.bidea = function () {
         const p = location.pathname.replace(/\.html?$/i, '').replace(/\/index$/i, '');
-        const m = p.match(/\/(tour|giro|vuelta)\/(\d{4})\/?$/i);
+        const m = p.match(/\/(tour|giro|vuelta|klasikak)\/(\d{4})\/?$/i);
         if (!m) return null;
         return { kirola: m[1].toLowerCase(), urtea: m[2] };
     };
 
     /** Kirol baten urteak, ordenatuta. */
-    window.ITZULIAK.kirolUrteak = function (kirola) {
-        return Object.keys(window.ITZULIAK.urteak)
+    window.TXAPELKETAK.kirolUrteak = function (kirola) {
+        return Object.keys(window.TXAPELKETAK.urteak)
             .filter(k => k.startsWith(kirola + '/'))
             .map(k => k.split('/')[1])
             .sort();
     };
 
     /** PDF esteka osoa eraiki (ez badago, null). */
-    window.ITZULIAK.pdf = function (mota, izena) {
+    window.TXAPELKETAK.pdf = function (mota, izena) {
         if (!izena) return null;
         const azpi = { arauak: 'Arauak/', dortsalak: 'TxirrindulariZerrenda/', porrak: 'Porrak/' }[mota];
-        return window.ITZULIAK.pdfBase + azpi + izena;
+        return window.TXAPELKETAK.pdfBase + azpi + izena;
+    };
+
+    /**
+     * Karrera baten irudi-hautagaiak (`db-loader.js`-eko `loadKarrerak`-entzat).
+     * Klasikoak: `irudiak` mapako fitxategia (bakarra; ez badago, irudirik ez).
+     * Itzuliak: `Etapa{N}.jpg` eta, huts eginez gero, `Etapa{N}.png`.
+     * Karpeta-izena zuriunearekin uzten da nahita: CSSko
+     * `img[src*="Etapen Profila"]` arauak horrela mugatzen ditu 800 px-ra.
+     */
+    window.TXAPELKETAK.irudiFn = function (cfg) {
+        if (!cfg.profilaDir) return null;
+        const oinarria = window.TXAPELKETAK.irudiBase + cfg.profilaDir;
+        if (cfg.irudiak) {
+            return (karreraId) => {
+                const fitx = cfg.irudiak[karreraId];
+                return fitx ? [oinarria + '/' + encodeURIComponent(fitx)] : [];
+            };
+        }
+        return (_karreraId, n) => [`${oinarria}/Etapa${n}.jpg`, `${oinarria}/Etapa${n}.png`];
     };
 })();

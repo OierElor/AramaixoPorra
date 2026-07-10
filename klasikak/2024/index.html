@@ -1,122 +1,27 @@
+<!DOCTYPE html>
 <html lang="eu">
 
 <head>
-    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
-            var newPath = window.location.pathname.slice(0, -5);
-            history.replaceState(null, '', newPath);
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/txapelketak.js"></script>
+    <script src="/js/txapelketa-orria.js" defer></script>
     <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <div class="etapa-navegazioa klasikak">
-        <button class="etapa-arrow klasikak disabled">&#8592;</button>
-        <span class="etapa-info klasikak">2024</span>
-        <a href="../2025/" class="etapa-arrow klasikak">&#8594;</a>
-    </div>
-    <div class="container">
-        <main>
-            <section>
-                <h2 class="klasikak">Klasikoen Porra 2024</h2>
-
-                <div class="download-section">
-                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Porrak/Porrak%20Klasikoak%202024.pdf"
-                        class="download-button klasikak" target="_blank">
-                        PORRALARIEN LISTA (PDF)
-                    </a>
-                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Arauak/Arauak%20klasikak%2024.pdf"
-                        class="download-button klasikak" target="_blank">
-                        ARAUAK (PDF)
-                    </a>
-                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/TxirrindulariZerrenda/Txirrindulari%20Zerrenda%20Klasikak%202024.pdf"
-                        class="download-button klasikak" target="_blank">
-                        DORTSALAK (PDF)
-                    </a>
-                </div>
-
-                <div class="tables-container stacked">
-                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
-                        <h3 class="klasikak" style="text-align: center;">PORRA SAILKAPENA</h3>
-                        <div class="table-content">
-                            <table class="sailkapena-table klasikak" id="porra-table" style="width: 100%; ">
-                                <thead>
-                                    <tr>
-                                        <th>Pos</th>
-                                        <th>Id</th>
-                                        <th>Porralaria</th>
-                                        <th>Puntuak</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be loaded from CSV -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
-                        <h3 class="klasikak" style="text-align: center;">TXIRRINDULARIAK</h3>
-                        <div class="table-content">
-                            <table class="sailkapena-table klasikak" id="txirrindulari-table" style="width: 100%; ">
-                                <thead>
-                                    <tr>
-                                        <th>Pos</th>
-                                        <th>Dortsala</th>
-                                        <th>Txirrindularia</th>
-                                        <th>Zenbatek?</th>
-                                        <th>Puntuak</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be loaded from CSV -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-            </section>
-        </main>
-        <aside class="etapak-menu klasikak">
-            <h3>Klasikak</h3>
-            <li><a href="omloop-nieuwsblad.html">Omloop Nieuwsblad</a></li>
-            <li><a href="strade-bianche.html">Strade Bianche</a></li>
-            <li><a href="milano-sanremo.html">Milano-Sanremo</a></li>
-            <li><a href="classic-brugge-de-panne.html">Classic Brugge-De Panne</a></li>
-            <li><a href="e3-saxo-classic.html">E3 Saxo Classic</a></li>
-            <li><a href="gent-wevelgem.html">Gent-Wevelgem</a></li>
-            <li><a href="dwars-door-vlaanderen.html">Dwars door Vlaanderen</a></li>
-            <li><a href="ronde-van-vlaanderen.html">Ronde van Vlaanderen</a></li>
-            <li><a href="paris-roubaix.html">Paris-Roubaix</a></li>
-            <li><a href="amstel-gold-race.html">Amstel Gold Race</a></li>
-            <li><a href="la-fleche-wallonne.html">La Flèche Wallonne</a></li>
-            <li><a href="liege-bastogne-liege.html">Liège-Bastogne-Liège</a></li>
-            <li><a href="eschborn-frankfurt.html">Eschborn-Frankfurt</a></li>
-            <li><a href="donostia-san-sebastian.html">Donostia San Sebastian</a></li>
-            <li><a href="bretagne-classic.html">Bretagne Classic</a></li>
-            <li><a href="adac-cyclassics.html">BEMER Cyclassics</a></li>
-            <li><a href="gp-quebec.html">GP Québec</a></li>
-            <li><a href="gp-montreal.html">GP Montréal</a></li>
-            <li><a href="world-championship.html">World Championship</a></li>
-            <li><a href="il-lombardia.html">Il Lombardia</a></li>
-        </aside>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Klasikak 2024 — Txapelketa_ID=13
-            window.dbLoader.loadPorra(13, 'porra-table');
-            window.dbLoader.loadCyclists(13, 'txirrindulari-table');
-        });
-    </script>
+    <noscript>
+        <p style="text-align:center; padding:24px;">Orri honek JavaScript behar du edukia erakusteko.</p>
+    </noscript>
 </body>
 
 </html>

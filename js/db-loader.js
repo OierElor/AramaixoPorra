@@ -5,6 +5,12 @@
 
 const API_URL = '/api/q.php';
 
+/** Klasikoen UCI kategoria bakoitzaren koloretxoa (akordeoiaren txartelean). */
+const KAT_KOLOREAK = {
+    'Monumentua': '#f5c6cb', '3': '#ffcc99', '4': '#d4f1d4',
+    '5': '#cce5ff', 'Proseries': '#fff3cd', 'Berezia': '#e2d9f3',
+};
+
 class DBLoader {
     /**
      * SQL kontsulta publikoa (grafikoetarako e.a.): array of objects itzuli.
@@ -193,241 +199,119 @@ class DBLoader {
     }
 
     /**
-     * Klasika baten emaitzak kargatu DB-tik (KarreraSailkapena) eta taula bete.
-     * EMAITZAK taula: Pos + Txirrindularia (podium koloreekin).
+     * Karrera-emaitzen akordeoia — txapelketa GUZTIENTZAKO sistema BAKARRA
+     * (itzuli handiak eta klasikoak). Karrera bakoitzaren panelak bere
+     * profil/ibilbide irudia (baldin badago) eta emaitza-taula erakusten ditu.
+     *
+     * Zutabeak karreraz karrera egokitzen dira datuen arabera:
+     * Pos · Zbk · Txirrindularia · Puntuak · Zenbatek?
+     *
+     * @param {number} txapelketaId
+     * @param {string} containerId  akordeoiaren edukiontziaren ID-a
+     * @param {string} colorClass   'tour' | 'giro' | 'vuelta' | 'klasikak'
+     * @param {?function(number, number): string[]} irudiFn
+     *        (karreraId, zenbakia) → probatu beharreko irudi-URLak (gehienez bi).
+     *        Lehenak huts eginez gero bigarrena; denek huts, irudia ezkutatu.
+     *        null → irudirik ez.
      */
-    async loadKlasikaResults(karreraId, tableId) {
-        const table = document.getElementById(tableId);
-        if (!table) return;
-        this._showLoading(table);
+    async loadKarrerak(txapelketaId, containerId, colorClass = '', irudiFn = null) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '<p style="text-align:center;opacity:.6;padding:16px;">Karrerak kargatzen...</p>';
 
         try {
-            const sql = `
-                SELECT
-                    ks.Sailkapena AS Posizioa,
-                    h.Dortsala    AS Dortsala,
-                    t.Izena       AS Txirrindularia,
-                    ks.Puntuak    AS Puntuak,
-                    (SELECT COUNT(*) FROM "PorraApustuak" pa
-                     WHERE pa.Txapelketa_ID = k.Txapelketa_ID
-                       AND pa.Txirrindularia_ID = ks.Txirrindularia_ID) AS Zenbatek
+            const karrerak = await this._query(`
+                SELECT Karrerak_ID AS kid, Izena AS izena, Kategoria AS kat
+                FROM "Karrerak"
+                WHERE Txapelketa_ID = ? AND Kategoria IS NOT NULL AND Kategoria <> ''
+                ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID
+            `, [txapelketaId]);
+
+            if (!karrerak.length) {
+                container.innerHTML = `
+                    <div style="text-align:center;padding:24px;">
+                        <span style="font-size:1.4em;">⚠️</span><br>
+                        <strong>Ez dago karrera daturik oraindik</strong>
+                    </div>`;
+                return;
+            }
+
+            const emaitzak = await this._query(`
+                SELECT ks.Karrera_ID AS kid, ks.Txirrindularia_ID AS txid,
+                       ks.Sailkapena AS pos, ks.Puntuak AS puntuak,
+                       t.Izena AS izena, h.Dortsala AS dortsala
                 FROM "KarreraSailkapena" ks
                 JOIN "Karrerak" k ON k.Karrerak_ID = ks.Karrera_ID
                 JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
                 LEFT JOIN "TxirrindulariakTxapleketanParteHartzea" h
                     ON h.TxapelketaID = k.Txapelketa_ID
                    AND h.TxirrindulariaID = ks.Txirrindularia_ID
-                WHERE ks.Karrera_ID = ?
-                ORDER BY ks.Sailkapena
-            `;
-
-            const rows = await this._query(sql, [karreraId]);
-
-            if (rows.length === 0) {
-                this._showMissing(table, 'Ez dago daturik.', karreraId);
-                return;
-            }
-
-            const hasDortsala = rows.some(r => this._hasData(r.Dortsala));
-            const hasPuntuak  = rows.some(r => this._hasData(r.Puntuak));
-            const hasZenbatek = rows.some(r => this._hasData(r.Zenbatek));
-
-            const thead = table.querySelector('thead');
-            if (thead) {
-                let h = '<tr><th>Pos</th>';
-                if (hasDortsala) h += '<th>Zbk</th>';
-                h += '<th>Txirrindularia</th>';
-                if (hasPuntuak)  h += '<th>Puntuak</th>';
-                if (hasZenbatek) h += '<th>Zenbatek?</th>';
-                h += '</tr>';
-                thead.innerHTML = h;
-            }
-
-            const tbody = table.querySelector('tbody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            rows.forEach(row => {
-                const tr = document.createElement('tr');
-                const pos = row.Posizioa;
-                if (pos === 1)      { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
-                else if (pos === 2) { tr.style.backgroundColor = '#f0f0f0'; }
-                else if (pos === 3) { tr.style.backgroundColor = '#fde8d0'; }
-                tr.appendChild(this._td(pos, 'pos-col'));
-                if (hasDortsala) tr.appendChild(this._td(row.Dortsala ?? '—'));
-                tr.appendChild(this._td(row.Txirrindularia, 'name-col'));
-                if (hasPuntuak)  tr.appendChild(this._td(row.Puntuak, 'points-col'));
-                if (hasZenbatek) tr.appendChild(this._td(row.Zenbatek ?? '—'));
-                tbody.appendChild(tr);
-            });
-
-        } catch (err) {
-            console.error(err);
-            this._showError(table, err.message);
-        }
-    }
-
-    /**
-     * Etapa baten emaitzak kargatu zenbakiaren arabera (etapa-orri indibidualetarako).
-     * Txapelketako N. benetako karrera aurkitu eta haren emaitzak erakutsi.
-     */
-    async loadStageByNumber(txapelketaId, n, tableId) {
-        const k = await this._query(
-            "SELECT Karrerak_ID AS id FROM Karrerak WHERE Txapelketa_ID = ? " +
-            "AND Kategoria IS NOT NULL AND Kategoria <> '' ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID LIMIT 1 OFFSET ?",
-            [txapelketaId, n - 1]);
-        const table = document.getElementById(tableId);
-        if (!k.length) {
-            if (table) this._showMissing(table, 'Ez dago etapa honetako daturik oraindik.', txapelketaId);
-            return;
-        }
-        return this.loadKlasikaResults(k[0].id, tableId);
-    }
-
-    /**
-     * Klasika baten orria bete: UCI kategoria badge-a (Karrerak.Kategoria) eta
-     * emaitza-taula (Pos, Dortsala, Txirrindularia, Puntuak, Zenbatek).
-     * @param {?number} karreraId  - null bada, "daturik ez" + kategoria '—'.
-     */
-    async loadKlasikaRace(karreraId, txapelketaId, tableId, badgeId, kategoria = null) {
-        const KAT_KOLORE = {
-            'Monumentua': '#f5c6cb', '3': '#ffcc99', '4': '#d4f1d4',
-            '5': '#cce5ff', 'Proseries': '#fff3cd', 'Berezia': '#e2d9f3',
-        };
-        const badge = document.getElementById(badgeId);
-        const table = document.getElementById(tableId);
-        const setBadge = (kat) => {
-            if (!badge) return;
-            badge.textContent = this._hasData(kat) ? kat : '—';
-            if (KAT_KOLORE[kat]) badge.style.backgroundColor = KAT_KOLORE[kat];
-        };
-        if (karreraId == null) {
-            setBadge(kategoria);  // korritu gabeko lasterketa: kategoria ezaguna (parametroz)
-            if (table) this._showMissing(table, 'Ez dago daturik oraindik.', txapelketaId);
-            return;
-        }
-        try {
-            if (kategoria != null) {
-                setBadge(kategoria);
-            } else {
-                const kr = await this._query("SELECT Kategoria FROM \"Karrerak\" WHERE Karrerak_ID = ?", [karreraId]);
-                if (kr.length) setBadge(kr[0].Kategoria);
-            }
-            const sql = `
-                SELECT ks.Sailkapena AS Posizioa, h.Dortsala AS Dortsala,
-                       t.Izena AS Txirrindularia, ks.Puntuak AS Puntuak,
-                       (SELECT COUNT(*) FROM "PorraApustuak" pa
-                         WHERE pa.Txapelketa_ID = ? AND pa.Txirrindularia_ID = ks.Txirrindularia_ID) AS Zenbatek
-                FROM "KarreraSailkapena" ks
-                JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
-                LEFT JOIN "TxirrindulariakTxapleketanParteHartzea" h
-                    ON h.TxapelketaID = ? AND h.TxirrindulariaID = ks.Txirrindularia_ID
-                WHERE ks.Karrera_ID = ? ORDER BY ks.Sailkapena`;
-            const rows = await this._query(sql, [txapelketaId, txapelketaId, karreraId]);
-            if (!table) return;
-            if (!rows.length) { this._showMissing(table, 'Ez dago daturik oraindik.', karreraId); return; }
-            const tbody = table.querySelector('tbody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            rows.forEach(row => {
-                const tr = document.createElement('tr');
-                const pos = row.Posizioa;
-                if (pos === 1)      { tr.style.backgroundColor = '#fff4cc'; tr.style.fontWeight = 'bold'; }
-                else if (pos === 2) { tr.style.backgroundColor = '#f0f0f0'; }
-                else if (pos === 3) { tr.style.backgroundColor = '#fde8d0'; }
-                tr.appendChild(this._td(pos, 'pos-col'));
-                tr.appendChild(this._td(row.Dortsala ?? '—'));
-                tr.appendChild(this._td(row.Txirrindularia, 'name-col'));
-                tr.appendChild(this._td(row.Puntuak, 'points-col'));
-                tr.appendChild(this._td(row.Zenbatek ?? '—'));
-                tbody.appendChild(tr);
-            });
-        } catch (err) {
-            console.error(err);
-            if (table) this._showError(table, err.message);
-        }
-    }
-
-    /**
-     * Hiru handietako etapaz etapako emaitzak kargatu (KarreraSailkapena) eta
-     * akordeoi gisa erakutsi: etapa bakoitza zabaltzean puntuatu duten
-     * txirrindulariak (Pos, Txirrindularia, Puntuak).
-     * @param {number} txapelketaId
-     * @param {string} containerId  - etapen edukiontziaren ID-a
-     * @param {string} colorClass   - 'vuelta' | 'giro' | 'tour' (estiloetarako)
-     */
-    /**
-     * "Etapaz etapa" akordeoia: etapa bakoitzaren emaitzak (eta profil-irudia).
-     * @param {string} profilaOinarria - Etapa-profilen karpeta, adib.
-     *        "/data/Etapen Profila/giro/giro26". Hutsik bada, irudirik ez.
-     */
-    async loadStages(txapelketaId, containerId, colorClass = '', profilaOinarria = '') {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        container.innerHTML = '<p style="text-align:center;opacity:.6;padding:16px;">Etapak kargatzen...</p>';
-
-        try {
-            const stages = await this._query(`
-                SELECT k.Karrerak_ID AS id, k.Izena AS izena
-                FROM "Karrerak" k
-                WHERE k.Txapelketa_ID = ? AND k.Kategoria = 'Etapa'
-                ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID
-            `, [txapelketaId]);
-
-            if (stages.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align:center;padding:24px;">
-                        <span style="font-size:1.4em;">⚠️</span><br>
-                        <strong>Ez dago etapa daturik oraindik</strong>
-                    </div>`;
-                return;
-            }
-
-            const results = await this._query(`
-                SELECT ks.Karrera_ID AS kid, ks.Sailkapena AS pos,
-                       t.Izena AS izena, ks.Puntuak AS puntuak
-                FROM "KarreraSailkapena" ks
-                JOIN "Karrerak" k ON k.Karrerak_ID = ks.Karrera_ID
-                JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = ks.Txirrindularia_ID
-                WHERE k.Txapelketa_ID = ? AND k.Kategoria = 'Etapa'
+                WHERE k.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> ''
                 ORDER BY ks.Karrera_ID, ks.Sailkapena
             `, [txapelketaId]);
 
-            const byStage = {};
-            results.forEach(r => { (byStage[r.kid] = byStage[r.kid] || []).push(r); });
+            // Txirrindulari bakoitza zenbat porralarik jokatu duen: kontsulta bakarra
+            // (karreraz karrerako azpi-kontsulta korrelatuak saihesteko).
+            const apustuak = await this._query(`
+                SELECT Txirrindularia_ID AS txid, COUNT(*) AS zenbatek
+                FROM "PorraApustuak"
+                WHERE Txapelketa_ID = ?
+                GROUP BY Txirrindularia_ID
+            `, [txapelketaId]);
+            const zenbatekaz = new Map(apustuak.map(a => [a.txid, Number(a.zenbatek)]));
+            // Txapelketak apusturik ez badu, `Zenbatek?` zutabea ezkutatzen da (null).
+            // Baditu: apusturik gabeko txirrindulariak 0 dira, ez hutsune.
+            const apustuakBadaude = apustuak.length > 0;
+
+            const karreraka = new Map();
+            emaitzak.forEach(r => {
+                if (!karreraka.has(r.kid)) karreraka.set(r.kid, []);
+                karreraka.get(r.kid).push(r);
+            });
 
             const cls = colorClass ? ' ' + colorClass : '';
             let html = '<div class="etapak-accordion">';
-            stages.forEach((s, i) => {
-                // Izena: "{Txapelketa} - {N}. etapa ({Helmuga})". Lehen ' - '-aren
-                // ondorengo GUZTIA hartu (helmugak berak ' - ' izan dezake).
-                const zatiak = String(s.izena).split(' - ');
-                const label = zatiak.length > 1 ? zatiak.slice(1).join(' - ') : s.izena;
 
-                const n = i + 1;
-                const profila = profilaOinarria ? `
-                            <div class="profile-container">
-                                <img src="${profilaOinarria}/Etapa${n}.jpg" alt="${n}. etapa profila"
-                                     onerror="this.onerror=null; this.src='${profilaOinarria}/Etapa${n}.png'; this.onerror=function(){this.style.display='none'};">
-                            </div>` : '';
+            karrerak.forEach((k, i) => {
+                const lerroak = karreraka.get(k.kid) || [];
+                lerroak.forEach(r => {
+                    r.zenbatek = apustuakBadaude ? (zenbatekaz.get(r.txid) ?? 0) : null;
+                });
 
-                const riders = byStage[s.id] || [];
-                const rowsHtml = riders.map(r =>
-                    `<tr><td class="pos-col">${r.pos}</td>` +
-                    `<td class="name-col">${this._esc(r.izena)}</td>` +
-                    `<td class="points-col">${r.puntuak}</td></tr>`
-                ).join('');
+                const badaDortsala = lerroak.some(r => this._hasData(r.dortsala));
+                const badaPuntuak  = lerroak.some(r => this._hasData(r.puntuak));
+                const badaZenbatek = lerroak.some(r => this._hasData(r.zenbatek));
+                const zutabeKop = 2 + Number(badaDortsala) + Number(badaPuntuak) + Number(badaZenbatek);
+
+                let goiburua = '<tr><th>Pos</th>';
+                if (badaDortsala) goiburua += '<th>Zbk</th>';
+                goiburua += '<th>Txirrindularia</th>';
+                if (badaPuntuak)  goiburua += '<th>Puntuak</th>';
+                if (badaZenbatek) goiburua += '<th>Zenbatek?</th>';
+                goiburua += '</tr>';
+
+                const lerroakHtml = lerroak.map(r => {
+                    let tr = `<tr${this._podiumEstiloa(r.pos)}><td class="pos-col">${this._esc(r.pos)}</td>`;
+                    if (badaDortsala) tr += `<td>${this._esc(r.dortsala ?? '—')}</td>`;
+                    tr += `<td class="name-col">${this._esc(r.izena)}</td>`;
+                    if (badaPuntuak)  tr += `<td class="points-col">${this._esc(r.puntuak)}</td>`;
+                    if (badaZenbatek) tr += `<td>${this._esc(r.zenbatek ?? '—')}</td>`;
+                    return tr + '</tr>';
+                }).join('');
+
+                const irudia = this._profilaHtml(irudiFn ? irudiFn(k.kid, i + 1) : null, `${k.izena} profila`);
+
                 html += `
                     <div class="etapa-item">
                         <button type="button" class="etapa-toggle${cls}">
-                            <span>${this._esc(label)}</span>
+                            <span class="etapa-izena">${this._esc(this._karreraLabel(k.izena))}${this._katBadge(k.kat)}</span>
                             <span class="etapa-chevron">▾</span>
                         </button>
-                        <div class="etapa-panel" hidden>${profila}
+                        <div class="etapa-panel" hidden>${irudia}
                             <table class="sailkapena-table${cls}" style="margin:0;">
-                                <thead><tr><th>Pos</th><th>Txirrindularia</th><th>Puntuak</th></tr></thead>
-                                <tbody>${rowsHtml ||
-                                    '<tr><td colspan="3" style="opacity:.6;">Daturik ez</td></tr>'}</tbody>
+                                <thead>${goiburua}</thead>
+                                <tbody>${lerroakHtml ||
+                                    `<tr><td colspan="${zutabeKop}" style="opacity:.6;">Daturik ez</td></tr>`}</tbody>
                             </table>
                         </div>
                     </div>`;
@@ -446,11 +330,56 @@ class DBLoader {
 
         } catch (err) {
             console.error(err);
-            container.innerHTML = `<p style="color:#c00;text-align:center;padding:16px;">Errorea etapak kargatzen: ${err.message}</p>`;
+            container.innerHTML = `<p style="color:#c00;text-align:center;padding:16px;">Errorea karrerak kargatzen: ${err.message}</p>`;
         }
     }
 
     // ── Barne laguntzaileak ────────────────────────────────────────────────────
+
+    /**
+     * Akordeoiaren etiketa. Itzulietan karreraren izena
+     * "{Txapelketa} - {N}. etapa ({Helmuga})" da → txapelketaren aurrizkia kentzen da
+     * (helmugak berak ' - ' izan dezake: "1. etapa (Durazzo - Tirana)").
+     * Klasikoetan izena osorik uzten da: "Milano - Torino" EZIN da zatitu.
+     */
+    _karreraLabel(izena) {
+        const s = String(izena);
+        const m = s.match(/^.+?\s-\s(\d+\.\s*etapa.*)$/i);
+        return m ? m[1] : s;
+    }
+
+    /** UCI kategoria-txartela (klasikoak). Itzulietako 'Etapa' ez da erakusten. */
+    _katBadge(kat) {
+        if (!this._hasData(kat) || String(kat) === 'Etapa') return '';
+        const kolorea = KAT_KOLOREAK[kat] || '#e0e0e0';
+        return ` <span class="kat-badge" style="background-color:${kolorea};">${this._esc(kat)}</span>`;
+    }
+
+    /** Podiumeko hiru lehenak nabarmendu (akordeoiko emaitza-taulan). */
+    _podiumEstiloa(pos) {
+        const p = Number(pos);
+        if (p === 1) return ' style="background-color:#fff4cc;font-weight:bold;"';
+        if (p === 2) return ' style="background-color:#f0f0f0;"';
+        if (p === 3) return ' style="background-color:#fde8d0;"';
+        return '';
+    }
+
+    /**
+     * Profil/ibilbide irudia. `urls`: gehienez bi hautagai; lehenak huts eginez
+     * gero bigarrena saiatzen da, hark ere huts eginez gero irudia ezkutatzen da.
+     * URLek zuriuneak izan ditzakete kodetu gabe (adib. ".../Etapen Profila/...");
+     * horrela `css/styles.css`-eko `img[src*="Etapen Profila"]` arauak 800 px-ra
+     * mugatzen ditu. Fitxategi-izenetan ez dago komatxorik ez apostroforik.
+     */
+    _profilaHtml(urls, alt) {
+        if (!urls || !urls.length) return '';
+        const onerror = urls.length > 1
+            ? `this.onerror=function(){this.style.display='none'};this.src='${urls[1]}'`
+            : `this.style.display='none'`;
+        return '<div class="profile-container">' +
+               `<img src="${urls[0]}" alt="${this._esc(alt)}" loading="lazy" onerror="${onerror}">` +
+               '</div>';
+    }
 
     _esc(s) {
         const div = document.createElement('div');

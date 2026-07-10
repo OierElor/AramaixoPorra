@@ -33,10 +33,13 @@ const Tresna = {
     },
 
     /** "{Txapelketa} - {N}. etapa ({Helmuga})" → "{N}. etapa ({Helmuga})".
-     *  Helmugak berak ' - ' izan dezake, beraz lehen zatia bakarrik kentzen da. */
+     *  Aurrizkia etapa-zenbaki batek jarraitzen dionean BAKARRIK kentzen da:
+     *  klasikoen izenek ' - ' izan dezakete ("Milano - Torino") eta oso-osorik
+     *  utzi behar dira. Helmugak berak ere ' - ' izan dezake. */
     karreraLabel(izena) {
-        const p = String(izena).split(' - ');
-        return p.length > 1 ? p.slice(1).join(' - ') : izena;
+        const s = String(izena);
+        const m = s.match(/^.+?\s-\s(\d+\.\s*etapa.*)$/i);
+        return m ? m[1] : s;
     },
 
     /**

@@ -511,65 +511,6 @@ nav.karrerak a.active {
     background: var(--color-klasikak-dark);
 }
 
-.etapa-back-btn {
-    background-color: #555;
-    color: white;
-    padding: 6px 15px;
-    border-radius: 20px;
-    text-decoration: none;
-    font-size: 0.9em;
-    font-weight: bold;
-    transition: background-color 0.2s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.etapa-back-btn:hover {
-    background-color: #333;
-    color: white;
-}
-
-.etapa-back-btn.tour {
-    background-color: var(--color-tour);
-    color: #000;
-}
-
-.etapa-back-btn.giro {
-    background-color: var(--color-giro);
-    color: #fff;
-}
-
-.etapa-back-btn.vuelta {
-    background-color: var(--color-vuelta);
-    color: #fff;
-}
-
-.etapa-back-btn.klasikak {
-    background-color: var(--color-klasikak);
-    color: #fff;
-}
-
-.etapa-back-btn.tour:hover {
-    background-color: var(--color-tour-dark);
-    color: #000;
-}
-
-.etapa-back-btn.giro:hover {
-    background-color: var(--color-giro-dark);
-    color: #fff;
-}
-
-.etapa-back-btn.vuelta:hover {
-    background-color: var(--color-vuelta-dark);
-    color: #fff;
-}
-
-.etapa-back-btn.klasikak:hover {
-    background-color: var(--color-klasikak-dark);
-    color: #fff;
-}
-
 /*Beste estiloak */
 
 main {
@@ -933,7 +874,6 @@ h3.klasikak {
     font-weight: bold;
 }
 
-
 h3.vuelta {
     color: var(--color-vuelta);
     margin-bottom: 15px;
@@ -954,50 +894,20 @@ h3.vuelta {
     margin: 0 auto;
 }
 
-/* Ibilbide- eta etapa-profilen irudiak (data/Etapen Profila/…) mugatu.
-   Azaleko irudiak (data/Portadak/…) ez dira ukitzen. */
-.profile-container img[src*="Etapen Profila"] {
+/* Ibilbide- eta karrera-profilen irudiak (data/Etapen Profila/…) mugatu.
+   Azaleko irudiak (data/Portadak/…) .profile-container barruan ere badaude,
+   beraz src-aren araberako iragazkia beharrezkoa da. Zuriunea kodetuta ere
+   ager daiteke (%20), bi formak jaso behar dira. */
+.profile-container img[src*="Etapen Profila"],
+.profile-container img[src*="Etapen%20Profila"] {
     max-width: min(100%, 800px);
 }
-
 
 .table-wrapper.no-box {
     border: none;
     box-shadow: none;
     max-height: none;
     background: transparent;
-}
-
-.profile-notice {
-    background: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 1.2em;
-    margin: 20px 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border: 2px solid transparent;
-}
-
-.profile-notice.giro {
-    color: var(--color-giro);
-    border-color: var(--color-giro);
-}
-
-.profile-notice.tour {
-    color: #fbc02d;
-    border-color: #fbc02d;
-}
-
-.profile-notice.vuelta {
-    color: var(--color-vuelta);
-    border-color: var(--color-vuelta);
-}
-
-.profile-notice.klasikak {
-    color: var(--color-klasikak-dark);
-    border-color: var(--color-klasikak-dark);
 }
 
 /* Download Button Estiloak */
@@ -1260,9 +1170,10 @@ h3.vuelta {
     transition: background 0.2s;
 }
 
-.etapa-toggle.vuelta { background: var(--color-vuelta); }
-.etapa-toggle.giro   { background: var(--color-giro); }
-.etapa-toggle.tour   { background: var(--color-tour); color: #000; }
+.etapa-toggle.vuelta   { background: var(--color-vuelta); }
+.etapa-toggle.giro     { background: var(--color-giro); }
+.etapa-toggle.tour     { background: var(--color-tour); color: #000; }
+.etapa-toggle.klasikak { background: var(--color-klasikak); }
 
 .etapa-toggle:hover            { filter: brightness(0.92); }
 .etapa-chevron {
@@ -1270,6 +1181,25 @@ h3.vuelta {
     font-size: 0.9em;
 }
 .etapa-toggle.open .etapa-chevron { transform: rotate(180deg); }
+
+/* Akordeoiaren goiburua: karreraren izena + (klasikoetan) UCI kategoria. */
+.etapa-izena {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    text-align: left;
+    min-width: 0;
+}
+
+.kat-badge {
+    font-size: 0.75em;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #222;
+    white-space: nowrap;
+}
 
 .etapa-panel {
     padding: 4px 8px 10px;

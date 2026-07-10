@@ -20,43 +20,45 @@ responsivea; taula-estiloak).
 
 Sarrera bisuala: azalak/karrusela (`data/Portadak/`). Hemendik menuaren bidez nabigatzen da.
 
-## Lasterketen atalak
+## Lasterketen atalak — `tour/`, `giro/`, `vuelta/`, `klasikak/`
 
-### Itzuli handiak — `tour/`, `giro/`, `vuelta/`
-
-Hiru itzuliek **egitura bera** dute, **txantiloi partekatu** baten bidez. HTML orriak
-**stub uniformeak** dira (denak berdinak); edukia bidetik eta konfiguraziotik sortzen da:
+**Lau txapelketa-motek egitura BERA dute**, **txantiloi partekatu** baten bidez. HTML
+orriak **stub uniformeak** dira (denak berdin-berdinak); edukia bidetik eta
+konfiguraziotik sortzen da:
 
 | Fitxategia | Zertarako |
 |---|---|
-| `js/itzuliak.js` | **Konfigurazio bakarra**: kirol-izenak + urteko `{ id, arauak, dortsalak, porrak, profilaDir, profilaIrudia }` |
-| `js/itzulia-orria.js` | **Urte-orria** marrazten du (`/tour/2026/`): nabigazioa, izenburua, PDFak, ibilbide-irudia eta sailkapen-taulak |
+| `js/txapelketak.js` | **Konfigurazio bakarra**: txapelketa-izenak + urteko `{ id, arauak, dortsalak, porrak, profilaDir, profilaIrudia, irudiak }` |
+| `js/txapelketa-orria.js` | **Urte-orria** marrazten du (`/tour/2026/`, `/klasikak/2026/`): nabigazioa, izenburua, PDFak, ibilbide-irudia eta sailkapen-taulak |
 
 Urte-orri bakoitzak hiru taula ditu: **Porra sailkapena** (`loadPorra`),
-**Txirrindulariak** (`loadCyclists`) eta **Etapaz etapa** (`loadStages`).
+**Txirrindulariak** (`loadCyclists`) eta karreren **akordeoia** (`loadKarrerak`).
 
-**Karreren emaitzak erakusteko sistema BAKARRA dago**: "Etapaz etapa" **akordeoia**
-urte-orrian. Etapa bakoitzaren panela zabaltzean bere **profil-irudia** (baldin badago)
-eta emaitza-taula erakusten dira. Ez dago etapa-orri indibidualik.
+**Karreren emaitzak erakusteko sistema BAKARRA dago**: urte-orriko **akordeoia**
+(itzulietan "ETAPAZ ETAPA", klasikoetan "LASTERKETAK"). Karrera baten panela zabaltzean
+bere **profil/ibilbide irudia** (baldin badago) eta emaitza-taula erakusten dira.
+**Ez dago karrera bakoitzeko orririk.**
 
+- Akordeoiko **zutabeak datuen arabera** egokitzen dira karreraz karrera:
+  Pos · Zbk · Txirrindularia · Puntuak · Zenbatek?
+- Klasikoetan **UCI kategoria** txartel koloredun gisa agertzen da goiburuan
+  (itzulietako `Kategoria = 'Etapa'` ez da erakusten).
 - **Taulak soilik erakusten dira** txapelketa DBan existitzen bada **eta karrerarik badu**;
   bestela "ez dago daturik oraindik" oharra (adib. oraindik hasi gabeko urteak).
+- **Datu-basea da egia-iturria**: akordeoian `Karrerak` taulako karrerak bakarrik
+  agertzen dira. Egutegiko lasterketa bat oraindik sartu gabe badago, ez da ikusiko;
+  admin paneleko **Karrerak** inportatzailearekin gehitu daiteke.
 - PDFak eta ibilbide-irudia konfigurazioan daudenean bakarrik agertzen dira.
 
-**Urte berri bat gehitzeko:** `js/itzuliak.js`-en sarrera bat gehitu eta `index.html`
+**Karrera-irudiak.** Itzulietan izena sistematikoa da (`Etapa{N}.jpg`, `.png`
+ordezko gisa), beraz ez da konfiguraziorik behar. Klasikoetan izenak ez dira
+sistematikoak (`paris roubaix.png`, `Braranconne.png`…), beraz konfigurazioan
+`irudiak: { Karrerak_ID: 'fitxategia.png' }` mapa bat behar da.
+
+**Urte berri bat gehitzeko:** `js/txapelketak.js`-en sarrera bat gehitu eta `index.html`
 stub-a kopiatu. Ez dago HTML markaketarik bikoiztu beharrik.
 
-Estaldura: `tour/` eta `giro/` → 2023-2026 · `vuelta/` → 2020-2026.
-
-### Klasikoak — `klasikak/`
-
-Klasikoak lasterketa independenteak dira (egun bakarrekoak). Urte bakoitzeko karpetan
-**lasterketa bakoitzak bere HTML orria** du (adib. `klasikak/2025/amstel-gold-race.html`):
-
-- **Lasterketaren emaitzak** — `dbLoader.loadKlasikaResults(...)` (2024/2025) edo
-  `dbLoader.loadKlasikaRace(...)` (2026, zutabe gehiagorekin).
-
-Urteko lasterketa kopurua: 2024 → 21 · 2025 → 27 · 2026 → 27.
+Estaldura: `tour/` eta `giro/` → 2023-2026 · `vuelta/` → 2020-2026 · `klasikak/` → 2024-2026.
 
 ## Datuak kargatzeko motorra — `js/db-loader.js`
 
@@ -68,8 +70,7 @@ taulatan errendatzen ditu. Metodo publiko nagusiak:
 | `query(sql, params)` | SELECT kontsulta orokorra (JSON itzultzen du) |
 | `loadPorra(txapId, tableId)` | Porralarien sailkapen ofiziala erakutsi |
 | `loadCyclists(...)` | Txirrindularien sailkapena erakutsi |
-| `loadStages(...)` / `loadStageByNumber(...)` | Etapen emaitzak (itzuliak) |
-| `loadKlasikaResults(...)` / `loadKlasikaRace(...)` | Klasika baten emaitzak |
+| `loadKarrerak(txapId, containerId, kolorea, irudiFn)` | Karreren akordeoia — **itzulietarako eta klasikoetarako berdina** |
 
 Emaitza ofizialik ez badago, `_porraFallback` / `_cyclistFallback`-ek azken kalkulatutako
 sailkapena erakusten dute (`TxapelketaSailkapena*` tauletatik).

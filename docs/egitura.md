@@ -15,18 +15,18 @@ AramaixoPorra/
 │   ├── layout.js               # Goiburua + nabigazioa + oina orri guztietan
 │   ├── db-loader.js            # Lasterketa-emaitzak kargatzeko (q.php bidez)
 │   ├── tresna-komuna.js        # `Tresna` objektua: tresnek partekatzen duten logika
-│   ├── itzuliak.js             # Itzulien konfigurazioa (id, PDFak, ibilbide-irudia)
-│   └── itzulia-orria.js        # Itzulien urte-orria marrazten du (txantiloi partekatua)
+│   ├── txapelketak.js          # Txapelketen konfigurazioa (id, PDFak, irudiak)
+│   └── txapelketa-orria.js     # Urte-orria marrazten du (txantiloi partekatua)
 │
 ├── tour/  giro/  vuelta/       # Itzuli handiak, urteka (urte bakoitzeko index.html bat)
-│   ├── 2023/index.html         # stub uniformea; edukia itzulia-orria.js-k sortzen du
+│   ├── 2023/index.html         # stub uniformea; edukia txapelketa-orria.js-k sortzen du
 │   ├── 2024/index.html
 │   └── …                       # tour/giro: 2023-2026 · vuelta: 2020-2026
 │
-├── klasikak/                   # Klasikoak, urteka; lasterketa bakoitzeko HTML bat
-│   ├── 2024/  (21 lasterketa)
-│   ├── 2025/  (27 lasterketa)
-│   └── 2026/  (27 lasterketa)  # adib. amstel-gold-race.html, paris-roubaix.html…
+├── klasikak/                   # Klasikoak, urteka — itzulien egitura BERA
+│   ├── 2024/index.html         # stub uniformea (lasterketak akordeoian)
+│   ├── 2025/index.html
+│   └── 2026/index.html
 │
 ├── tresnak/                    # Analisi-tresna interaktiboak
 │   ├── index.html              # Tresnen sarrera (txartelak)
@@ -78,5 +78,6 @@ AramaixoPorra/
   Ez du ezertarako balio; segurtasunez ezaba daiteke.
 - **`Excelak ikusteko/`**: administratzailearen jatorrizko Excelak dira, datuak nondik
   datozen ulertzeko erreferentzia gisa. Ikus [INPORTATU-GIDA](../admin/INPORTATU-GIDA.md).
-- **Itzuli handiak vs klasikoak**: itzuliek (tour/giro/vuelta) **urteko orri bakarra**
-  dute (etapa anitz barruan); klasikoek **lasterketa bakoitzeko orri bat**.
+- **Lau txapelketa-motek egitura BERA dute**: `tour`, `giro`, `vuelta` eta `klasikak`.
+  Bakoitzak **urteko orri bakarra** du, eta karrera guztiak (etapak edo klasikoak)
+  urte-orriko **akordeoian** agertzen dira. Ez dago karrera bakoitzeko orririk.

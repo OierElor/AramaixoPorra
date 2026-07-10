@@ -1,6 +1,7 @@
 /**
- * Itzuli baten URTE-orria marrazten du (Tour / Giro / Vuelta).
- * Dena bidetik eta `js/itzuliak.js` konfiguraziotik ateratzen da.
+ * Txapelketa baten URTE-orria marrazten du: Tour / Giro / Vuelta eta Klasikak.
+ * Denek egitura BERA dute; dena bidetik eta `js/txapelketak.js` konfiguraziotik
+ * ateratzen da.
  *
  * Sailkapen-taulak SOILIK erakusten dira txapelketa DBan existitzen bada
  * ETA karrerarik badu. Bestela "ez dago daturik" oharra.
@@ -10,7 +11,7 @@
 (function () {
     'use strict';
 
-    const C = window.ITZULIAK;
+    const C = window.TXAPELKETAK;
     if (!C) return;
     const loc = C.bidea();
     if (!loc) return;   // urte-orria soilik
@@ -53,7 +54,7 @@
     ].filter(Boolean).join('\n');
     const deskargak = pdfak ? `<div class="download-section">${pdfak}</div>` : '';
 
-    // ── Ibilbide osoaren irudia (baldin badago) ──────────────────────────────
+    // ── Ibilbide osoaren irudia (itzuliak; klasikoek ez dute) ────────────────
     const profila = cfg.profilaIrudia
         ? `<div class="profile-container">
                <img src="${C.irudiBase}${cfg.profilaDir}/${cfg.profilaIrudia}"
@@ -115,17 +116,14 @@
                 ${taula('PORRA SAILKAPENA', 'porra-table')}
                 ${taula('TXIRRINDULARIAK', 'txirrindulari-table')}
                 <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
-                    <h3 class="${kirola}" style="text-align: center;">ETAPAZ ETAPA</h3>
-                    <div id="etapak-container"></div>
+                    <h3 class="${kirola}" style="text-align: center;">${meta.karrerakIzenburua}</h3>
+                    <div id="karrerak-container"></div>
                 </div>
             </div>`;
 
-        // Etapa-profilen oinarria (baldin badago): akordeoiaren paneletan erakusteko
-        const profilaOinarria = cfg.profilaDir ? C.irudiBase + cfg.profilaDir : '';
-
         window.dbLoader.loadPorra(cfg.id, 'porra-table');
         window.dbLoader.loadCyclists(cfg.id, 'txirrindulari-table');
-        window.dbLoader.loadStages(cfg.id, 'etapak-container', kirola, profilaOinarria);
+        window.dbLoader.loadKarrerak(cfg.id, 'karrerak-container', kirola, C.irudiFn(cfg));
     }
 
     taulakMarraztu();

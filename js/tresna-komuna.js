@@ -32,9 +32,11 @@ const Tresna = {
             "ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID", [tid]);
     },
 
+    /** "{Txapelketa} - {N}. etapa ({Helmuga})" → "{N}. etapa ({Helmuga})".
+     *  Helmugak berak ' - ' izan dezake, beraz lehen zatia bakarrik kentzen da. */
     karreraLabel(izena) {
         const p = String(izena).split(' - ');
-        return p.length > 1 ? p[p.length - 1] : izena;
+        return p.length > 1 ? p.slice(1).join(' - ') : izena;
     },
 
     /**

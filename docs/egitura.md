@@ -14,10 +14,12 @@ AramaixoPorra/
 ├── js/
 │   ├── layout.js               # Goiburua + nabigazioa + oina orri guztietan
 │   ├── db-loader.js            # Lasterketa-emaitzak kargatzeko (q.php bidez)
-│   └── tresna-komuna.js        # `Tresna` objektua: tresnek partekatzen duten logika
+│   ├── tresna-komuna.js        # `Tresna` objektua: tresnek partekatzen duten logika
+│   ├── itzuliak.js             # Itzulien konfigurazioa (id, PDFak, ibilbide-irudia)
+│   └── itzulia-orria.js        # Itzulien urte-orria marrazten du (txantiloi partekatua)
 │
 ├── tour/  giro/  vuelta/       # Itzuli handiak, urteka (urte bakoitzeko index.html bat)
-│   ├── 2023/index.html
+│   ├── 2023/index.html         # stub uniformea; edukia itzulia-orria.js-k sortzen du
 │   ├── 2024/index.html
 │   └── …                       # tour/giro: 2023-2026 · vuelta: 2020-2026
 │

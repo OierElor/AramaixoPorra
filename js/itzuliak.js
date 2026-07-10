@@ -2,14 +2,13 @@
  * Itzuli handien konfigurazioa (Tour / Giro / Vuelta) — EGIA-ITURRI BAKARRA.
  *
  * Urte berri bat gehitzeko: sarrera bat gehitu `urteak`-en eta orri-stub-ak kopiatu.
- *   { id, arauak, dortsalak, porrak, profilaDir, profilaIrudia, etapak }
+ *   { id, arauak, dortsalak, porrak, profilaDir, profilaIrudia }
  *
  *  - id            : Txapelketa_ID. `null` bada (edo DBan karrerarik ez badu),
  *                    sailkapen-taulak EZ dira erakusten.
  *  - arauak/dortsalak/porrak : PDF fitxategi-izena (URL-kodetua). Ez badago, kendu.
- *  - profilaDir    : ibilbide/etapa irudien karpeta (2026tik aurrera).
+ *  - profilaDir    : ibilbide/etapa irudien karpeta (akordeoiko etapa-profiletarako ere).
  *  - profilaIrudia : ibilbide osoaren irudia.
- *  - etapak        : etapa kopurua (etapa-orriak daudenean).
  */
 (function () {
     'use strict';
@@ -48,7 +47,6 @@
                 arauak: 'Arauak%20tour%2026.pdf',
                 profilaDir: 'tour/tour26',
                 profilaIrudia: 'IbilbideOsoa.jpg',
-                etapak: 21,
             },
 
             // ── Giro d'Italia ────────────────────────────────────────────────
@@ -74,7 +72,6 @@
                 dortsalak: 'Txirrindulari%20Zerrenda%20Giro%202026.pdf',
                 profilaDir: 'giro/giro26',
                 profilaIrudia: 'IbildideOsoa.jpg',   // izen okerra, baina benetakoa
-                etapak: 21,
             },
 
             // ── Vuelta a España ──────────────────────────────────────────────
@@ -114,17 +111,16 @@
                 arauak: 'Arauak%20vuelta%2026.pdf',
                 profilaDir: 'vuelta/vuelta26',
                 profilaIrudia: 'IbilbideOsoa.jpg',
-                etapak: 21,
             },
         },
     };
 
-    /** Bidetik kirola/urtea atera: "/tour/2026/", "/tour/2026/index.html", "/tour/2026/etapa3" */
+    /** Bidetik kirola/urtea atera: "/tour/2026/", "/tour/2026", "/tour/2026/index.html" */
     window.ITZULIAK.bidea = function () {
-        let p = location.pathname.replace(/\.html?$/i, '').replace(/\/index$/i, '');
-        const m = p.match(/\/(tour|giro|vuelta)\/(\d{4})(?:\/etapa(\d+))?\/?$/i);
+        const p = location.pathname.replace(/\.html?$/i, '').replace(/\/index$/i, '');
+        const m = p.match(/\/(tour|giro|vuelta)\/(\d{4})\/?$/i);
         if (!m) return null;
-        return { kirola: m[1].toLowerCase(), urtea: m[2], etapa: m[3] ? Number(m[3]) : null };
+        return { kirola: m[1].toLowerCase(), urtea: m[2] };
     };
 
     /** Kirol baten urteak, ordenatuta. */

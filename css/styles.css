@@ -954,6 +954,12 @@ h3.vuelta {
     margin: 0 auto;
 }
 
+/* Ibilbide- eta etapa-profilen irudiak (data/Etapen Profila/…) mugatu.
+   Azaleko irudiak (data/Portadak/…) ez dira ukitzen. */
+.profile-container img[src*="Etapen Profila"] {
+    max-width: min(100%, 800px);
+}
+
 
 .table-wrapper.no-box {
     border: none;

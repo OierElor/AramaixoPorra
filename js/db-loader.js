@@ -356,7 +356,12 @@ class DBLoader {
      * @param {string} containerId  - etapen edukiontziaren ID-a
      * @param {string} colorClass   - 'vuelta' | 'giro' | 'tour' (estiloetarako)
      */
-    async loadStages(txapelketaId, containerId, colorClass = '') {
+    /**
+     * "Etapaz etapa" akordeoia: etapa bakoitzaren emaitzak (eta profil-irudia).
+     * @param {string} profilaOinarria - Etapa-profilen karpeta, adib.
+     *        "/data/Etapen Profila/giro/giro26". Hutsik bada, irudirik ez.
+     */
+    async loadStages(txapelketaId, containerId, colorClass = '', profilaOinarria = '') {
         const container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '<p style="text-align:center;opacity:.6;padding:16px;">Etapak kargatzen...</p>';
@@ -393,8 +398,19 @@ class DBLoader {
 
             const cls = colorClass ? ' ' + colorClass : '';
             let html = '<div class="etapak-accordion">';
-            stages.forEach(s => {
-                const label = String(s.izena).split(' - ').pop();  // "1. etapa (Helmuga)"
+            stages.forEach((s, i) => {
+                // Izena: "{Txapelketa} - {N}. etapa ({Helmuga})". Lehen ' - '-aren
+                // ondorengo GUZTIA hartu (helmugak berak ' - ' izan dezake).
+                const zatiak = String(s.izena).split(' - ');
+                const label = zatiak.length > 1 ? zatiak.slice(1).join(' - ') : s.izena;
+
+                const n = i + 1;
+                const profila = profilaOinarria ? `
+                            <div class="profile-container">
+                                <img src="${profilaOinarria}/Etapa${n}.jpg" alt="${n}. etapa profila"
+                                     onerror="this.onerror=null; this.src='${profilaOinarria}/Etapa${n}.png'; this.onerror=function(){this.style.display='none'};">
+                            </div>` : '';
+
                 const riders = byStage[s.id] || [];
                 const rowsHtml = riders.map(r =>
                     `<tr><td class="pos-col">${r.pos}</td>` +
@@ -407,7 +423,7 @@ class DBLoader {
                             <span>${this._esc(label)}</span>
                             <span class="etapa-chevron">▾</span>
                         </button>
-                        <div class="etapa-panel" hidden>
+                        <div class="etapa-panel" hidden>${profila}
                             <table class="sailkapena-table${cls}" style="margin:0;">
                                 <thead><tr><th>Pos</th><th>Txirrindularia</th><th>Puntuak</th></tr></thead>
                                 <tbody>${rowsHtml ||

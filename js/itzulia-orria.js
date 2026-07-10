@@ -13,7 +13,7 @@
     const C = window.ITZULIAK;
     if (!C) return;
     const loc = C.bidea();
-    if (!loc || loc.etapa !== null) return;   // urte-orria soilik
+    if (!loc) return;   // urte-orria soilik
 
     const { kirola, urtea } = loc;
     const meta = C.kirolak[kirola];
@@ -62,14 +62,6 @@
            </div>`
         : '';
 
-    // ── Etapa-menua (etapa-orriak daudenean) ─────────────────────────────────
-    let menua = '';
-    if (cfg.etapak) {
-        let li = '';
-        for (let n = 1; n <= cfg.etapak; n++) li += `<li><a href="etapa${n}.html">${n}. etapa</a></li>`;
-        menua = `<aside class="etapak-menu ${kirola}"><h3>Etapak</h3><ul>${li}</ul></aside>`;
-    }
-
     document.body.insertAdjacentHTML('beforeend', `
         ${nav}
         <div class="container">
@@ -81,7 +73,6 @@
                     <div id="itz-taulak"></div>
                 </section>
             </main>
-            ${menua}
         </div>`);
 
     // ── Taulak: txapelketa existitzen bada ETA karrerak baditu ───────────────
@@ -129,9 +120,12 @@
                 </div>
             </div>`;
 
+        // Etapa-profilen oinarria (baldin badago): akordeoiaren paneletan erakusteko
+        const profilaOinarria = cfg.profilaDir ? C.irudiBase + cfg.profilaDir : '';
+
         window.dbLoader.loadPorra(cfg.id, 'porra-table');
         window.dbLoader.loadCyclists(cfg.id, 'txirrindulari-table');
-        window.dbLoader.loadStages(cfg.id, 'etapak-container', kirola);
+        window.dbLoader.loadStages(cfg.id, 'etapak-container', kirola, profilaOinarria);
     }
 
     taulakMarraztu();

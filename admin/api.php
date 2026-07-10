@@ -99,6 +99,8 @@ try {
                 json_out(export_txapelketa((int)$tid));
             case $path === 'proposals':
                 json_out(['proposals' => read_proposals()]);
+            case $path === 'aurre-porrak':
+                json_out(['porrak' => read_aurre_porrak()]);
             case $path === 'meta':
                 json_out(db_meta());
             case $path === 'undo-state':
@@ -134,6 +136,8 @@ try {
             case $path === 'import/karrerak': json_out(import_karrerak($body));
             case $path === 'proposals/clear': json_out(clear_proposals());
             case $path === 'proposals/delete': json_out(delete_proposal($body['idx'] ?? -1));
+            case $path === 'aurre-porrak/clear': json_out(clear_aurre_porrak());
+            case $path === 'aurre-porrak/delete': json_out(delete_aurre_porra($body['idx'] ?? -1));
             case $path === 'undo': json_out(do_undo());
             case $path === 'redo': json_out(do_redo());
             case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));

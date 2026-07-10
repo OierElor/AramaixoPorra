@@ -1,0 +1,9 @@
+# Aramaixo Porra API — Apache konfigurazioa
+
+Options -Indexes
+
+# db-read.php ez da endpoint bat: q.php eta porra.php-k barnetik kargatzen dute.
+# PHPk ez luke iturburua erakutsiko, baina zuzeneko sarbidea blokeatzea merkea da.
+<Files "db-read.php">
+    Require all denied
+</Files>

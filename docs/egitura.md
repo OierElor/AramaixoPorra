@@ -16,7 +16,8 @@ AramaixoPorra/
 │   ├── db-loader.js            # Lasterketa-emaitzak kargatzeko (q.php bidez)
 │   ├── tresna-komuna.js        # `Tresna` objektua: tresnek partekatzen duten logika
 │   ├── txapelketak.js          # Txapelketen konfigurazioa (id, PDFak, irudiak)
-│   └── txapelketa-orria.js     # Urte-orria marrazten du (txantiloi partekatua)
+│   ├── txapelketa-orria.js     # Urte-orria marrazten du (txantiloi partekatua)
+│   └── porra-bidali.js         # Aurre-porren formularioa (txirrindulari-hautatzailea)
 │
 ├── tour/  giro/  vuelta/       # Itzuli handiak, urteka (urte bakoitzeko index.html bat)
 │   ├── 2023/index.html         # stub uniformea; edukia txapelketa-orria.js-k sortzen du
@@ -39,11 +40,15 @@ AramaixoPorra/
 │   ├── porra-ideala/           # Porra idealaren analisia
 │   ├── porralariak-konparatzailea/  # Porralarien konparaketa historikoa
 │   ├── sariak/                 # Sarien banaketa (dagoeneko ez da menuan agertzen)
-│   └── zuzenketak/             # Zuzenketa-proposamenen formularioa (publikoa)
+│   ├── zuzenketak/             # Zuzenketa-proposamenen formularioa (publikoa)
+│   └── porra-bidali/           # Aurre-porrak bidaltzeko formularioa (publikoa)
 │
 ├── api/                        # API publikoa (auth gabe)
+│   ├── db-read.php             # SELECT-soilik PDO konexioa (KREDENTZIALAK; ez da endpoint-a)
 │   ├── q.php                   # SELECT-soilik kontsulta-API segurua
-│   └── proposal.php            # Zuzenketa-proposamenak (email + log)
+│   ├── proposal.php            # Zuzenketa-proposamenak (email + log)
+│   ├── porra.php               # Aurre-porrak (email + log; DBan ez du idazten)
+│   └── .htaccess               # db-read.php-rako zuzeneko sarbidea blokeatu
 │
 ├── admin/                      # Kudeaketa-panela (HTTP Basic Auth)
 │   ├── index.html              # SPA interfazea (atal guztiak)
@@ -53,13 +58,16 @@ AramaixoPorra/
 │   ├── db.php                  # MySQL konexioa (mysqli) + laguntzaileak
 │   ├── config.php              # KREDENTZIALAK (git-etik kanpo, .gitignore)
 │   ├── .htaccess               # api/* bideratzea + fitxategi sentikorren babesa
-│   ├── .gitignore              # config.php + zuzenketak.log baztertu
+│   ├── .gitignore              # config.php + *.log baztertu
 │   ├── zuzenketak.log          # Zuzenketa-proposamenak (runtime, git-etik kanpo)
+│   ├── aurre-porrak.log        # Aurretik bidalitako porrak (runtime, git-etik kanpo)
 │   ├── README.md               # Admin panelaren instalazio-oharrak
 │   └── INPORTATU-GIDA.md       # Datuak inportatzeko gida osoa
 │
 ├── db/
-│   └── Datuak 260707.sql       # Datu-basearen dump-a (erreferentzia)
+│   ├── Datuak 260707.sql       # Datu-basearen dump-a (erreferentzia)
+│   ├── ordena.sql              # Migrazioa: Karrerak.Ordena
+│   └── aurre-porrak.sql        # Migrazioa: Txapelketak.Porra_Irekita + Apustu_Kopurua
 │
 ├── data/                       # Baliabide estatikoak
 │   ├── Portadak/               # Azalak + favicon

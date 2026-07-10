@@ -154,6 +154,7 @@
     <div class="nav-item" data-section="karrera-emaitzak"><span class="icon">🏁</span> Karrera emaitzak</div>
     <div class="nav-item" data-section="osasuna"><span class="icon">🩺</span> Datu-osasuna</div>
     <div class="nav-item" data-section="zuzenketak"><span class="icon">📮</span> Zuzenketak <span class="badge" id="nav-zuzenketak-badge" style="display:none;margin-left:auto"></span></div>
+    <div class="nav-item" data-section="aurre-porrak"><span class="icon">📥</span> Aurre-porrak <span class="badge" id="nav-aurre-porrak-badge" style="display:none;margin-left:auto"></span></div>
     <div class="nav-item" data-section="taulak"><span class="icon">▦</span> Taula guztiak</div>
     <div class="nav-sub-list" id="table-nav-list"></div>
     <div class="nav-section">Sartu</div>
@@ -271,7 +272,8 @@
           <button class="btn btn-ghost btn-sm" onclick="exportTxapelketa('txap-export-sel')">⬇ Esportatu (JSON)</button>
         </div>
       </div>
-      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5"><strong>Porra irekita</strong> markatzean, porralariek beren porra aurretik bidal dezakete <code>/tresnak/porra-bidali/</code> orritik. Apustuak EZ dira zuzenean gordetzen: <strong>Aurre-porrak</strong> atalean agertuko dira berrikusteko. Txapelketaren <strong>txirrindulari zerrenda inportatuta</strong> egon behar da.</div>
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th><th>Porra irekita</th><th>Apustu kop.</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
       <div class="card"><div class="card-head"><div class="card-title">Karrerak</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Ordena</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
     </section>
 
@@ -466,6 +468,15 @@
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Proposamenak eskuz konpondu behar dira lehendik dauden tresnekin: <strong>Porra editatu</strong>, <strong>Fusionatu</strong>, <strong>Ezizenak lotu</strong> edo izena editatu (Porralariak). Konponduta, kendu (🗑).</div>
       <div id="zuzenketak-list"></div>
+    </section>
+
+    <!-- AURRE-PORRAK -->
+    <section class="section" id="sec-aurre-porrak">
+      <div class="page-header"><div><div class="page-title">📥 Aurre-porrak</div><div class="page-sub">Porralariek aurretik bidalitako porrak (oraindik ez daude datu-basean)</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="clearAurrePorrak()">🧹 Garbitu dena</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">Porra hauek <strong>ez daude datu-basean</strong>. <strong>➡ Inportatu</strong> sakatuz <code>PorraApustuak</code>-en sartzen dira (porralari berririk EZ da sortzen: ezizena ezezaguna bada, <strong>Ezizenak lotu</strong> atalean lotu beharko duzu). Inportatu ondoren, kendu (🗑).</div>
+      <div id="aurre-porrak-list"></div>
     </section>
 
     <!-- PORRA EDITATU -->
@@ -762,6 +773,7 @@ function renderCurrentSection() {
     case "import":           renderImportSelectors(); break;
     case "osasuna":          renderOsasunaSelectors(); break;
     case "zuzenketak":       loadProposals(); break;
+    case "aurre-porrak":     loadAurrePorrak(); break;
     case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
 }
@@ -803,6 +815,7 @@ function renderStats() {
   el("st-karrerak").textContent = state.karrerak.length;
   loadDataQuality();
   loadProposalsBadge();
+  loadAurrePorrakBadge();
 }
 
 // ── Porralariak ───────────────────────────────────────────────────────────────
@@ -845,9 +858,17 @@ function renderTxirrindulariak() {
 
 // ── Txapelketak ───────────────────────────────────────────────────────────────
 function renderTxapelketak() {
-  el("txap-tbody").innerHTML = state.txapelketak.map(t =>
-    `<tr><td class="pk-cell">${esc(t.Txapelketa_ID)}</td><td>${esc(t.Izena)}</td><td>${esc(t.Urtea)}</td></tr>`
-  ).join("");
+  // Zutabeak db/aurre-porrak.sql exekutatu arte ez daude: kontrolak orduan bakarrik.
+  const badaPorraZut = state.txapelketak.some(t => "Porra_Irekita" in t);
+  const inputEstiloa = "width:64px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center";
+  el("txap-tbody").innerHTML = state.txapelketak.map(t => {
+    const tid = t.Txapelketa_ID;
+    const kontrolak = badaPorraZut
+      ? `<td><input type="checkbox" ${Number(t.Porra_Irekita) === 1 ? "checked" : ""} onchange="saveTxapPorra(this, ${tid}, 'Porra_Irekita')"></td>` +
+        `<td><input type="number" min="1" value="${t.Apustu_Kopurua ?? ""}" onchange="saveTxapPorra(this, ${tid}, 'Apustu_Kopurua')" style="${inputEstiloa}"></td>`
+      : `<td colspan="2" style="color:var(--muted);font-size:12px" title="db/aurre-porrak.sql exekutatu phpMyAdmin-en">— migrazioa falta da —</td>`;
+    return `<tr><td class="pk-cell">${esc(tid)}</td><td>${esc(t.Izena)}</td><td>${esc(t.Urtea)}</td>${kontrolak}</tr>`;
+  }).join("");
   const exSel = el("txap-export-sel");
   if (exSel) { const prev = exSel.value; exSel.innerHTML = `<option value="">— Txapelketa —</option>` +
     state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join(""); if (prev) exSel.value = prev; }
@@ -860,6 +881,20 @@ function renderTxapelketak() {
       `<td><input type="number" value="${k.Ordena ?? ''}" onchange="saveKarreraOrdena(this, ${k.Karrerak_ID})" style="width:56px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center"></td>` +
       `<td class="row-actions"><button class="btn btn-sm btn-ghost" title="Ezabatu" onclick="deleteKarrera(${k.Karrerak_ID}, this.dataset.iz)" data-iz="${esc(k.Izena)}">🗑</button></td></tr>`;
   }).join("");
+}
+
+/** Txapelketa baten Porra_Irekita (checkbox) edo Apustu_Kopurua (zenbakia) gorde. */
+async function saveTxapPorra(inp, tid, zutabea) {
+  const balioa = zutabea === "Porra_Irekita"
+    ? (inp.checked ? 1 : 0)
+    : (inp.value.trim() === "" ? null : Number(inp.value));
+  try {
+    await api("api/table-update", { method: "POST", body: JSON.stringify({ table: "Txapelketak", pk: { Txapelketa_ID: tid }, values: { [zutabea]: balioa } }) });
+    const t = state.txapelketak.find(x => x.Txapelketa_ID === tid);
+    if (t) t[zutabea] = balioa;
+    if (zutabea === "Porra_Irekita") showToast(balioa ? "Porra IREKITA ✓" : "Porra itxita ✓");
+    else showToast("Apustu kopurua gordeta ✓");
+  } catch(e) { showToast(e.message, "err"); await reloadData(); }
 }
 
 async function saveKarreraOrdena(inp, kid) {
@@ -2101,6 +2136,106 @@ function updateProposalsBadge(n) {
 
 async function loadProposalsBadge() {
   try { const r = await api("api/proposals"); updateProposalsBadge((r.proposals || []).length); }
+  catch(_) {}
+}
+
+// ── Aurre-porrak (porralariek aurretik bidalitakoak) ─────────────────────────
+async function loadAurrePorrak() {
+  const cont = el("aurre-porrak-list");
+  cont.innerHTML = `<div style="color:var(--muted);font-size:13px">Kargatzen...</div>`;
+  try {
+    const r = await api("api/aurre-porrak");
+    const list = r.porrak || [];
+    updateAurrePorrakBadge(list.length);
+    if (!list.length) { cont.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:24px;text-align:center">Ez dago aurre-porrarik.</div>`; return; }
+    cont.innerHTML = list.map(p => {
+      const txirri = (p.txirrindulariak || []).map(t =>
+        `<div style="display:flex;gap:8px"><span style="color:var(--muted);min-width:44px;text-align:right">${esc(t.dortsala)}</span><span>${esc(t.izena)}</span></div>`).join("");
+      const harr = p.harremana ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">☎ ${esc(p.harremana)}</div>` : "";
+      const ohar = p.oharrak ? `<div style="font-size:12.5px;margin-top:8px;white-space:pre-wrap">📝 ${esc(p.oharrak)}</div>` : "";
+      return `<div class="card" style="margin-bottom:10px"><div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div><strong style="font-size:14.5px">${esc(p.ezizena)}</strong>
+            <span class="badge" style="margin-left:8px">${esc(p.txap_izena)}</span>
+            <span style="color:var(--muted);font-size:12px;margin-left:8px">${esc(p.data)}</span>
+            <span style="color:var(--muted);font-size:12px;margin-left:8px">${esc(p.dortsalak.length)} txirrindulari</span>
+            ${harr}</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" onclick="importAurrePorra(${p.idx})" title="PorraApustuak-en sartu">➡ Inportatu</button>
+            <button class="btn btn-sm btn-ghost" onclick="deleteAurrePorra(${p.idx})" title="Kendu">🗑</button>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:13px;line-height:1.5;columns:2;column-gap:24px">${txirri}</div>
+        ${ohar}
+      </div></div>`;
+    }).join("");
+  } catch(e) { cont.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
+}
+
+/** Aurre-porra bat dagoen apustu-inportatzailetik pasatu (preview → berretsi → aplikatu). */
+async function importAurrePorra(idx) {
+  let p;
+  try {
+    const r = await api("api/aurre-porrak");
+    p = (r.porrak || []).find(x => x.idx === idx);
+  } catch(e) { showToast(e.message, "err"); return; }
+  if (!p) { showToast("Aurre-porra ez da aurkitu", "err"); return; }
+
+  const payload = {
+    txapelketa_id: p.txap_id,
+    mota: p.dortsalak.length === 25 ? "klasikoak" : "",
+    bettors: [{ izena: p.ezizena, dortsalak: p.dortsalak }],
+  };
+
+  let prev;
+  try { prev = await api("api/import/apustuak-preview", { method: "POST", body: JSON.stringify(payload) }); }
+  catch(e) { showToast(e.message, "err"); return; }
+
+  const abisuak = [];
+  if ((prev.lotu_gabe || []).length)         abisuak.push(`⚠ Ezizena lotu gabe: ${prev.lotu_gabe.join(", ")}`);
+  if ((prev.unknown_dortsalak || []).length) abisuak.push(`⚠ Dortsal ezezagunak: ${prev.unknown_dortsalak.join(", ")}`);
+  if ((prev.warnings || []).length)          abisuak.push(...prev.warnings.map(w => `⚠ ${w}`));
+
+  // confirmDialog-ek textContent darabil (white-space:pre-wrap): ez ihes egin, lerro-jauziak bai.
+  const galdera = `"${p.ezizena}" → ${p.txap_izena}\n${prev.bet_count} apustu sartuko dira.` +
+    (abisuak.length ? `\n\n${abisuak.join("\n")}` : "");
+  if (!(await confirmDialog(galdera))) return;
+
+  try {
+    const res = await api("api/import/apustuak", { method: "POST", body: JSON.stringify(payload) });
+    showToast(`Inportatuta ✓ (${res.apustuak ?? prev.bet_count} apustu)`);
+    await reloadData();
+    await loadAurrePorrak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function deleteAurrePorra(idx) {
+  if (!(await confirmDialog("Aurre-porra hau kendu? (inportatuta badago)"))) return;
+  try {
+    await api("api/aurre-porrak/delete", { method: "POST", body: JSON.stringify({ idx }) });
+    showToast("Kenduta ✓");
+    await loadAurrePorrak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function clearAurrePorrak() {
+  if (!(await confirmDialog("Aurre-porra GUZTIAK ezabatu?"))) return;
+  try {
+    await api("api/aurre-porrak/clear", { method: "POST", body: "{}" });
+    showToast("Garbituta ✓");
+    await loadAurrePorrak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+function updateAurrePorrakBadge(n) {
+  const b = el("nav-aurre-porrak-badge");
+  if (!b) return;
+  if (n > 0) { b.textContent = n; b.style.display = ""; }
+  else b.style.display = "none";
+}
+
+async function loadAurrePorrakBadge() {
+  try { const r = await api("api/aurre-porrak"); updateAurrePorrakBadge((r.porrak || []).length); }
   catch(_) {}
 }
 

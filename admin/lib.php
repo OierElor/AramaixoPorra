@@ -1480,14 +1480,13 @@ function read_proposals() {
 
 function count_proposals() { return count(read_proposals()); }
 
-function clear_proposals() {
-    $f = _proposals_file();
+// ─── Log-fitxategien laguntzaile komunak (zuzenketak + aurre-porrak) ─────────
+function _log_clear($f) {
     if (is_file($f)) file_put_contents($f, '', LOCK_EX);
     return ['ok' => true];
 }
 
-function delete_proposal($idx) {
-    $f = _proposals_file();
+function _log_delete($f, $idx) {
     if (!is_file($f)) return ['ok' => true];
     $content = file_get_contents($f);
     if ($content === false) return ['ok' => false, 'reason' => 'Ezin irakurri'];
@@ -1500,3 +1499,64 @@ function delete_proposal($idx) {
     file_put_contents($f, $rebuilt, LOCK_EX);
     return ['ok' => true];
 }
+
+function clear_proposals() { return _log_clear(_proposals_file()); }
+
+function delete_proposal($idx) { return _log_delete(_proposals_file(), $idx); }
+
+// ─── Aurre-porrak (testu-fitxategia, DB gabe) ───────────────────────────────
+// api/porra.php-k admin/aurre-porrak.log-en eransten ditu; hemen irakurtzen dira.
+// Blokearen formatua (ikus api/porra.php):
+//   [data] TXAP: 17 | Tour De France 2026 | EZIZENA: xxx | IP: 1.2.3.4
+//   HARREMANA: ...            (aukerakoa)
+//   DORTSALAK: 1,21,31,...
+//     1  Tadej Pogačar        (irakurtzeko soilik)
+//   OHARRAK: ...              (aukerakoa)
+function _aurre_porrak_file() { return __DIR__ . '/aurre-porrak.log'; }
+
+function read_aurre_porrak() {
+    $f = _aurre_porrak_file();
+    if (!is_file($f)) return [];
+    $content = file_get_contents($f);
+    if ($content === false || trim($content) === '') return [];
+    $blocks = preg_split('/\n=====\n/', $content);
+    $out = [];
+    foreach ($blocks as $i => $block) {
+        $block = trim($block, "\n");
+        if ($block === '') continue;
+
+        $lines = explode("\n", $block);
+        $head = $lines[0];
+        $data = ''; $txap_id = 0; $txap_izena = ''; $ezizena = ''; $ip = '';
+        if (preg_match('/^\[(.*?)\]\s*TXAP:\s*(\d+)\s*\|\s*(.*?)\s*\|\s*EZIZENA:\s*(.*?)\s*\|\s*IP:\s*(\S*)$/', $head, $m)) {
+            $data = $m[1]; $txap_id = (int)$m[2]; $txap_izena = $m[3]; $ezizena = $m[4]; $ip = $m[5];
+        }
+
+        $harremana = ''; $oharrak = ''; $dortsalak = []; $txirrindulariak = [];
+        foreach ($lines as $ln) {
+            if (strpos($ln, 'HARREMANA: ') === 0)      $harremana = substr($ln, 11);
+            elseif (strpos($ln, 'OHARRAK: ') === 0)    $oharrak = substr($ln, 9);
+            elseif (strpos($ln, 'DORTSALAK: ') === 0 && !$dortsalak) {
+                foreach (explode(',', substr($ln, 11)) as $d) {
+                    $d = trim($d);
+                    if ($d !== '' && ctype_digit($d)) $dortsalak[] = (int)$d;
+                }
+            } elseif (preg_match('/^\s+(\d+)\s\s+(.+)$/', $ln, $mm)) {
+                $txirrindulariak[] = ['dortsala' => (int)$mm[1], 'izena' => $mm[2]];
+            }
+        }
+
+        $out[] = [
+            'idx' => $i, 'data' => $data, 'txap_id' => $txap_id, 'txap_izena' => $txap_izena,
+            'ezizena' => $ezizena, 'ip' => $ip, 'harremana' => $harremana, 'oharrak' => $oharrak,
+            'dortsalak' => $dortsalak, 'txirrindulariak' => $txirrindulariak,
+        ];
+    }
+    return array_reverse($out); // berrienak lehenengo
+}
+
+function count_aurre_porrak() { return count(read_aurre_porrak()); }
+
+function clear_aurre_porrak() { return _log_clear(_aurre_porrak_file()); }
+
+function delete_aurre_porra($idx) { return _log_delete(_aurre_porrak_file(), $idx); }

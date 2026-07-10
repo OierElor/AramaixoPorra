@@ -12,12 +12,7 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
-// ───── KONFIGURAZIOA — bete zure datuekin ───────────────────────────────────
-$DB_HOST = 'PMYSQL104.dns-servicio.com';
-$DB_NAME = '6437239_aramaixoporra';
-$DB_USER = 'Erabiltzaile';   // SELECT-soilik baimenarekin, gomendatua
-$DB_PASS = 'erabiltzailePH';
-// ────────────────────────────────────────────────────────────────────────────
+require_once __DIR__ . '/db-read.php';   // api_pdo() / api_select() — kredentzialak hor daude
 
 function fail($msg, $code = 400) {
     http_response_code($code);
@@ -41,27 +36,7 @@ if (preg_match('/\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|REPLACE|GRAN
 }
 
 try {
-    $pdo = new PDO(
-        "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4",
-        $DB_USER, $DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,   // LIMIT ? eta zenbaki-mota natiboak
-        ]
-    );
-    // Komatxo bikoitzak identifikadore gisa (kontsultek SQLite estiloa darabilte)
-    $pdo->exec("SET SESSION sql_mode='ANSI_QUOTES'");
-
-    $stmt = $pdo->prepare($sql);
-    foreach ($params as $i => $v) {
-        if (is_int($v))        $stmt->bindValue($i + 1, $v, PDO::PARAM_INT);
-        elseif (is_null($v))   $stmt->bindValue($i + 1, null, PDO::PARAM_NULL);
-        elseif (is_bool($v))   $stmt->bindValue($i + 1, $v ? 1 : 0, PDO::PARAM_INT);
-        else                   $stmt->bindValue($i + 1, (string) $v);
-    }
-    $stmt->execute();
-    echo json_encode($stmt->fetchAll());
+    echo json_encode(api_select($sql, $params));
 } catch (Throwable $e) {
     fail('DB errorea: ' . $e->getMessage(), 500);
 }

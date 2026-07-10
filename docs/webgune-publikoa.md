@@ -81,6 +81,24 @@ Analisi-tresna interaktiboak. Guztiek `tresna-komuna.js`-ko **`Tresna`** objektu
 erabiltzen dute (kontsultak, autocomplete, Chart.js grafikoak). Xehetasunak:
 [tresnak.md](tresnak.md).
 
+## Aurre-porrak — `tresnak/porra-bidali/`
+
+Porralariek beren porra **aurretik** bidal dezakete, baina **adminak ireki dituen
+txapelketetan bakarrik** (`Txapelketak.Porra_Irekita = 1`).
+
+- Txapelketa hautatu → bere **startlist**-etik 15 (edo 25) txirrindulari aukeratu
+  (`Tresna.autocomplete()` + `.grafiko-chip` txipak). Kopurua osatu arte ezin da bidali.
+- `POST /api/porra.php` → emaila + `admin/aurre-porrak.log`. **Ez du datu-basea idazten.**
+  Balidazio guztia zerbitzarian errepikatzen da.
+- **Anboto abisua** hiru lekutan agertzen da: formularioan, arrakasta-mezuan eta emailean.
+  Aurre-porra ez da behin betikoa; presentzialki joan behar da beti.
+- **Banner-a urte-orrian**: txapelketa irekita badago, `txapelketa-orria.js`-k ohar bat
+  erakusten du esteka zuzenarekin (`/tresnak/porra-bidali/?txap=17`). Kontsulta **bereizia**
+  da, txapelketak oraindik karrerarik ez badu ere banner-ak agertu behar duelako.
+
+Adminak "Aurre-porrak" atalean berrikusten ditu eta handik inportatzen (ikus
+[admin-panela.md](admin-panela.md)).
+
 ## Zuzenketak — `tresnak/zuzenketak/`
 
 Porralariek akatsak jakinarazteko formulario publikoa. `POST /api/proposal.php` bidez,

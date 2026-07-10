@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Porra aurretik bidali</title>
+    <link rel="stylesheet" href="/css/styles.css?v=20260711">
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+    <script src="/js/db-loader.js?v=20260711"></script>
+    <script src="/js/tresna-komuna.js?v=20260711"></script>
+    <script src="/js/layout.js?v=20260711" defer></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Porra aurretik bidali</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px; max-width:640px; margin-left:auto; margin-right:auto;">
+                    Aukeratu zure txirrindulariak eta bidali porra aurretik, dena prest egon dadin.
+                </p>
+
+                <div class="ohar-nabarmena">
+                    <strong>⚠ Garrantzitsua:</strong> aurre-porra hau <strong>ez da behin betikoa</strong>.
+                    Porra ofizialki uzteko <strong>Anboto tabernara joan behar duzu</strong>, beti bezala.
+                    Hemen bidaltzeak lana aurreratzea besterik ez du egiten.
+                </div>
+
+                <div id="sarrera-oharra"></div>
+
+                <div class="grafiko-oihala" id="forma" hidden style="max-width:640px; margin:20px auto;">
+
+                    <div style="margin-bottom:14px;">
+                        <label for="txapelketa" style="display:block; font-weight:600; margin-bottom:6px;">Txapelketa</label>
+                        <select id="txapelketa" style="width:100%; padding:9px 10px; border:1px solid #bbb; border-radius:6px; font-size:15px;"></select>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <label for="ezizena" style="display:block; font-weight:600; margin-bottom:6px;">Zure ezizena</label>
+                        <input type="text" id="ezizena" maxlength="60" placeholder="Adib. Ataque de enric"
+                            style="width:100%; box-sizing:border-box; padding:9px 10px; border:1px solid #bbb; border-radius:6px; font-size:15px;">
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <label for="harremana" style="display:block; font-weight:600; margin-bottom:6px;">Harremana <span style="font-weight:400; opacity:.6;">(aukerakoa)</span></label>
+                        <input type="text" id="harremana" maxlength="120" placeholder="Telefonoa edo emaila"
+                            style="width:100%; box-sizing:border-box; padding:9px 10px; border:1px solid #bbb; border-radius:6px; font-size:15px;">
+                    </div>
+
+                    <div class="porra-bilaketa" style="margin-bottom:6px;">
+                        <label for="bilaketa" style="display:block; font-weight:600; margin-bottom:6px;">
+                            Txirrindulariak —
+                            <span class="porra-kontagailua"><span id="kontagailua">0</span>/<span id="guztira">15</span></span>
+                        </label>
+                        <input type="text" id="bilaketa" disabled autocomplete="off" placeholder="Aukeratu txapelketa bat lehenengo"
+                            style="width:100%; box-sizing:border-box; padding:9px 10px; border:1px solid #bbb; border-radius:6px; font-size:15px;">
+                        <div id="hautatuak" class="porra-hautatuak"></div>
+                        <div style="font-size:12px; opacity:.6; margin-top:6px;">Egin klik txirrindulari batean kentzeko.</div>
+                    </div>
+
+                    <div style="margin:14px 0 6px;">
+                        <label for="oharrak" style="display:block; font-weight:600; margin-bottom:6px;">Oharrak <span style="font-weight:400; opacity:.6;">(aukerakoa)</span></label>
+                        <textarea id="oharrak" rows="3" maxlength="500"
+                            style="width:100%; box-sizing:border-box; padding:10px; border:1px solid #bbb; border-radius:6px; font-size:15px; font-family:inherit; resize:vertical;"></textarea>
+                    </div>
+
+                    <!-- Honeypot: erabiltzaileek ez dute ikusten; botek betetzen dute -->
+                    <input type="text" id="hp" tabindex="-1" autocomplete="off"
+                        style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" aria-hidden="true">
+
+                    <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <button id="bidali-btn" disabled style="padding:10px 20px; border:none; border-radius:6px; background:#43a047; color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Bidali porra</button>
+                        <span id="emaitza" style="font-size:14px;"></span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/porra-bidali.js?v=20260711"></script>
+</body>
+
+</html>

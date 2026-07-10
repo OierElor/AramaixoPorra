@@ -34,6 +34,7 @@ Metodo/laguntzaile nagusiak:
 | **Porralariak konparatzailea** | `tresnak/porralariak-konparatzailea/` | 2-4 porralari alderatu txapelketa GUZTIETAN: posizioak, garaipenak, podioak, aurrez-aurreko (head-to-head). |
 | **Sarien banaketa** | `tresnak/sariak/` | Lasterketa bakoitzeko sariak eta irabazleak. **Oharra:** dagoeneko ez da tresnen menuan agertzen (sariak webgunetik kendu ziren), baina orria oraindik hor dago. |
 | **Zuzenketak proposatu** | `tresnak/zuzenketak/` | Porralarien akats-jakinarazpenen formularioa (ikus [apiak.md](apiak.md)). |
+| **Porra bidali** | `tresnak/porra-bidali/` | **Aurre-porrak**: adminak *irekitako* txapelketetan, porralariek beren 15 (edo 25) txirrindulari aukeratzen dituzte startlist-etik eta porra aurretik bidaltzen dute. `POST /api/porra.php` — **ez du datu-basea idazten**. Anboto tabernara joan behar da hala ere. |
 
 ## Patroi komuna
 

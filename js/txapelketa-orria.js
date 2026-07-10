@@ -71,6 +71,7 @@
                     <h2 class="${kirola}">${esc(meta.izena)} ${urtea}</h2>
                     ${deskargak}
                     ${profila}
+                    <div id="porra-banner"></div>
                     <div id="itz-taulak"></div>
                 </section>
             </main>
@@ -95,6 +96,38 @@
                 </table>
             </div>
         </div>`;
+
+    /**
+     * "Porra irekita" banner-a (Txapelketak.Porra_Irekita = 1).
+     *
+     * Kontsulta BEREIZIA da nahita, bi arrazoirengatik:
+     *  1. Txapelketa bat irekita egon daiteke oraindik karrerarik gabe; kasu horretan
+     *     `taulakMarraztu()`-k goiz irteten du eta banner-a ez litzateke agertuko.
+     *  2. `Porra_Irekita` zutabea sortu gabe badago (db/aurre-porrak.sql exekutatu arte),
+     *     erroreak hemen bakarrik geratzen dira eta taulek funtzionatzen jarraitzen dute.
+     */
+    async function bannerMarraztu() {
+        if (!cfg.id) return;
+        try {
+            const rows = await window.dbLoader.query(
+                'SELECT Porra_Irekita AS irekita FROM "Txapelketak" WHERE Txapelketa_ID = ?',
+                [cfg.id]);
+            if (!rows.length || Number(rows[0].irekita) !== 1) return;
+        } catch (e) {
+            return;   // zutabea oraindik ez dago: banner-ik ez, baina orria osorik
+        }
+
+        const el = document.getElementById('porra-banner');
+        if (!el) return;
+        el.innerHTML = `
+            <div class="ohar-nabarmena" style="text-align:center;">
+                <p style="margin:0 0 10px;"><strong>Porra irekita dago!</strong>
+                   Zure txirrindulariak aukeratu eta porra aurretik bidal dezakezu.</p>
+                <a href="/tresnak/porra-bidali/?txap=${cfg.id}" class="download-button ${kirola}">PORRA BIDALI</a>
+                <p style="margin:10px 0 0; font-size:.9em;">
+                   Gogoratu: porra ofizialki uzteko <strong>Anboto tabernara</strong> joan behar duzu.</p>
+            </div>`;
+    }
 
     async function taulakMarraztu() {
         if (!cfg.id) return oharra();
@@ -126,5 +159,6 @@
         window.dbLoader.loadKarrerak(cfg.id, 'karrerak-container', kirola, C.irudiFn(cfg));
     }
 
+    bannerMarraztu();
     taulakMarraztu();
 })();

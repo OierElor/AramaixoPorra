@@ -1,113 +1,27 @@
+<!DOCTYPE html>
 <html lang="eu">
 
 <head>
-    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="/js/db-loader.js"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
-            var newPath = window.location.pathname.slice(0, -5);
-            history.replaceState(null, '', newPath);
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/itzuliak.js"></script>
+    <script src="/js/itzulia-orria.js" defer></script>
     <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <div class="etapa-navegazioa tour">
-        <button class="etapa-arrow tour disabled" disabled>&#8592;</button>
-        <span class="etapa-info tour">2023</span>
-        <a href="../2024/" class="etapa-arrow tour">&#8594;</a>
-    </div>
-    <div class="container">
-        <main>
-            <section>
-                <h2 class="tour">Tour de France 2023</h2>
-                <div class="download-section">
-                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/Arauak/Arauak%20tour%2023.pdf" class="download-button tour"
-                        target="_blank">
-                        ARAUAK (PDF)
-                    </a>
-                    <a href="/data/Arauak%2C%20TxirrindulariZerrenda%20eta%20Porrak/TxirrindulariZerrenda/Txirrindulari%20Zerrenda%20Tour%202023.pdf" class="download-button tour"
-                        target="_blank">
-                        DORTSALAK (PDF)
-                    </a>
-                </div>
-
-                <div class="tables-container stacked">
-                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
-                        <h3 class="tour" style="text-align: center;">PORRA SAILKAPENA</h3>
-                        <div class="table-content">
-                            <table class="sailkapena-table tour" id="porra-table" style="width: 100%; ">
-                                <thead>
-                                    <tr>
-                                        <th rowspan="2">Pos</th>
-                                        <th rowspan="2">Id</th>
-                                        <th rowspan="2">Porralaria</th>
-                                        <th rowspan="2">Puntuak</th>
-                                        <th colspan="6" style="border-bottom: 2px solid #fff;">Etapetako sailkapena</th>
-                                        <th rowspan="2">Mendia</th>
-                                        <th rowspan="2">Orokorra</th>
-                                        
-                                    </tr>
-                                    <tr>
-                                        <th>1.</th>
-                                        <th>2.</th>
-                                        <th>3.</th>
-                                        <th>4.</th>
-                                        <th>5.</th>
-                                        <th>6.</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be loaded from CSV -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
-                        <h3 class="tour" style="text-align: center;">TXIRRINDULARIAK</h3>
-                        <div class="table-content">
-                            <table class="sailkapena-table tour" id="txirrindulari-table" style="width: 100%; ">
-                                <thead>
-                                    <tr>
-                                        <th>Pos</th>
-                                        <th>Dortsala</th>
-                                        <th>Txirrindularia</th>
-                                        <th>Zenbatek?</th>
-                                        <th>Puntuak</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be loaded from CSV -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tables-container stacked">
-                    <div class="table-wrapper" style="width: 100%; overflow-x: auto;">
-                        <h3 class="tour" style="text-align: center;">ETAPAZ ETAPA</h3>
-                        <div id="etapak-container"></div>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Tour de France 2023 — Txapelketa_ID=4
-            window.dbLoader.loadPorra(4, 'porra-table');
-            window.dbLoader.loadCyclists(4, 'txirrindulari-table');
-            window.dbLoader.loadStages(4, 'etapak-container', 'tour');
-        });
-    </script>
+    <noscript>
+        <p style="text-align:center; padding:24px;">Orri honek JavaScript behar du edukia erakusteko.</p>
+    </noscript>
 </body>
 
 </html>

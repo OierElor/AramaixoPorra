@@ -2,39 +2,26 @@
 <html lang="eu">
 
 <head>
-    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra</title>
+    <link rel="icon" type="image/png" href="/data/Portadak/favicon.png">
     <link rel="stylesheet" href="/css/styles.css">
-        <script>
+    <script>
         if (window.location.pathname.endsWith('.html')) {
-            var newPath = window.location.pathname.slice(0, -5);
-            history.replaceState(null, '', newPath);
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
+    <script src="/js/db-loader.js"></script>
+    <script src="/js/itzuliak.js"></script>
+    <script src="/js/etapa-orria.js" defer></script>
     <script src="/js/layout.js" defer></script>
 </head>
 
 <body>
-    <div class="etapa-navegazioa vuelta">
-        <a href="../2026/" class="etapa-back-btn vuelta">2026</a>
-        <button onclick="window.location.href='etapa8.html'" aria-label='Aurrekoa' class='etapa-arrow vuelta'>&#8592;</button>
-        
-        <span class="etapa-info vuelta">Etapa 9</span>
-        <button onclick="window.location.href='etapa10.html'" aria-label='Hurrengoa' class='etapa-arrow vuelta'>&#8594;</button>
-    </div>
-        <main>
-        <section>
-            <h2 class="vuelta">Vuelta — 9. etapa</h2>
-            <div class="profile-container">
-                <img src="/data/Etapen Profila/vuelta/vuelta26/Etapa9.jpg" alt="9. etapa profila"
-                    onerror="this.onerror=null; this.src='/data/Etapen Profila/vuelta/vuelta26/Etapa9.png'; this.onerror=function(){this.style.display='none'};">
-            </div>
-            <p style="text-align:center; opacity:.6; margin-top:24px;">Ez dago daturik oraindik. Lasterketa amaitzean agertuko dira emaitzak.</p>
-        </section>
-    </main>
-    
+    <noscript>
+        <p style="text-align:center; padding:24px;">Orri honek JavaScript behar du edukia erakusteko.</p>
+    </noscript>
 </body>
 
 </html>

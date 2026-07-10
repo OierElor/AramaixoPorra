@@ -24,14 +24,26 @@ Sarrera bisuala: azalak/karrusela (`data/Portadak/`). Hemendik menuaren bidez na
 
 ### Itzuli handiak — `tour/`, `giro/`, `vuelta/`
 
-Urte bakoitzak **`index.html` bat** du (adib. `giro/2025/index.html`). Itzuli baten barruan
-etapa asko daudenez, orri bakarrean erakusten dira:
+Hiru itzuliek **egitura bera** dute, **txantiloi partekatu** baten bidez. HTML orriak
+**stub uniformeak** dira (denak berdinak); edukia bidetik eta konfiguraziotik sortzen da:
 
-- **Porra sailkapena** (porralariak) — `dbLoader.loadPorra(txapelketaId, tableId)`.
-- **Txirrindulari sailkapena** — `dbLoader.loadCyclists(...)`.
-- **Etapak** — `dbLoader.loadStages(...)` / `loadStageByNumber(...)`.
+| Fitxategia | Zertarako |
+|---|---|
+| `js/itzuliak.js` | **Konfigurazio bakarra**: kirol-izenak + urteko `{ id, arauak, dortsalak, porrak, profilaDir, profilaIrudia, etapak }` |
+| `js/itzulia-orria.js` | **Urte-orria** marrazten du (`/tour/2026/`): nabigazioa, izenburua, PDFak, ibilbide-irudia, etapa-menua eta sailkapen-taulak |
+| `js/etapa-orria.js` | **Etapa-orria** marrazten du (`/giro/2026/etapa3`): nabigazioa, etaparen profila, etapako emaitzak |
 
-Estaldura: `tour/` eta `giro/` → 2023-2026 · `vuelta/` → 2020-2026.
+- Urte-orriak: **Porra sailkapena** (`loadPorra`), **Txirrindulariak** (`loadCyclists`),
+  **Etapaz etapa** (`loadStages`).
+- Etapa-orriak: **Etapako emaitzak** (`loadStageByNumber`).
+- **Taulak soilik erakusten dira** txapelketa DBan existitzen bada **eta karrerarik badu**;
+  bestela "ez dago daturik oraindik" oharra (adib. oraindik hasi gabeko urteak).
+- PDFak, ibilbide-irudia eta etapa-menua konfigurazioan daudenean bakarrik agertzen dira.
+
+**Urte berri bat gehitzeko:** `js/itzuliak.js`-en sarrera bat gehitu eta stub-ak kopiatu
+(`index.html` + `etapa1..21.html`). Ez dago HTML markaketarik bikoiztu beharrik.
+
+Estaldura: `tour/` eta `giro/` → 2023-2026 · `vuelta/` → 2020-2026 · etapa-orriak: 2026.
 
 ### Klasikoak — `klasikak/`
 

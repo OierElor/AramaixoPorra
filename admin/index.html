@@ -401,7 +401,7 @@
 
       <!-- D · EMAITZAK -->
       <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">4 · Karrera emaitzak</div></div><div class="card-body">
-        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Lasterketa bat hautatu eta emaitzak itsatsi, <strong>helmugako ordenan</strong>. Nahikoa da <strong>zutabe bakarra</strong>: dortsalak (<code>91</code>) edo izenak (<code>MERLIER Tim</code>). Postua lerroaren ordenatik dator eta <strong>puntuak beheko eskalatik</strong>.<br>Excel-etik zutabe gehiago badatoz (<code>Posizioa · Dortsala · Izena · Puntuak</code>) horiek erabiliko dira; itsatsitako puntuek eskala gainidazten dute. Dortsalez lotzen da (izena fallback gisa).</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Lasterketa bat hautatu eta emaitzak itsatsi, <strong>helmugako ordenan</strong>. Nahikoa da <strong>zutabe bakarra</strong>: dortsalak (<code>91</code>) <strong>edo</strong> izenak (<code>MERLIER Tim</code>) — <strong>ez biak</strong>. Postua lerroaren ordenatik dator eta <strong>puntuak beheko eskalatik</strong>.<br><strong>🔍 Aurreikusi</strong> sakatzean, dortsala jarrita <strong>izena</strong> osatzen da (eta alderantziz), startlist-etik. Egiaztatu inportatu aurretik.<br>Excel-etik zutabe gehiago badatoz (<code>Posizioa · Dortsala · Izena · Puntuak</code>) horiek erabiliko dira; itsatsitako puntuek eskala gainidazten dute.</div>
         <div class="field" style="margin-bottom:10px"><label>Karrera (lasterketa)</label>
           <select id="imp-emaitza-karrera" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:260px"><option value="">— Aukeratu —</option></select></div>
         <textarea id="imp-emaitzak-paste" placeholder="MERLIER Tim&#10;WAERENSKJOLD Soren&#10;GIRMAY Biniam&#10;&#10;...edo dortsalak: 91 / 128 / 131&#10;...edo osoa: 1&#9;0102&#9;PHILIPSEN Jasper&#9;400" style="width:100%;height:110px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
@@ -1944,13 +1944,41 @@ async function impEmaitzakPreview() {
   if (!rows.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da emaitzarik antzeman.</div>`; return; }
   try {
     const r = await api("api/import/emaitzak-preview", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
-    const unk = (r.unknown||[]).length
-      ? `<div style="font-size:12px;color:var(--accent);margin-top:6px">⚠ ${r.unknown.length} ezezagun (inportatzean SORTU egingo dira txirrindulari berri gisa): ${r.unknown.slice(0,20).map(esc).join(", ")}</div>`
-      : `<div style="font-size:12px;color:#4ade80;margin-top:6px">✓ Denak lotu daitezke.</div>`;
+    const eRows = r.rows || [];
+    const berriak = eRows.filter(x => x.egoera === "sortu").length;
+    const galduak = eRows.filter(x => x.egoera === "ezezaguna").length;
+    const laburpena = [];
+    if (galduak) laburpena.push(`<span style="color:var(--accent)">⚠ ${galduak} dortsal ezezagun (BAZTERTUKO dira)</span>`);
+    if (berriak) laburpena.push(`<span style="color:var(--accent)">⚠ ${berriak} izen berri (txirrindulari berri gisa SORTUKO dira)</span>`);
+    if (!laburpena.length) laburpena.push(`<span style="color:#4ade80">✓ Denak startlist-arekin lotuta.</span>`);
+
+    // Egoera bakoitzeko kolorea + oharra
+    const EG = {
+      ok:            { kolore:"var(--text)",  ohar:"" },
+      dortsalik_gabe:{ kolore:"#fbbf24",       ohar:"⚠ startlist-ean dortsalik gabe" },
+      sortu:         { kolore:"var(--accent)", ohar:"➕ berria" },
+      ezezaguna:     { kolore:"var(--accent)", ohar:"✗ ezezaguna, baztertua" },
+    };
     const taula = `<table style="margin-top:8px;font-size:12px;border-collapse:collapse">
-      <thead><tr><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Pos</th><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Dortsala</th><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Izena</th><th style="text-align:left;padding:2px 0;color:var(--muted)">Puntuak</th></tr></thead>
-      <tbody>${rows.map(x => `<tr><td style="padding:2px 10px 2px 0">${x.pos}</td><td style="padding:2px 10px 2px 0">${x.dortsala != null ? esc(x.dortsala) : "—"}</td><td style="padding:2px 10px 2px 0">${x.izena ? esc(x.izena) : "—"}</td><td style="padding:2px 0"><strong>${esc(x.puntuak)}</strong></td></tr>`).join("")}</tbody></table>`;
-    res.innerHTML = `<div style="font-size:13px"><strong>${r.rows}</strong> emaitza</div>${unk}${taula}`;
+      <thead><tr>
+        <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Pos</th>
+        <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Dortsala</th>
+        <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Txirrindularia</th>
+        <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Puntuak</th>
+        <th style="text-align:left;padding:2px 0;color:var(--muted)"></th>
+      </tr></thead>
+      <tbody>${eRows.map(x => {
+        const eg = EG[x.egoera] || EG.ok;
+        return `<tr style="color:${eg.kolore}">
+          <td style="padding:2px 10px 2px 0">${x.pos}</td>
+          <td style="padding:2px 10px 2px 0">${x.dortsala != null ? esc(x.dortsala) : "—"}</td>
+          <td style="padding:2px 10px 2px 0">${x.izena ? esc(x.izena) : "—"}</td>
+          <td style="padding:2px 10px 2px 0"><strong>${x.puntuak != null ? esc(x.puntuak) : "—"}</strong></td>
+          <td style="padding:2px 0;font-size:11px">${eg.ohar}</td>
+        </tr>`;
+      }).join("")}</tbody></table>`;
+    res.innerHTML = `<div style="font-size:13px"><strong>${r.count}</strong> emaitza</div>
+      <div style="font-size:12px;margin-top:4px">${laburpena.join(" · ")}</div>${taula}`;
   } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">${esc(e.message)}</div>`; }
 }
 

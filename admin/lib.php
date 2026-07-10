@@ -664,20 +664,55 @@ function import_apustuak($payload) {
 function import_emaitzak_preview($payload) {
     $txap = _imp_txap_id($payload);
     $rows = $payload['rows'] ?? [];
-    $count = 0; $unknown = [];
+    $out = []; $unknown = [];
     foreach ($rows as $r) {
         $pos = to_int($r['pos'] ?? null);
-        $pts = to_int($r['puntuak'] ?? null);
         if ($pos === null) continue;
-        $count++;
-        $rid = null;
+
         $di = to_int($r['dortsala'] ?? null);
-        if ($di !== null) $rid = find_txirri_by_dortsala($txap, $di);
         $nm = trim((string)($r['izena'] ?? ''));
-        if ($rid === null && $nm !== '') $rid = find_txirrindularia_id($nm);
-        if ($rid === null) $unknown[] = ($nm !== '' ? $nm : (string)($r['dortsala'] ?? '?'));
+
+        // Txirrindularia ebatzi: lehenik dortsalez (startlist), gero izenez.
+        $rid = null; $bidea = null;
+        if ($di !== null) { $rid = find_txirri_by_dortsala($txap, $di); if ($rid !== null) $bidea = 'dortsala'; }
+        if ($rid === null && $nm !== '') { $rid = find_txirrindularia_id($nm); if ($rid !== null) $bidea = 'izena'; }
+
+        // Dortsala↔izena osatu: ebatzitako txirrindulariaren izen kanonikoa eta
+        // txapelketa honetako dortsala (biak erakusteko).
+        $izen_ebatzia = $nm;
+        $dortsala_ebatzia = ($di !== null ? (string)$di : null);
+        $egoera = 'ok';
+        if ($rid !== null) {
+            $tx = db_one('SELECT t.Izena AS izena, h.Dortsala AS dortsala
+                          FROM `Txirrindulariak` t
+                          LEFT JOIN `TxirrindulariakTxapleketanParteHartzea` h
+                            ON h.TxirrindulariaID = t.Txirrindularia_ID AND h.TxapelketaID = ?
+                          WHERE t.Txirrindularia_ID = ?', [$txap, $rid]);
+            if ($tx) {
+                $izen_ebatzia = $tx['izena'];
+                if ($tx['dortsala'] !== null && $tx['dortsala'] !== '') $dortsala_ebatzia = (string)$tx['dortsala'];
+                // Izenez ebatzi baina txapelketan dortsalik gabe (startlist-ean ez dago)
+                if ($bidea === 'izena' && ($tx['dortsala'] === null || $tx['dortsala'] === '')) $egoera = 'dortsalik_gabe';
+            }
+        } elseif ($nm !== '') {
+            $egoera = 'sortu';           // izena DBan ez dago → inportatzean sortuko da
+        } else {
+            $egoera = 'ezezaguna';       // dortsala startlist-ean ez dago, izenik ez
+        }
+
+        if ($egoera === 'sortu' || $egoera === 'ezezaguna') {
+            $unknown[] = ($nm !== '' ? $nm : (string)($r['dortsala'] ?? '?'));
+        }
+
+        $out[] = [
+            'pos'      => $pos,
+            'dortsala' => $dortsala_ebatzia,
+            'izena'    => $izen_ebatzia,
+            'puntuak'  => $r['puntuak'] ?? null,
+            'egoera'   => $egoera,       // ok | dortsalik_gabe | sortu | ezezaguna
+        ];
     }
-    return ['rows'=>$count, 'unknown'=>$unknown];
+    return ['count'=>count($out), 'rows'=>$out, 'unknown'=>$unknown];
 }
 
 function import_emaitzak($payload) {

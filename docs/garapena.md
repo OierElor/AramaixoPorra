@@ -49,6 +49,32 @@ MySQL-era **ezin da lokaletik konektatu** (urruneko sarbidea mugatua). Beraz:
 - **Funtzio osoak:** zerbitzarian probatu (Plesk pull ondoren) edo staging batean.
 - **Inportazio-parser-ak:** benetako Excel-datuen aurka baliozkotu daitezke (adib. Python-era eramanda).
 
+## Nabigatzailearen cachea (⚠ garrantzitsua)
+
+Zerbitzariak **ez du `Cache-Control` goibururik bidaltzen `.js` fitxategietan**, eta
+`css/styles.css`-ek `max-age=86400` du (egun bat). Beraz nabigatzaileek bertsio
+zaharrak berrerabil ditzakete deploy baten ondoren.
+
+Hori bereziki arriskutsua da fitxategi **batzuk** izenez aldatzen direnean eta beste
+batzuk ez: izen berriak freskoak ekartzen dira, izen zaharrak cachetik. Emaitza:
+`db-loader.js` zaharra + `txapelketa-orria.js` berria → `loadKarrerak is not a
+function`, eta karreren akordeoia **hutsik** agertzen da errore-mezurik gabe.
+
+**Babesa:** urte-orrien stub-ek bertsio-parametroa daramate:
+
+```html
+<script src="/js/db-loader.js?v=20260710"></script>
+<link rel="stylesheet" href="/css/styles.css?v=20260710">
+```
+
+`js/db-loader.js`, `js/txapelketak.js`, `js/txapelketa-orria.js`, `js/layout.js` edo
+`css/styles.css` aldatzean, **`?v=` eguneratu 18 stub-etan** (data bat nahikoa da).
+Bestela erabiltzaile batzuek kode zaharra ikusiko dute.
+
+> Aukera iraunkorragoa: erroko `.htaccess` batean `Cache-Control: no-cache`
+> ezartzea `.js`/`.css`-entzat (ETag bidezko 304 merkeak). Hostalia/Plesk-en
+> egiaztatu behar da fitxategi estatikoak Apache-tik pasatzen diren.
+
 ## Git errepositorioa
 
 - **Remote:** `https://github.com/OierElor/AramaixoPorra.git`, `main` adarra.

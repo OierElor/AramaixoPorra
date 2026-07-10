@@ -401,11 +401,24 @@
 
       <!-- D · EMAITZAK -->
       <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">4 · Karrera emaitzak</div></div><div class="card-body">
-        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Lasterketa bat hautatu, gero emaitzak itsatsi: <code>Posizioa · Dortsala · [Izena] · Puntuak</code>. Dortsalez lotzen da (izena fallback gisa).</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Lasterketa bat hautatu eta emaitzak itsatsi, <strong>helmugako ordenan</strong>. Nahikoa da <strong>zutabe bakarra</strong>: dortsalak (<code>91</code>) edo izenak (<code>MERLIER Tim</code>). Postua lerroaren ordenatik dator eta <strong>puntuak beheko eskalatik</strong>.<br>Excel-etik zutabe gehiago badatoz (<code>Posizioa · Dortsala · Izena · Puntuak</code>) horiek erabiliko dira; itsatsitako puntuek eskala gainidazten dute. Dortsalez lotzen da (izena fallback gisa).</div>
         <div class="field" style="margin-bottom:10px"><label>Karrera (lasterketa)</label>
           <select id="imp-emaitza-karrera" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:260px"><option value="">— Aukeratu —</option></select></div>
-        <textarea id="imp-emaitzak-paste" placeholder="1&#9;0102&#9;PHILIPSEN Jasper&#9;400&#10;2&#9;0309&#9;ANDRESEN Tobias&#9;320" style="width:100%;height:110px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="impEmaitzakPreview()">🔍 Aurreikusi</button><button class="btn btn-primary btn-sm" onclick="impEmaitzak()">⬆ Inportatu</button></div>
+        <textarea id="imp-emaitzak-paste" placeholder="MERLIER Tim&#10;WAERENSKJOLD Soren&#10;GIRMAY Biniam&#10;&#10;...edo dortsalak: 91 / 128 / 131&#10;...edo osoa: 1&#9;0102&#9;PHILIPSEN Jasper&#9;400" style="width:100%;height:110px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="impEmaitzakPreview()">🔍 Aurreikusi</button>
+          <button class="btn btn-primary btn-sm" onclick="impEmaitzak()">⬆ Inportatu</button>
+          <label style="font-size:12px;color:var(--muted)">Puntuak (1.–6.):
+            <span style="display:inline-flex;gap:3px">
+              <input class="emaitza-pt" value="31" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="emaitza-pt" value="23" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="emaitza-pt" value="17" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="emaitza-pt" value="13" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="emaitza-pt" value="9" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+              <input class="emaitza-pt" value="7" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
+            </span>
+          </label>
+        </div>
         <div id="imp-emaitzak-result" style="margin-top:10px"></div>
       </div></div>
 
@@ -1662,24 +1675,63 @@ function parseStartlistKlasikoak(text) {
 }
 
 // ── Emaitza-parser (Posizioa · Dortsala · [Izena] · Puntuak) ─────────────────
-function parseResults(text) {
-  const grid = tourParseGrid(text);
-  const out = [];
-  for (const row of grid) {
+/** 4. blokeko puntu-eskala (postuaren araberakoa). 4b-koa `.etapak-pt` da, ez nahastu. */
+function emaitzaEskala() {
+  const inputs = [...document.querySelectorAll(".emaitza-pt")];
+  if (!inputs.length) return [31, 23, 17, 13, 9, 7];
+  return inputs.map(i => Number(i.value) || 0);
+}
+
+/**
+ * Karrera baten emaitzak parseatu. Onartutako formatuak:
+ *   - Zutabe bakarra, helmugako ordenan: izenak edo dortsalak → postua = lerro-ordena.
+ *   - Excel osoa: Posizioa · Dortsala · Izena · Puntuak.
+ * Puntuak itsatsi ez badira, `eskala`-tik hartzen dira (postuaren arabera).
+ *
+ * Postu-zutabea ZUTABE MAILAN antzematen da (lehen zenbakiak 1,2,3…N badira),
+ * ez lerroz lerro: bestela "91" bezalako dortsal bat postutzat har liteke.
+ */
+function parseResults(text, eskala) {
+  const skala = eskala || emaitzaEskala();
+  const parsed = [];
+  for (const row of tourParseGrid(text)) {
+    const cells = row.map(c => (c || "").trim());
+    if (!cells.some(c => c !== "")) continue;
+    let nameI = -1;
+    for (let i = 0; i < cells.length; i++) {
+      if (cells[i] && /[A-Za-zÀ-ÿ]/.test(cells[i]) && !/^\d/.test(cells[i])) { nameI = i; break; }
+    }
+    const izena = nameI >= 0 ? cells[nameI] : null;
+    if (izena && /^(posizioa|sailkapena|txirrindularia|porreroa|puntuak|dortsala|izena)$/i.test(izena)) continue;
     const ints = [];
-    for (let i = 0; i < row.length; i++) { const v = (row[i]||"").trim(); if (/^\d+$/.test(v)) ints.push({ i, raw: v, n: parseInt(v,10) }); }
-    if (!ints.length) continue;
-    let name = null, nameI = -1;
-    for (let i = 0; i < row.length; i++) { const v = (row[i]||"").trim(); if (v && /[A-Za-zÀ-ÿ]/.test(v) && !/^\d/.test(v)) { name = v; nameI = i; break; } }
-    if (name && /posizioa|sailkap|txirrind|porrero|puntuak/i.test(name)) continue;
-    const pos = ints[0].n;
-    const puntuak = ints[ints.length-1].raw;
-    let dortsala = null;
-    if (nameI > 0) { const before = ints.filter(x => x.i < nameI); if (before.length >= 2) dortsala = before[before.length-1].raw; }
-    if (dortsala === null && ints.length >= 2) dortsala = ints[1].raw;
-    out.push({ pos, dortsala, izena: name, puntuak });
+    for (let i = 0; i < cells.length; i++) if (/^\d+$/.test(cells[i])) ints.push({ i, raw: cells[i], n: parseInt(cells[i], 10) });
+    if (nameI < 0 && !ints.length) continue;
+    parsed.push({ izena, nameI, ints });
   }
-  return out;
+  if (!parsed.length) return [];
+
+  // Izenaren aurreko / ondorengo zenbakiak (izenik ez badago, denak "aurrekoak").
+  const aurrekoak = p => p.ints.filter(x => p.nameI < 0 || x.i < p.nameI);
+  const ondorengoak = p => p.ints.filter(x => p.nameI >= 0 && x.i > p.nameI);
+
+  // Postu-zutabea: lehen zenbakiak 1,2,3…N dira. Baina zenbaki hori BAKARRA bada
+  // eta izenik ez badago, dortsal-zerrenda bat da ("1","2","3" dortsalak), ez postuak.
+  const lehenak = parsed.map(p => aurrekoak(p)[0]);
+  const sekuentziala = lehenak.every((x, i) => x && x.n === i + 1);
+  const badaDaturik = parsed.some(p => p.nameI >= 0 || p.ints.length >= 2);
+  const postuZutabea = sekuentziala && badaDaturik;
+
+  return parsed.map((p, idx) => {
+    const b = aurrekoak(p), a = ondorengoak(p);
+    let pos, hasi;
+    if (postuZutabea) { pos = b[0].n; hasi = 1; } else { pos = idx + 1; hasi = 0; }
+    const dortsala = b.length > hasi ? b[hasi].raw : null;
+    let puntuak;
+    if (a.length)                    puntuak = a[a.length - 1].raw;   // izenaren ondoren
+    else if (b.length > hasi + 1)    puntuak = b[b.length - 1].raw;   // izenik gabe, azken zenbakia
+    else                             puntuak = skala[pos - 1] ?? 0;   // eskalatik
+    return { pos, dortsala, izena: p.izena, puntuak };
+  });
 }
 
 // ── Sailkapen finalak (Posizioa · Porreroa · Puntuak) ────────────────────────
@@ -1892,8 +1944,13 @@ async function impEmaitzakPreview() {
   if (!rows.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da emaitzarik antzeman.</div>`; return; }
   try {
     const r = await api("api/import/emaitzak-preview", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
-    const unk = (r.unknown||[]).length ? `<div style="font-size:12px;color:var(--accent);margin-top:6px">⚠ ${r.unknown.length} ezezagun: ${r.unknown.slice(0,20).map(esc).join(", ")}</div>` : `<div style="font-size:12px;color:#4ade80;margin-top:6px">✓ Denak lotu daitezke.</div>`;
-    res.innerHTML = `<div style="font-size:13px"><strong>${r.rows}</strong> emaitza</div>${unk}`;
+    const unk = (r.unknown||[]).length
+      ? `<div style="font-size:12px;color:var(--accent);margin-top:6px">⚠ ${r.unknown.length} ezezagun (inportatzean SORTU egingo dira txirrindulari berri gisa): ${r.unknown.slice(0,20).map(esc).join(", ")}</div>`
+      : `<div style="font-size:12px;color:#4ade80;margin-top:6px">✓ Denak lotu daitezke.</div>`;
+    const taula = `<table style="margin-top:8px;font-size:12px;border-collapse:collapse">
+      <thead><tr><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Pos</th><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Dortsala</th><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Izena</th><th style="text-align:left;padding:2px 0;color:var(--muted)">Puntuak</th></tr></thead>
+      <tbody>${rows.map(x => `<tr><td style="padding:2px 10px 2px 0">${x.pos}</td><td style="padding:2px 10px 2px 0">${x.dortsala != null ? esc(x.dortsala) : "—"}</td><td style="padding:2px 10px 2px 0">${x.izena ? esc(x.izena) : "—"}</td><td style="padding:2px 0"><strong>${esc(x.puntuak)}</strong></td></tr>`).join("")}</tbody></table>`;
+    res.innerHTML = `<div style="font-size:13px"><strong>${r.rows}</strong> emaitza</div>${unk}${taula}`;
   } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">${esc(e.message)}</div>`; }
 }
 
@@ -1956,7 +2013,12 @@ async function impEtapakPreview() {
   const txap = impTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
   etapakStages = parseEtapak(el("imp-etapak-paste")?.value || "");
   const res = el("imp-etapak-result");
-  if (!etapakStages.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da etaparik antzeman (datuekin).</div>`; return; }
+  if (!etapakStages.length) {
+    res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da etaparik antzeman (datuekin).<br>
+      Bloke hau Excel-eko <strong>"Etapak" orriarentzat</strong> da: etapa bakoitza <strong>zutabe bat</strong>, goian helmugaren izena.<br>
+      Lasterketa <strong>bakarra</strong> sartu nahi baduzu, erabili <strong>4 · Karrera emaitzak</strong> goian.</div>`;
+    return;
+  }
   try {
     const r = await api("api/import/etapak-preview", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), stages: etapakStages }) });
     const willCreate = el("imp-etapak-create")?.checked;

@@ -76,15 +76,37 @@ Porra bakoitza (porralaria + aukeratutako txirrindulariak) sortzen du: `Porralar
 Lasterketa baten txirrindularien emaitzak sartzen ditu (`KarreraSailkapena`), dortsalez lotuta.
 
 1. **Karrera** (lasterketa) hautatu goiko zerrendan (1. blokean sortutakoak).
-2. Emaitza-blokea itsatsi: `Posizioa · Dortsala · [Izena] · Puntuak`.
-   - **Klasikoak:** "Sailkapenak erakutsi" orriko **txirrindulari-taula** kopiatu (Posizioa, Zbkia, Txirrindularia, Zenbatek, Puntuak). Kopiatu **bloke garbia**, ez orri osoa.
-   - **Itzulia:** etapa baten emaitzak (Posizioa, Dortsala, Txirrindularia, Puntuak).
-   ```
-   1	1601	POGAČAR Tadej	39	3540
-   2	1501	VAN AERT Wout	38	2165
-   ```
+2. Emaitzak itsatsi, **helmugako ordenan**. Bi bide daude:
 
-**🔍 Aurreikusi** → zenbat emaitza eta ezezagunak. **⬆ Inportatu** (lasterketa honen emaitzak birjartzen dira).
+**A) Zutabe bakarra (errazena).** Dortsalak **edo** izenak, lehena irabazlea:
+
+```
+91                    MERLIER Tim
+128        edo        WAERENSKJOLD Soren
+131                   GIRMAY Biniam
+```
+
+Postua **lerroaren ordenatik** dator, eta puntuak blokearen azpiko **puntu-eskalatik**
+(lehenetsia `31 · 23 · 17 · 13 · 9 · 7`, editagarria). 6. postutik aurrera, 0 puntu.
+
+**B) Excel-eko bloke osoa:** `Posizioa · Dortsala · [Izena] · [Zenbatek] · Puntuak`.
+Zutabeak badaude horiek erabiltzen dira, eta **itsatsitako puntuek eskala gainidazten dute**.
+
+```
+1	1601	POGAČAR Tadej	39	3540
+2	1501	VAN AERT Wout	38	2165
+```
+
+- **Klasikoak:** "Sailkapenak erakutsi" orriko **txirrindulari-taula** kopiatu. Kopiatu **bloke garbia**, ez orri osoa.
+- **Itzulia:** etapa baten emaitzak.
+
+**🔍 Aurreikusi** → postu, dortsal, izen eta **puntu** bakoitza taula batean erakusten du,
+inportatu aurretik egiaztatzeko. **⬆ Inportatu** (lasterketa honen emaitzak birjartzen dira).
+
+> ⚠️ **Izenez lotzean:** dortsalik ez badago, izenez bilatzen da (azentuak, izen-ordena eta
+> herrialde-kodea alde batera utzita). Izena **DBan ez badago, txirrindulari berri bat SORTZEN da**.
+> Aurreikuspenak "ezezagun" gisa markatzen ditu horiek: begiratu inportatu aurretik, tipografia-akats
+> batek bikoiztu bat sor baitezake. Dortsalak beti seguruagoak dira.
 
 Emaitzak sartu ondoren, joan **Sailkapenak kalkulatu** atalera eta kalkulatu porralarien puntuak.
 

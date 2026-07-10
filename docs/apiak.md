@@ -67,6 +67,25 @@ OHARRAK: ...              (aukerakoa)
 - Erantzunak **Anboto abisua** darama (`abisua`), formularioan erakusteko.
 - Admin panelak fitxategia irakurtzen du ("Aurre-porrak" atala) eta handik inporta daiteke.
 
+## Fitxategi-kudeatzailea (`admin/api.php` → `files*`)
+
+Admin paneleko "Fitxategiak" atalak `data/`-ko fitxategiak kudeatzen ditu (`files_*`
+funtzioak `admin/lib.php`-n). **Segurtasun-kritikoa** da: `data/` publikoki zerbitzatzen
+da eta ez dago erroko `.htaccess`-ik, beraz `.php` bat igotzea kode-exekuzioa litzateke.
+
+Hiru babes-geruza:
+1. **Luzapen-zerrenda zuria** (`FILES_ALLOWED_EXT`): `jpg jpeg png gif webp pdf` soilik.
+2. **`data/.htaccess`** (kodeak sortua, `_ensure_data_guard()`): PHP/script exekuzioa
+   itzalita (`php_flag engine off`, `RemoveHandler`, `<FilesMatch> Require all denied`).
+   Git-etik kanpo dagoenez, **kodeak** bermatzen du existitzea, ez git-ek.
+3. **Bide-konfinamendua** (`_safe_data_path`): `realpath`-ez `data/` azpian dagoela
+   egiaztatu; `..`, `/`, `\`, byte nuluak eta hasierako `.` ukatu (bide-zeharkatzea galarazi).
+
+`data/.htaccess` bera ezin da ezabatu/berrizendatu (babestua). Igoerak multipart dira
+(`$_FILES`); router-ak JSON gorputza hutsik uzten du multipart-ean, beraz `$_GET`/`$_FILES`
+erabiltzen dira. Ikus [garapena.md](garapena.md): `data/` **zerbitzari-jabetzakoa** da
+(git-etik kanpo) eta migrazioak **backup-lehen** prozedura eskatzen du.
+
 ## 4 · `admin/api.php` — kudeaketa API (Basic Auth)
 
 Admin panelaren backend osoa. HTTP Basic Auth-ez babestua (`config.php`-ko
@@ -88,6 +107,9 @@ Route-ak (adibide adierazgarriak; ez dira denak):
 | POST | `calculate/porralari-sailkapena`, `calculate/txirri-sailkapena` | Sailkapenak kalkulatu |
 | POST | `proposals/clear`, `proposals/delete` | Zuzenketak kudeatu |
 | POST | `aurre-porrak/clear`, `aurre-porrak/delete` | Aurre-porrak kudeatu |
+| GET | `files?dir=` | `data/` karpeta baten edukia (fitxategiak + azpikarpetak) |
+| POST | `files/upload?dir=` | Fitxategiak igo (multipart, `$_FILES`) |
+| POST | `files/delete`, `files/rename`, `files/mkdir` | Fitxategiak kudeatu |
 
 Logika guztia `admin/lib.php`-n dago; konexioa `admin/db.php`-n (mysqli).
 Xehetasunak: [admin-panela.md](admin-panela.md).

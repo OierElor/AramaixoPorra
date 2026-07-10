@@ -137,6 +137,19 @@
     .btn-inline-edit{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:2px 5px;border-radius:4px;transition:color .1s;line-height:1;}
     .btn-inline-edit:hover{color:var(--accent);}
     .field input:required:not(:placeholder-shown):invalid{border-color:var(--accent);}
+    /* Fitxategi-kudeatzailea */
+    .fm-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--border);font-size:13.5px;}
+    .fm-row .fm-ico{cursor:pointer;font-size:16px;}
+    .fm-row .fm-name{cursor:pointer;flex:1;}
+    .fm-row.fm-dir:hover{background:var(--bg);}
+    .fm-actions{display:flex;gap:4px;}
+    .fm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px;}
+    .fm-card{border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:5px;background:var(--card,transparent);}
+    .fm-thumb{display:block;width:100%;height:100px;object-fit:contain;background:var(--bg);border-radius:5px;}
+    a.fm-thumb.fm-pdf{display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:var(--accent2);text-decoration:none;}
+    .fm-fname{font-size:12px;line-height:1.3;word-break:break-word;}
+    .fm-meta{font-size:11px;color:var(--muted);}
+    .fm-card .fm-actions{justify-content:flex-end;}
     @media(max-width:900px){.sidebar{display:none;}.main{padding:20px;}.stats-row{grid-template-columns:1fr 1fr;}.form-grid{grid-template-columns:1fr;}}
   </style>
 </head>
@@ -160,6 +173,7 @@
     <div class="nav-section">Sartu</div>
     <div class="nav-item" data-section="add-manual"><span class="icon">✏️</span> Eskuz sartu</div>
     <div class="nav-item" data-section="import"><span class="icon">📥</span> Datuak inportatu</div>
+    <div class="nav-item" data-section="fitxategiak"><span class="icon">📁</span> Fitxategiak</div>
     <div class="nav-item" data-section="porra-editatu"><span class="icon">📝</span> Porra editatu</div>
     <div class="nav-item" data-section="sariak"><span class="icon">🏅</span> Sariak</div>
     <div class="nav-item" data-section="kalkulatu"><span class="icon">📊</span> Sailkapenak kalkulatu</div>
@@ -492,6 +506,26 @@
       <div id="aurre-porrak-list"></div>
     </section>
 
+    <!-- FITXATEGIAK -->
+    <section class="section" id="sec-fitxategiak">
+      <div class="page-header"><div><div class="page-title">📁 Fitxategiak</div><div class="page-sub">PDFak, irudiak eta etapa-profilak kudeatu (<code>data/</code> karpeta)</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="fmMkdir()">➕ Karpeta berria</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        Itzulien <strong>etapa-profilak</strong> <code>Etapen Profila/&lt;kirola&gt;/&lt;kirola&gt;NN/</code>-en joan behar dira, <code>Etapa1.jpg</code>, <code>Etapa2.jpg</code>… izenekin (konfiguraziorik ukitu gabe funtzionatzeko). <strong>Klasikoen</strong> irudiek <code>js/txapelketak.js</code>-eko <code>irudiak</code> mapa eskatzen dute (eskuz). Onartutako motak: <strong>jpg, png, gif, webp, pdf</strong>.
+      </div>
+      <div id="fm-breadcrumb" style="margin-bottom:10px;font-size:13px"></div>
+      <div class="card" style="margin-bottom:14px"><div class="card-body">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="file" id="fm-file" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" style="font-size:13px">
+          <button class="btn btn-primary btn-sm" onclick="fmUpload()">⬆ Igo hona</button>
+          <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px"><input type="checkbox" id="fm-overwrite"> Gainidatzi badago</label>
+          <span id="fm-upload-msg" style="font-size:12px"></span>
+        </div>
+      </div></div>
+      <div id="fm-list"></div>
+    </section>
+
     <!-- PORRA EDITATU -->
     <section class="section" id="sec-porra-editatu">
       <div class="page-header"><div><div class="page-title">📝 Porra editatu</div><div class="page-sub">Porralari baten apustuak (15 txirrindulariak) ikusi eta zuzendu</div></div></div>
@@ -640,6 +674,7 @@ const state = {
   ezizenak: [],
   currentTable: null, currentTableData: null,
   sailTab: "porralariak",
+  fileDir: "",
 };
 
 const el = id => document.getElementById(id);
@@ -656,6 +691,29 @@ function confirmDialog(msg) {
     el("confirm-overlay").style.display = "flex";
     el("confirm-yes").onclick = () => { el("confirm-overlay").style.display = "none"; resolve(true); };
     el("confirm-no").onclick  = () => { el("confirm-overlay").style.display = "none"; resolve(false); };
+  });
+}
+
+/** Testu-sarrera duen elkarrizketa (prompt natiboaren ordez). Bertan behera → null. */
+function promptDialog(msg, defval="") {
+  return new Promise(resolve => {
+    const ov = document.createElement("div");
+    ov.className = "confirm-overlay"; ov.style.display = "flex";
+    const box = document.createElement("div"); box.className = "confirm-box";
+    const m = document.createElement("div"); m.className = "confirm-msg"; m.textContent = msg;
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.value = defval;
+    inp.style.cssText = "width:100%;box-sizing:border-box;padding:8px 10px;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px";
+    const btns = document.createElement("div"); btns.className = "confirm-btns";
+    const no = document.createElement("button"); no.className = "btn btn-ghost"; no.textContent = "Utzi";
+    const yes = document.createElement("button"); yes.className = "btn btn-primary"; yes.textContent = "Ados";
+    btns.append(no, yes); box.append(m, inp, btns); ov.append(box); document.body.append(ov);
+    const done = v => { ov.remove(); resolve(v); };
+    no.onclick = () => done(null);
+    yes.onclick = () => done(inp.value);
+    ov.onclick = e => { if (e.target === ov) done(null); };
+    inp.onkeydown = e => { if (e.key === "Enter") done(inp.value); if (e.key === "Escape") done(null); };
+    setTimeout(() => { inp.focus(); inp.select(); }, 30);
   });
 }
 
@@ -787,6 +845,7 @@ function renderCurrentSection() {
     case "osasuna":          renderOsasunaSelectors(); break;
     case "zuzenketak":       loadProposals(); break;
     case "aurre-porrak":     loadAurrePorrak(); break;
+    case "fitxategiak":      loadFiles(state.fileDir || ""); break;
     case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
 }
@@ -798,6 +857,10 @@ document.querySelectorAll(".nav-item[data-section]").forEach(item => {
     setSection(s);
   });
 });
+
+// Fitxategi-atala: nabigazioa eta ekintzak delegazioz (izenek komatxoak izan ditzakete).
+el("fm-list").addEventListener("click", fmClickHandler);
+el("fm-breadcrumb").addEventListener("click", fmClickHandler);
 
 // ── Data loading ─────────────────────────────────────────────────────────────
 async function reloadData() {
@@ -2327,6 +2390,129 @@ function updateAurrePorrakBadge(n) {
 async function loadAurrePorrakBadge() {
   try { const r = await api("api/aurre-porrak"); updateAurrePorrakBadge((r.porrak || []).length); }
   catch(_) {}
+}
+
+// ── Fitxategi-kudeatzailea (data/) ───────────────────────────────────────────
+function fmSize(n) {
+  if (n < 1024) return n + " B";
+  if (n < 1048576) return (n/1024).toFixed(1) + " KB";
+  return (n/1048576).toFixed(1) + " MB";
+}
+
+async function loadFiles(dir="") {
+  state.fileDir = dir;
+  const cont = el("fm-list");
+  cont.innerHTML = `<div style="color:var(--muted);font-size:13px">Kargatzen...</div>`;
+  let r;
+  try {
+    r = await api("api/files?dir=" + encodeURIComponent(dir));
+  } catch(e) { cont.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; return; }
+
+  // Datu-atributuak erabiltzen dira (ez onclick inline): izenek komatxoak izan ditzakete.
+  const dataAttrs = f => `data-path="${esc(f.path)}" data-name="${esc(f.name)}"`;
+
+  // Breadcrumb
+  const parts = r.path ? r.path.split("/") : [];
+  let acc = "";
+  const crumbs = [`<a href="#" data-nav="" style="color:var(--accent2)">data</a>`];
+  for (const p of parts) { acc = acc ? acc + "/" + p : p;
+    crumbs.push(`<a href="#" data-nav="${esc(acc)}" style="color:var(--accent2)">${esc(p)}</a>`); }
+  el("fm-breadcrumb").innerHTML = "📂 " + crumbs.join(' <span style="color:var(--muted)">/</span> ');
+
+  let html = "";
+  if (r.parent !== null) {
+    html += `<div class="fm-row fm-dir"><span class="fm-ico" data-nav="${esc(r.parent)}">⬆</span><span class="fm-name" data-nav="${esc(r.parent)}">.. (gora)</span></div>`;
+  }
+  for (const d of r.dirs) {
+    html += `<div class="fm-row fm-dir">
+      <span class="fm-ico" data-nav="${esc(d.path)}">📁</span>
+      <span class="fm-name" data-nav="${esc(d.path)}">${esc(d.name)}</span>
+      <span class="fm-actions">
+        <button class="btn btn-sm btn-ghost" title="Izena aldatu" data-act="rename" data-dir="1" ${dataAttrs(d)}>✏️</button>
+        <button class="btn btn-sm btn-ghost" title="Ezabatu (hutsik badago)" data-act="delete" ${dataAttrs(d)}>🗑</button>
+      </span></div>`;
+  }
+  if (!r.dirs.length && !r.files.length) html += `<div style="color:var(--muted);font-size:13px;padding:16px">Karpeta hutsik.</div>`;
+  if (r.files.length) {
+    html += `<div class="fm-grid">`;
+    for (const f of r.files) {
+      const isImg = ["jpg","jpeg","png","gif","webp"].includes(f.ext);
+      const thumb = isImg
+        ? `<a href="${esc(f.url)}" target="_blank"><img class="fm-thumb" src="${esc(f.url)}" loading="lazy" alt=""></a>`
+        : `<a href="${esc(f.url)}" target="_blank" class="fm-thumb fm-pdf">📄 ${esc(f.ext.toUpperCase())}</a>`;
+      html += `<div class="fm-card">
+        ${thumb}
+        <div class="fm-fname" title="${esc(f.name)}">${esc(f.name)}</div>
+        <div class="fm-meta">${fmSize(f.size)}</div>
+        <div class="fm-actions">
+          <button class="btn btn-sm btn-ghost" title="Izena aldatu" data-act="rename" ${dataAttrs(f)}>✏️</button>
+          <button class="btn btn-sm btn-ghost" title="Ezabatu" data-act="delete" ${dataAttrs(f)}>🗑</button>
+        </div></div>`;
+    }
+    html += `</div>`;
+  }
+  cont.innerHTML = html;
+}
+
+// Delegazioa: nabigazioa (data-nav) eta ekintzak (data-act) fitxategi-atalean.
+function fmClickHandler(e) {
+  const nav = e.target.closest("[data-nav]");
+  if (nav) { loadFiles(nav.getAttribute("data-nav")); return; }
+  const act = e.target.closest("[data-act]");
+  if (!act) return;
+  const path = act.getAttribute("data-path"), name = act.getAttribute("data-name");
+  if (act.dataset.act === "delete") fmDelete(path, name);
+  else if (act.dataset.act === "rename") fmRename(path, name, act.dataset.dir === "1");
+}
+
+async function fmUpload() {
+  const input = el("fm-file");
+  const msg = el("fm-upload-msg");
+  if (!input.files.length) { msg.style.color = "var(--accent)"; msg.textContent = "⚠ Aukeratu fitxategiren bat."; return; }
+  const fd = new FormData();
+  for (const file of input.files) fd.append("file", file);   // file[] anitza
+  const ow = el("fm-overwrite").checked ? "&overwrite=1" : "";
+  msg.style.color = "var(--muted)"; msg.textContent = "⏳ Igotzen...";
+  try {
+    // FormData: EZ jarri Content-Type eskuz (browser-ak boundary-a jartzen du).
+    const res = await fetch("api/files/upload?dir=" + encodeURIComponent(state.fileDir) + ow, { method:"POST", body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+    const okN = (data.saved||[]).length, errN = (data.errors||[]).length;
+    msg.style.color = errN ? "var(--accent)" : "#4ade80";
+    msg.textContent = `✅ ${okN} igota` + (errN ? ` · ⚠ ${errN} huts: ` + data.errors.map(e => `${e.name} (${e.reason})`).join("; ") : "");
+    input.value = "";
+    loadFiles(state.fileDir);
+  } catch(e) { msg.style.color = "var(--accent)"; msg.textContent = "⚠ " + e.message; }
+}
+
+async function fmDelete(path, name) {
+  if (!(await confirmDialog(`"${name}" ezabatu?`))) return;
+  try {
+    await api("api/files/delete", { method:"POST", body: JSON.stringify({ path }) });
+    showToast("Ezabatuta ✓");
+    loadFiles(state.fileDir);
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function fmRename(path, name, isDir) {
+  const nn = await promptDialog(isDir ? "Karpetaren izen berria:" : "Fitxategiaren izen berria:", name);
+  if (nn === null || nn.trim() === "" || nn === name) return;
+  try {
+    await api("api/files/rename", { method:"POST", body: JSON.stringify({ path, newname: nn.trim() }) });
+    showToast("Berrizendatuta ✓");
+    loadFiles(state.fileDir);
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function fmMkdir() {
+  const name = await promptDialog("Karpeta berriaren izena:", "");
+  if (name === null || name.trim() === "") return;
+  try {
+    await api("api/files/mkdir", { method:"POST", body: JSON.stringify({ dir: state.fileDir, name: name.trim() }) });
+    showToast("Karpeta sortuta ✓");
+    loadFiles(state.fileDir);
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 // ── Porra editatu ────────────────────────────────────────────────────────────

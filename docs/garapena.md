@@ -78,8 +78,32 @@ Bestela erabiltzaile batzuek kode zaharra ikusiko dute.
 ## Git errepositorioa
 
 - **Remote:** `https://github.com/OierElor/AramaixoPorra.git`, `main` adarra.
-- **Baztertuta** (.gitignore): `admin/config.php`, `admin/zuzenketak.log`.
+- **Baztertuta** (.gitignore): `admin/config.php`, `admin/*.log`, **`data/`**.
 - **Commit-mezuak:** euskaraz, laburrak.
+
+## `data/` — zerbitzari-jabetzakoa (⚠ ez git-en)
+
+Lehen `data/` osoa git-en zegoen; orain **git-etik kanpo** dago (`.gitignore`), admin
+paneleko **Fitxategiak** atalak zuzenean zerbitzarian kudeatzen baititu (igo/ezabatu/
+berrizendatu). Zerbitzaria da **iturri bakarra**; igoerak ez daude git-eko babeskopian.
+
+- **`data/.htaccess`** git-etik kanpo geratzen da; **kodeak sortzen du** (`_ensure_data_guard()`,
+  `admin/lib.php`) edozein fitxategi-eragiketatan. PHP/script exekuzioa itzaltzen du.
+- **Igoera-mugak**: Plesk-eko PHP settings-etan `upload_max_filesize` eta `post_max_size`
+  handitu (adib. 32M), etapa-mapa/PDF handiak igotzeko. Muga gaindituz gero, panelak
+  «zerbitzariaren muga gaindituta» erakusten du.
+
+### ⚠️ Migrazioa: `data/` git-etik ateratzea (BACKUP-LEHEN, hurrenkera zorrotza)
+
+`data/` git-etik kentzen duen commit-a Plesk-ek pull egitean, **zerbitzariko `data/`
+EZABATU egingo luke** aurretik babeskopiarik gabe. Hurrenkera hau **derrigorrezkoa** da:
+
+1. **Backup**: Plesk File Manager-en `httpdocs/data` → `httpdocs/data_backup` kopiatu
+   (edo zip deskargatu). ⚠️ Ez saltatu.
+2. **Push** + **Plesk pull** → zerbitzariko `data/` ezabatuko da.
+3. **Restore**: `data_backup` → `data` berrizendatu Plesk-en.
+4. **Egiaztatu** irudiak/PDFak berriz agertzen direla. `data/.htaccess` sortuko da lehen
+   fitxategi-eragiketan (Fitxategiak atala irekitzean) edo eskuz sor daiteke.
 
 ## Cruft / garbiketa-oharrak
 

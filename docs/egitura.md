@@ -69,9 +69,11 @@ AramaixoPorra/
 │   ├── ordena.sql              # Migrazioa: Karrerak.Ordena
 │   └── aurre-porrak.sql        # Migrazioa: Txapelketak.Porra_Irekita + Apustu_Kopurua
 │
-├── data/                       # Baliabide estatikoak
+├── data/                       # Baliabide estatikoak — ZERBITZARI-JABETZAKOA (git-etik kanpo)
+│   ├── .htaccess               # PHP/script exekuzioa itzalita (kodeak sortua)
 │   ├── Portadak/               # Azalak + favicon
 │   └── …                       # PDFak (arauak, porralarien zerrendak), irudiak
+│   # Admin paneleko "Fitxategiak" atalak kudeatzen du. Ikus garapena.md (migrazioa).
 │
 ├── Excelak ikusteko/           # Iturri-Excelak (erreferentzia; ez da webgunearen parte)
 │   ├── Porra tour 2026 betea.ods

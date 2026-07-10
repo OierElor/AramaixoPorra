@@ -1595,3 +1595,238 @@ function count_aurre_porrak() { return count(read_aurre_porrak()); }
 function clear_aurre_porrak() { return _log_clear(_aurre_porrak_file()); }
 
 function delete_aurre_porra($idx) { return _log_delete(_aurre_porrak_file(), $idx); }
+
+// ─── Fitxategi-kudeatzailea (data/ azpian: PDF, irudiak, etapa-profilak…) ────
+// SEGURTASUNA: data/ publikoki zerbitzatzen da eta ez dago erroko .htaccess-ik.
+//  1) Luzapen-zerrenda zuria (irudiak + PDF soilik).
+//  2) data/.htaccess-ek PHP/script exekuzioa itzaltzen du (_ensure_data_guard).
+//  3) Bide-konfinamendua: realpath-ez data/ azpian dagoela egiaztatu (../ galarazita).
+
+const FILES_ALLOWED_EXT = ['jpg','jpeg','png','gif','webp','pdf'];
+
+function _data_base() {
+    $dir = __DIR__ . '/../data';
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    $real = realpath($dir);
+    if ($real === false) throw new Exception('data/ karpeta ez da existitzen eta ezin da sortu');
+    return $real;
+}
+
+/** $child $base barruan (edo bera) den, PHP 7.4-rekin ere (str_starts_with gabe). */
+function _within_base($child, $base) {
+    if ($child === $base) return true;
+    return strncmp($child, $base . DIRECTORY_SEPARATOR, strlen($base) + 1) === 0;
+}
+
+/** Bide erlatiboa garbitu: aurreko/atzeko barrak kendu, byte nulua eta '..' ukatu. */
+function _clean_rel($rel) {
+    $rel = str_replace('\\', '/', (string)$rel);
+    if (strpos($rel, "\0") !== false) throw new Exception('Bide baliogabea');
+    $rel = trim($rel, '/');
+    if ($rel === '') return '';
+    $parts = [];
+    foreach (explode('/', $rel) as $p) {
+        if ($p === '' || $p === '.') continue;
+        if ($p === '..') throw new Exception('Bide baliogabea (..)');
+        $parts[] = $p;
+    }
+    return implode('/', $parts);
+}
+
+/** Existitzen den KARPETA bat data/ azpian ebatzi (dir='' → data/ erroa). */
+function _safe_data_dir($rel) {
+    $base = _data_base();
+    $rel = _clean_rel($rel);
+    $abs = realpath($base . ($rel === '' ? '' : '/' . $rel));
+    if ($abs === false || !is_dir($abs) || !_within_base($abs, $base)) throw new Exception('Karpeta baliogabea');
+    return $abs;
+}
+
+/** Existitzen den FITXATEGI/karpeta bat data/ azpian ebatzi. */
+function _safe_data_path($rel) {
+    $base = _data_base();
+    $rel = _clean_rel($rel);
+    if ($rel === '') throw new Exception('Bidea behar da');
+    $abs = realpath($base . '/' . $rel);
+    if ($abs === false || !_within_base($abs, $base)) throw new Exception('Bide baliogabea');
+    return $abs;
+}
+
+/** Fitxategi-izena garbitu: barrak/kontrol-karaktereak kendu, hasierako puntua debekatu.
+ *  Zuriuneak eta karaktere bereziak MANTENTZEN dira (konfigurazioak izen zehatzak ditu). */
+function _sanitize_filename($name) {
+    $name = basename(str_replace('\\', '/', (string)$name));
+    $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name);   // kontrol-karaktereak
+    $name = str_replace(['/', '\\'], '', $name);
+    $name = ltrim($name, '.');                                // .htaccess eta ezkutukoak ez
+    $name = trim($name);
+    if ($name === '' || $name === '.' || $name === '..') throw new Exception('Izen baliogabea');
+    if (strlen($name) > 200) throw new Exception('Izena luzeegia');
+    return $name;
+}
+
+/** Karpeta-izena garbitu: soilik letra, zenbaki, zuriune, '-', '_'. */
+function _sanitize_dirname($name) {
+    $name = trim((string)$name);
+    if (!preg_match('/^[\p{L}\p{N} _-]{1,80}$/u', $name)) {
+        throw new Exception('Karpeta-izen baliogabea (letrak, zenbakiak, zuriuneak, - eta _ soilik)');
+    }
+    return $name;
+}
+
+function _files_ext($name) {
+    $dot = strrpos($name, '.');
+    return $dot === false ? '' : strtolower(substr($name, $dot + 1));
+}
+
+function _files_check_ext($name) {
+    if (!in_array(_files_ext($name), FILES_ALLOWED_EXT, true)) {
+        throw new Exception('Luzapen debekatua: ' . _files_ext($name) . ' (onartuak: ' . implode(', ', FILES_ALLOWED_EXT) . ')');
+    }
+}
+
+/** data/.htaccess bermatu: PHP/script exekuzioa itzalita. Git-etik kanpo dagoenez,
+ *  kodeak sortu behar du. Edozein fitxategi-eragiketan deitzen da. */
+function _ensure_data_guard() {
+    $base = _data_base();
+    $f = $base . '/.htaccess';
+    if (is_file($f)) return;
+    $rules = "# Aramaixo Porra — data/ babesa (kodeak sortua). Fitxategi estatikoak SOILIK.\n"
+        . "# PHP eta script-ak EZ exekutatu: igotako fitxategi bat ez dadila kode bihurtu.\n"
+        . "php_flag engine off\n"
+        . "Options -ExecCGI -Indexes\n"
+        . "RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .phps .pht .cgi .pl .py .sh\n"
+        . "<FilesMatch \"\\.(php[0-9]?|phtml|pht|phps|cgi|pl|py|sh|htaccess)$\">\n"
+        . "    Require all denied\n"
+        . "</FilesMatch>\n";
+    @file_put_contents($f, $rules);
+}
+
+/** Publikoko URLa eraiki, segmentu bakoitza kodetuta (zuriuneak e.a.). */
+function _files_url($rel) {
+    $rel = _clean_rel($rel);
+    if ($rel === '') return '/data/';
+    return '/data/' . implode('/', array_map('rawurlencode', explode('/', $rel)));
+}
+
+function files_list($dir = '') {
+    _ensure_data_guard();
+    $base = _data_base();
+    $abs = _safe_data_dir($dir);
+    $rel = _clean_rel($dir);
+
+    $dirs = []; $files = [];
+    foreach (scandir($abs) as $entry) {
+        if ($entry === '.' || $entry === '..') continue;
+        if ($entry[0] === '.') continue;                 // ezkutukoak (.htaccess barne)
+        $full = $abs . '/' . $entry;
+        $childRel = ($rel === '' ? '' : $rel . '/') . $entry;
+        if (is_dir($full)) {
+            $dirs[] = ['name' => $entry, 'path' => $childRel];
+        } else {
+            $files[] = [
+                'name'  => $entry,
+                'path'  => $childRel,
+                'size'  => filesize($full),
+                'ext'   => _files_ext($entry),
+                'url'   => _files_url($childRel),
+                'mtime' => filemtime($full),
+            ];
+        }
+    }
+    usort($dirs, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+    usort($files, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
+    $parent = null;
+    if ($rel !== '') { $parent = strpos($rel, '/') === false ? '' : substr($rel, 0, strrpos($rel, '/')); }
+
+    return ['path' => $rel, 'parent' => $parent, 'dirs' => $dirs, 'files' => $files];
+}
+
+function files_upload($dir = '') {
+    _ensure_data_guard();
+    $abs = _safe_data_dir($dir);
+    $rel = _clean_rel($dir);
+    $overwrite = !empty($_GET['overwrite']) || !empty($_POST['overwrite']);
+
+    if (empty($_FILES)) {
+        $max = ini_get('post_max_size');
+        throw new Exception("Ez da fitxategirik jaso. Baliteke zerbitzariaren muga gainditzea (post_max_size=$max). Plesk-en igoera-muga handitu.");
+    }
+
+    // 'file' eremua: bakarra edo anitza (file[]).
+    $saved = []; $errors = [];
+    $f = $_FILES['file'] ?? null;
+    if ($f === null) throw new Exception("'file' eremua falta da");
+    $names = is_array($f['name']) ? $f['name'] : [$f['name']];
+    $tmps  = is_array($f['tmp_name']) ? $f['tmp_name'] : [$f['tmp_name']];
+    $errs  = is_array($f['error']) ? $f['error'] : [$f['error']];
+
+    $ERR = [
+        UPLOAD_ERR_INI_SIZE   => 'Handiegia (upload_max_filesize). Plesk-en muga handitu.',
+        UPLOAD_ERR_FORM_SIZE  => 'Handiegia (formularioaren muga).',
+        UPLOAD_ERR_PARTIAL    => 'Igoera osatu gabe geratu da.',
+        UPLOAD_ERR_NO_FILE    => 'Fitxategirik ez.',
+        UPLOAD_ERR_NO_TMP_DIR => 'Zerbitzariak ez du aldi baterako karpetarik.',
+        UPLOAD_ERR_CANT_WRITE  => 'Ezin idatzi diskoan.',
+        UPLOAD_ERR_EXTENSION  => 'PHP luzapen batek gelditu du.',
+    ];
+
+    for ($i = 0; $i < count($names); $i++) {
+        $orig = (string)$names[$i];
+        try {
+            if ($errs[$i] !== UPLOAD_ERR_OK) throw new Exception($ERR[$errs[$i]] ?? ('Errorea (' . $errs[$i] . ')'));
+            $name = _sanitize_filename($orig);
+            _files_check_ext($name);
+            $dest = $abs . '/' . $name;
+            if (is_file($dest) && !$overwrite) throw new Exception('Existitzen da jada (gainidazteko markatu)');
+            if (!is_uploaded_file($tmps[$i])) throw new Exception('Igoera baliogabea');
+            if (!move_uploaded_file($tmps[$i], $dest)) throw new Exception('Ezin gorde');
+            @chmod($dest, 0644);
+            $childRel = ($rel === '' ? '' : $rel . '/') . $name;
+            $saved[] = ['name' => $name, 'url' => _files_url($childRel)];
+        } catch (Exception $e) {
+            $errors[] = ['name' => $orig, 'reason' => $e->getMessage()];
+        }
+    }
+    return ['saved' => $saved, 'errors' => $errors];
+}
+
+function files_delete($path) {
+    _ensure_data_guard();
+    $abs = _safe_data_path($path);
+    if (basename($abs) === '.htaccess') throw new Exception('Babes-fitxategia ezin da ezabatu');
+    if (is_dir($abs)) {
+        $rest = array_diff(scandir($abs), ['.', '..']);
+        if ($rest) throw new Exception('Karpeta ez dago hutsik');
+        if (!@rmdir($abs)) throw new Exception('Ezin ezabatu karpeta');
+    } else {
+        if (!@unlink($abs)) throw new Exception('Ezin ezabatu');
+    }
+    return ['ok' => true];
+}
+
+function files_rename($path, $newname) {
+    _ensure_data_guard();
+    $abs = _safe_data_path($path);
+    if (basename($abs) === '.htaccess') throw new Exception('Babes-fitxategia ezin da berrizendatu');
+    $new = is_dir($abs) ? _sanitize_dirname($newname) : _sanitize_filename($newname);
+    if (!is_dir($abs)) {
+        // Luzapena mantendu edo baliozkoa izan behar du
+        _files_check_ext($new);
+    }
+    $dest = dirname($abs) . '/' . $new;
+    if (file_exists($dest)) throw new Exception('Izen hori existitzen da jada');
+    if (!@rename($abs, $dest)) throw new Exception('Ezin berrizendatu');
+    return ['ok' => true, 'name' => $new];
+}
+
+function files_mkdir($dir, $name) {
+    _ensure_data_guard();
+    $abs = _safe_data_dir($dir);
+    $name = _sanitize_dirname($name);
+    $dest = $abs . '/' . $name;
+    if (file_exists($dest)) throw new Exception('Karpeta hori existitzen da jada');
+    if (!@mkdir($dest, 0755)) throw new Exception('Ezin sortu karpeta');
+    return ['ok' => true, 'name' => $name];
+}

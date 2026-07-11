@@ -103,6 +103,8 @@ try {
                 json_out(['porrak' => read_aurre_porrak()]);
             case $path === 'files':
                 try { json_out(files_list($_GET['dir'] ?? '')); } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'ezarpenak':
+                try { json_out(read_ezarpenak()); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'meta':
                 json_out(db_meta());
             case $path === 'undo-state':
@@ -148,6 +150,8 @@ try {
                 try { json_out(files_rename($body['path'] ?? '', $body['newname'] ?? '')); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'files/mkdir':
                 try { json_out(files_mkdir($body['dir'] ?? '', $body['name'] ?? '')); } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'ezarpenak':
+                try { json_out(save_ezarpenak($body)); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'undo': json_out(do_undo());
             case $path === 'redo': json_out(do_redo());
             case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));

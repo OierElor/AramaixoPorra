@@ -1,3 +1,4 @@
-# data/ zerbitzari-jabetzakoa da (admin fitxategi-kudeatzailea). Ez git-en.
-# Ikus docs/garapena.md — migrazioak backup-lehen prozedura eskatzen du.
-data/
+# data/ git-en trackeatuta dago (segurua git-pull hedapenarekin).
+# Guardia-fitxategia bakarrik da git-etik kanpo: kodeak sortzen/mantentzen du
+# (PHP-FPM-rekin bateragarria) eta ez du git-pull talkarik sortu behar.
+data/.htaccess

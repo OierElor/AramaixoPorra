@@ -67,6 +67,29 @@ OHARRAK: ...              (aukerakoa)
 - Erantzunak **Anboto abisua** darama (`abisua`), formularioan erakusteko.
 - Admin panelak fitxategia irakurtzen du ("Aurre-porrak" atala) eta handik inporta daiteke.
 
+## `api/ezarpenak.php` — karpeta-mapa (publikoa, irakurketa soilik)
+
+Fitxategi-mota bakoitza **zein karpetatan** dagoen esaten dio webgune publikoari:
+
+```json
+{ "karpetak": { "arauak": "arauak", "dortsalak": "dortsalak",
+                "porrak": "porrak", "profilak": "profilak" } }
+```
+
+- `js/txapelketak.js`-ek mapa hau erabiltzen du URLak eraikitzeko
+  (`TXAPELKETAK.url(mota, …)` → `/data/<karpeta>/<fitxategia>`); `txapelketa-orria.js`-k
+  **errendatu aurretik** kargatzen du (`karpetakKargatu()`).
+- Adminak karpeta bat aldatzen badu (panela → **Fitxategiak → Mota bakoitzaren karpeta**),
+  gunea **berehala** moldatzen da; koderik ez da ukitu behar.
+- Iturria: `admin/ezarpenak.json` (zerbitzari-jabetzakoa, git-etik kanpo). Fitxategirik ez
+  badago edo hondatuta badago, **lehenetsiak** itzultzen dira → **gunea ez da inoiz hausten**.
+- Karpeta-izenak balidatuta itzultzen dira (letrak/zenbakiak/zuriuneak/`-`/`_`): bezeroak
+  URL bat eraikitzen du haiekin, beraz `../` gisako bide-zeharkatzea ukatzen da.
+
+> **portadak** (azalak + favicon) **EZ da konfiguragarria**: `<head>`-etako esteka
+> estatikoak dira (35 orritan) eta ezin dira exekuzio-garaian ebatzi. Bide finkoa:
+> `/data/portadak/`.
+
 ## Fitxategi-kudeatzailea (`admin/api.php` → `files*`)
 
 Admin paneleko "Fitxategiak" atalak `data/`-ko fitxategiak kudeatzen ditu (`files_*`
@@ -75,16 +98,18 @@ da eta ez dago erroko `.htaccess`-ik, beraz `.php` bat igotzea kode-exekuzioa li
 
 Hiru babes-geruza:
 1. **Luzapen-zerrenda zuria** (`FILES_ALLOWED_EXT`): `jpg jpeg png gif webp pdf` soilik.
-2. **`data/.htaccess`** (kodeak sortua, `_ensure_data_guard()`): PHP/script exekuzioa
-   itzalita (`php_flag engine off`, `RemoveHandler`, `<FilesMatch> Require all denied`).
-   Git-etik kanpo dagoenez, **kodeak** bermatzen du existitzea, ez git-ek.
+2. **`data/.htaccess`** (kodeak sortua/mantendua, `_ensure_data_guard()`): script-etarako
+   sarbidea ukatuta — `Options -Indexes` + `<FilesMatch "\.(php…|htaccess)$"> Require all
+   denied </FilesMatch>`.
+   > ⚠️ **EZ `php_flag`**: zerbitzaria **PHP-FPM** da eta `php_flag` `.htaccess`-ean
+   > **HTTP 500** eragiten du karpeta osorako. Guardia auto-sendatzailea da: edukia falta
+   > bada edo desberdina bada, berridatzi egiten du.
 3. **Bide-konfinamendua** (`_safe_data_path`): `realpath`-ez `data/` azpian dagoela
    egiaztatu; `..`, `/`, `\`, byte nuluak eta hasierako `.` ukatu (bide-zeharkatzea galarazi).
 
 `data/.htaccess` bera ezin da ezabatu/berrizendatu (babestua). Igoerak multipart dira
 (`$_FILES`); router-ak JSON gorputza hutsik uzten du multipart-ean, beraz `$_GET`/`$_FILES`
-erabiltzen dira. Ikus [garapena.md](garapena.md): `data/` **zerbitzari-jabetzakoa** da
-(git-etik kanpo) eta migrazioak **backup-lehen** prozedura eskatzen du.
+erabiltzen dira. `data/` **git-en trackeatuta** dago (ikus [garapena.md](garapena.md)).
 
 ## 4 · `admin/api.php` — kudeaketa API (Basic Auth)
 
@@ -110,6 +135,7 @@ Route-ak (adibide adierazgarriak; ez dira denak):
 | GET | `files?dir=` | `data/` karpeta baten edukia (fitxategiak + azpikarpetak) |
 | POST | `files/upload?dir=` | Fitxategiak igo (multipart, `$_FILES`) |
 | POST | `files/delete`, `files/rename`, `files/mkdir` | Fitxategiak kudeatu |
+| GET/POST | `ezarpenak` | Karpeta-mapa irakurri / gorde (`admin/ezarpenak.json`) |
 
 Logika guztia `admin/lib.php`-n dago; konexioa `admin/db.php`-n (mysqli).
 Xehetasunak: [admin-panela.md](admin-panela.md).

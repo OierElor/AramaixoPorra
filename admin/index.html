@@ -512,8 +512,22 @@
         <button class="btn btn-ghost btn-sm" onclick="fmMkdir()">➕ Karpeta berria</button>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
-        Itzulien <strong>etapa-profilak</strong> <code>Etapen Profila/&lt;kirola&gt;/&lt;kirola&gt;NN/</code>-en joan behar dira, <code>Etapa1.jpg</code>, <code>Etapa2.jpg</code>… izenekin (konfiguraziorik ukitu gabe funtzionatzeko). <strong>Klasikoen</strong> irudiek <code>js/txapelketak.js</code>-eko <code>irudiak</code> mapa eskatzen dute (eskuz). Onartutako motak: <strong>jpg, png, gif, webp, pdf</strong>.
+        Itzulien <strong>etapa-profilak</strong> <code>profilak/&lt;kirola&gt;NN/</code>-en joan behar dira, <code>Etapa1.jpg</code>, <code>Etapa2.jpg</code>… izenekin (konfiguraziorik ukitu gabe funtzionatzeko). <strong>Klasikoen</strong> irudiek <code>js/txapelketak.js</code>-eko <code>irudiak</code> mapa eskatzen dute (eskuz). Onartutako motak: <strong>jpg, png, gif, webp, pdf</strong>.
       </div>
+
+      <!-- Karpeta-mapa: mota bakoitza zein karpetatan dagoen (webgune publikoak jarraitzen du) -->
+      <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">🗂️ Mota bakoitzaren karpeta</div></div><div class="card-body">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+          Fitxategi-mota bakoitza zein karpetatan dagoen. <strong>Webgune publikoak berehala jarraitzen du</strong> aldaketa. Karpeta bat aldatu aurretik, ziurtatu fitxategiak han daudela (behean sortu/mugitu ditzakezu), bestela estekak hautsiko dira.
+        </div>
+        <div id="fm-karpetak" style="display:flex;gap:14px;flex-wrap:wrap"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="saveKarpetak()">💾 Gorde karpetak</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetKarpetak()">↺ Lehenetsiak</button>
+          <span id="fm-karpetak-msg" style="font-size:12px"></span>
+        </div>
+      </div></div>
+
       <div id="fm-breadcrumb" style="margin-bottom:10px;font-size:13px"></div>
       <div class="card" style="margin-bottom:14px"><div class="card-body">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -845,7 +859,7 @@ function renderCurrentSection() {
     case "osasuna":          renderOsasunaSelectors(); break;
     case "zuzenketak":       loadProposals(); break;
     case "aurre-porrak":     loadAurrePorrak(); break;
-    case "fitxategiak":      loadFiles(state.fileDir || ""); break;
+    case "fitxategiak":      loadKarpetak(); loadFiles(state.fileDir || ""); break;
     case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
 }
@@ -2513,6 +2527,54 @@ async function fmMkdir() {
     showToast("Karpeta sortuta ✓");
     loadFiles(state.fileDir);
   } catch(e) { showToast(e.message, "err"); }
+}
+
+// ── Karpeta-mapa (fitxategi-mota → karpeta). Webgune publikoak jarraitzen du. ─
+const FM_MOTA_IZENA = { arauak:"Arauak", dortsalak:"Dortsalak", porrak:"Porrak", profilak:"Profilak" };
+let fmLehenetsiak = {};
+
+async function loadKarpetak() {
+  const cont = el("fm-karpetak");
+  try {
+    const r = await api("api/ezarpenak");
+    fmLehenetsiak = r.lehenetsiak || {};
+    cont.innerHTML = Object.keys(r.karpetak).map(mota => {
+      const bada = r.badaude && r.badaude[mota];
+      const abisua = bada ? "" : `<div style="font-size:11px;color:var(--accent);margin-top:3px">⚠ Karpeta ez da existitzen</div>`;
+      return `<div class="field" style="min-width:150px">
+        <label>${esc(FM_MOTA_IZENA[mota] || mota)}</label>
+        <input id="fm-karpeta-${esc(mota)}" value="${esc(r.karpetak[mota])}" style="width:100%">
+        ${abisua}
+      </div>`;
+    }).join("");
+  } catch(e) { cont.innerHTML = `<div style="color:var(--accent);font-size:12px">${esc(e.message)}</div>`; }
+}
+
+async function saveKarpetak() {
+  const msg = el("fm-karpetak-msg");
+  const karpetak = {};
+  for (const mota of Object.keys(FM_MOTA_IZENA)) {
+    const inp = el("fm-karpeta-" + mota);
+    if (inp) karpetak[mota] = inp.value.trim();
+  }
+  msg.style.color = "var(--muted)"; msg.textContent = "Gordetzen...";
+  try {
+    const r = await api("api/ezarpenak", { method:"POST", body: JSON.stringify({ karpetak }) });
+    const falta = Object.keys(r.badaude || {}).filter(m => !r.badaude[m]);
+    msg.style.color = falta.length ? "var(--accent)" : "#4ade80";
+    msg.textContent = falta.length
+      ? `⚠ Gordeta, baina karpeta hauek ez daude: ${falta.join(", ")} — estekak hautsita egongo dira.`
+      : "✅ Gordeta. Webgune publikoak karpeta hauek erabiliko ditu.";
+    await loadKarpetak();
+  } catch(e) { msg.style.color = "var(--accent)"; msg.textContent = "⚠ " + e.message; }
+}
+
+async function resetKarpetak() {
+  for (const [mota, lehenetsia] of Object.entries(fmLehenetsiak)) {
+    const inp = el("fm-karpeta-" + mota);
+    if (inp) inp.value = lehenetsia;
+  }
+  showToast("Lehenetsiak jarrita (gorde behar duzu)");
 }
 
 // ── Porra editatu ────────────────────────────────────────────────────────────

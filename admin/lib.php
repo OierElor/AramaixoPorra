@@ -1685,20 +1685,24 @@ function _files_check_ext($name) {
     }
 }
 
-/** data/.htaccess bermatu: PHP/script exekuzioa itzalita. Git-etik kanpo dagoenez,
- *  kodeak sortu behar du. Edozein fitxategi-eragiketan deitzen da. */
+/** data/.htaccess bermatu: PHP/script exekuzioa galarazi. Git-etik kanpo dagoenez,
+ *  kodeak sortu/mantendu behar du. Edozein fitxategi-eragiketan deitzen da.
+ *
+ *  ⚠️ EZ `php_flag`: zerbitzaria PHP-FPM da eta `php_flag` `.htaccess`-ean 500 emango luke
+ *  karpeta osorako. Babes eramangarria `<FilesMatch> Require all denied` da (script-etarako
+ *  sarbidea 403), admin/.htaccess-ek darabilena bezala (Apache 2.4).
+ *
+ *  Auto-sendatzailea: edukia falta bada EDO desberdina bada berridazten du, zerbitzarian
+ *  gera litekeen bertsio zahar/hautsi bat konpontzeko. */
 function _ensure_data_guard() {
-    $base = _data_base();
-    $f = $base . '/.htaccess';
-    if (is_file($f)) return;
+    $f = _data_base() . '/.htaccess';
     $rules = "# Aramaixo Porra — data/ babesa (kodeak sortua). Fitxategi estatikoak SOILIK.\n"
-        . "# PHP eta script-ak EZ exekutatu: igotako fitxategi bat ez dadila kode bihurtu.\n"
-        . "php_flag engine off\n"
-        . "Options -ExecCGI -Indexes\n"
-        . "RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .phps .pht .cgi .pl .py .sh\n"
+        . "# EZ php_flag (PHP-FPM-rekin 500 emango luke). FilesMatch-ek script-ak ukatzen ditu.\n"
+        . "Options -Indexes\n"
         . "<FilesMatch \"\\.(php[0-9]?|phtml|pht|phps|cgi|pl|py|sh|htaccess)$\">\n"
         . "    Require all denied\n"
         . "</FilesMatch>\n";
+    if (is_file($f) && file_get_contents($f) === $rules) return;
     @file_put_contents($f, $rules);
 }
 
@@ -1829,4 +1833,49 @@ function files_mkdir($dir, $name) {
     if (file_exists($dest)) throw new Exception('Karpeta hori existitzen da jada');
     if (!@mkdir($dest, 0755)) throw new Exception('Ezin sortu karpeta');
     return ['ok' => true, 'name' => $name];
+}
+
+// ─── Ezarpenak: fitxategi-moten karpeta-mapa ────────────────────────────────
+// admin/ezarpenak.json (git-etik kanpo). Webgune publikoak api/ezarpenak.php bidez
+// irakurtzen du: karpeta bat aldatzean, gunea berehala moldatzen da.
+// LEHENETSIAK api/ezarpenak.php-koekin bat etorri behar dute.
+
+const EZARPEN_MOTAK = ['arauak' => 'arauak', 'dortsalak' => 'dortsalak',
+                       'porrak' => 'porrak', 'profilak' => 'profilak'];
+
+function _ezarpenak_file() { return __DIR__ . '/ezarpenak.json'; }
+
+function read_ezarpenak() {
+    $map = EZARPEN_MOTAK;
+    $f = _ezarpenak_file();
+    if (is_file($f)) {
+        $data = json_decode((string)@file_get_contents($f), true);
+        if (is_array($data)) {
+            foreach (EZARPEN_MOTAK as $mota => $lehenetsia) {
+                $v = $data['karpetak'][$mota] ?? null;
+                if (is_string($v) && preg_match('/^[\p{L}\p{N} _-]{1,80}$/u', $v)) $map[$mota] = $v;
+            }
+        }
+    }
+    // Karpeta bakoitza existitzen den jakinarazi (adminari abisatzeko)
+    $base = _data_base();
+    $egoera = [];
+    foreach ($map as $mota => $karpeta) $egoera[$mota] = is_dir($base . '/' . $karpeta);
+    return ['karpetak' => $map, 'lehenetsiak' => EZARPEN_MOTAK, 'badaude' => $egoera];
+}
+
+function save_ezarpenak($payload) {
+    $in = $payload['karpetak'] ?? [];
+    if (!is_array($in)) throw new Exception('Datu baliogabeak');
+    $map = [];
+    foreach (EZARPEN_MOTAK as $mota => $lehenetsia) {
+        $v = trim((string)($in[$mota] ?? $lehenetsia));
+        if ($v === '') $v = $lehenetsia;
+        $map[$mota] = _sanitize_dirname($v);   // bide-zeharkatzea galarazi
+    }
+    $json = json_encode(['karpetak' => $map], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if (@file_put_contents(_ezarpenak_file(), $json, LOCK_EX) === false) {
+        throw new Exception('Ezin gorde ezarpenak');
+    }
+    return read_ezarpenak();
 }

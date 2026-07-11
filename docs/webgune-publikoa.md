@@ -18,7 +18,7 @@ responsivea; taula-estiloak).
 
 ## Hasiera-orria — `index.html`
 
-Sarrera bisuala: azalak/karrusela (`data/Portadak/`). Hemendik menuaren bidez nabigatzen da.
+Sarrera bisuala: azalak/karrusela (`data/portadak/`). Hemendik menuaren bidez nabigatzen da.
 
 ## Lasterketen atalak — `tour/`, `giro/`, `vuelta/`, `klasikak/`
 

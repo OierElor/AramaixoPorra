@@ -42,35 +42,47 @@
             ${gezia(hurrengoa, '&#8594;', 'Hurrengoa')}
         </div>`;
 
-    // ── Deskarga-botoiak (dauden PDFak soilik) ───────────────────────────────
-    const botoia = (mota, izena, testua) => {
-        const href = C.pdf(mota, izena);
-        return href ? `<a href="${href}" class="download-button ${kirola}" target="_blank">${testua}</a>` : '';
-    };
-    const pdfak = [
-        botoia('porrak', cfg.porrak, 'PORRALARIEN LISTA (PDF)'),
-        botoia('arauak', cfg.arauak, 'ARAUAK (PDF)'),
-        botoia('dortsalak', cfg.dortsalak, 'DORTSALAK (PDF)'),
-    ].filter(Boolean).join('\n');
-    const deskargak = pdfak ? `<div class="download-section">${pdfak}</div>` : '';
+    // ── Karpeta-mapatik eratorriak (PDFak + ibilbide-irudia) ─────────────────
+    // Karpeta-mapa kargatu ONDOREN deitzen dira, adminak karpeta bat aldatu badu ere
+    // esteka zuzenak sor daitezen.
+    function deskargakMarraztu() {
+        const botoia = (mota, izena, testua) => {
+            const href = C.pdf(mota, izena);
+            return href ? `<a href="${href}" class="download-button ${kirola}" target="_blank">${testua}</a>` : '';
+        };
+        const pdfak = [
+            botoia('porrak', cfg.porrak, 'PORRALARIEN LISTA (PDF)'),
+            botoia('arauak', cfg.arauak, 'ARAUAK (PDF)'),
+            botoia('dortsalak', cfg.dortsalak, 'DORTSALAK (PDF)'),
+        ].filter(Boolean).join('\n');
+        const el = document.getElementById('itz-deskargak');
+        if (el && pdfak) el.innerHTML = `<div class="download-section">${pdfak}</div>`;
+    }
 
-    // ── Ibilbide osoaren irudia (itzuliak; klasikoek ez dute) ────────────────
-    const profila = cfg.profilaIrudia
-        ? `<div class="profile-container">
-               <img src="${C.irudiBase}${cfg.profilaDir}/${cfg.profilaIrudia}"
+    /** Ibilbide osoaren irudia (itzuliak; klasikoek ez dute). */
+    function profilaMarraztu() {
+        if (!cfg.profilaIrudia || !cfg.profilaDir) return;
+        const el = document.getElementById('itz-profila');
+        if (!el) return;
+        const src = C.url('profilak', cfg.profilaDir, cfg.profilaIrudia);
+        el.innerHTML = `<div class="profile-container">
+               <img class="profil-irudia" src="${src}"
                     alt="${esc(meta.izena)} ${urtea} Ibilbide Osoa"
                     onerror="this.style.display='none'">
-           </div>`
-        : '';
+           </div>`;
+    }
 
+    // Egitura SINKRONIKOKI txertatzen da (ez await honen aurretik): `layout.js`-ek oina
+    // `beforeend` jartzen du, eta hemen itxarongo bagenu, edukia oinaren ONDOREN geratuko
+    // litzateke. Karpeta-mapa behar duten zatiak (PDFak, profil-irudia) gero betetzen dira.
     document.body.insertAdjacentHTML('beforeend', `
         ${nav}
         <div class="container">
             <main>
                 <section>
                     <h2 class="${kirola}">${esc(meta.izena)} ${urtea}</h2>
-                    ${deskargak}
-                    ${profila}
+                    <div id="itz-deskargak"></div>
+                    <div id="itz-profila"></div>
                     <div id="porra-banner"></div>
                     <div id="itz-taulak"></div>
                 </section>
@@ -159,6 +171,13 @@
         window.dbLoader.loadKarrerak(cfg.id, 'karrerak-container', kirola, C.irudiFn(cfg));
     }
 
-    bannerMarraztu();
-    taulakMarraztu();
+    // Karpeta-mapa lehenik: PDF/irudi esteken karpetak hortik datoz. Fetch-ak huts eginez
+    // gero, `txapelketak.js`-eko lehenetsiak erabiltzen dira (gunea ez da hausten).
+    (async function hasi() {
+        await C.karpetakKargatu();
+        deskargakMarraztu();
+        profilaMarraztu();
+        bannerMarraztu();
+        taulakMarraztu();
+    })();
 })();

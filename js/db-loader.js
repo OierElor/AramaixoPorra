@@ -367,9 +367,9 @@ class DBLoader {
     /**
      * Profil/ibilbide irudia. `urls`: gehienez bi hautagai; lehenak huts eginez
      * gero bigarrena saiatzen da, hark ere huts eginez gero irudia ezkutatzen da.
-     * URLek zuriuneak izan ditzakete kodetu gabe (adib. ".../Etapen Profila/...");
-     * horrela `css/styles.css`-eko `img[src*="Etapen Profila"]` arauak 800 px-ra
-     * mugatzen ditu. Fitxategi-izenetan ez dago komatxorik ez apostroforik.
+     * `profil-irudia` klaseak 800 px-ra mugatzen du (`css/styles.css`); azaleko
+     * irudiek ez dute klase hori, `.profile-container` partekatzen badute ere.
+     * URLak `TXAPELKETAK.url()`-k kodetzen ditu (komatxorik gabeak).
      */
     _profilaHtml(urls, alt) {
         if (!urls || !urls.length) return '';
@@ -377,7 +377,7 @@ class DBLoader {
             ? `this.onerror=function(){this.style.display='none'};this.src='${urls[1]}'`
             : `this.style.display='none'`;
         return '<div class="profile-container">' +
-               `<img src="${urls[0]}" alt="${this._esc(alt)}" loading="lazy" onerror="${onerror}">` +
+               `<img class="profil-irudia" src="${urls[0]}" alt="${this._esc(alt)}" loading="lazy" onerror="${onerror}">` +
                '</div>';
     }
 

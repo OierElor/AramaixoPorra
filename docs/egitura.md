@@ -48,6 +48,7 @@ AramaixoPorra/
 │   ├── q.php                   # SELECT-soilik kontsulta-API segurua
 │   ├── proposal.php            # Zuzenketa-proposamenak (email + log)
 │   ├── porra.php               # Aurre-porrak (email + log; DBan ez du idazten)
+│   ├── ezarpenak.php           # Karpeta-mapa publikoa (fitxategi-mota → karpeta)
 │   └── .htaccess               # db-read.php-rako zuzeneko sarbidea blokeatu
 │
 ├── admin/                      # Kudeaketa-panela (HTTP Basic Auth)
@@ -69,11 +70,14 @@ AramaixoPorra/
 │   ├── ordena.sql              # Migrazioa: Karrerak.Ordena
 │   └── aurre-porrak.sql        # Migrazioa: Txapelketak.Porra_Irekita + Apustu_Kopurua
 │
-├── data/                       # Baliabide estatikoak — ZERBITZARI-JABETZAKOA (git-etik kanpo)
-│   ├── .htaccess               # PHP/script exekuzioa itzalita (kodeak sortua)
-│   ├── Portadak/               # Azalak + favicon
-│   └── …                       # PDFak (arauak, porralarien zerrendak), irudiak
-│   # Admin paneleko "Fitxategiak" atalak kudeatzen du. Ikus garapena.md (migrazioa).
+├── data/                       # Baliabide estatikoak — GIT-EN trackeatuta, MOTAKA antolatuta
+│   ├── .htaccess               # Script exekuzioa galarazi (gitignore; kodeak mantentzen du)
+│   ├── arauak/                 # Arauen PDFak
+│   ├── dortsalak/              # Txirrindulari-zerrenden PDFak
+│   ├── porrak/                 # Porralarien zerrenden PDFak
+│   ├── portadak/               # Azalak + favicon (bide FINKOA, <head>-etan)
+│   └── profilak/               # Etapa/ibilbide irudiak: tour26/ giro26/ vuelta26/ klasikak26/
+│   # Karpeta hauek admin-etik alda daitezke (api/ezarpenak.php); portadak izan ezik.
 │
 ├── Excelak ikusteko/           # Iturri-Excelak (erreferentzia; ez da webgunearen parte)
 │   ├── Porra tour 2026 betea.ods

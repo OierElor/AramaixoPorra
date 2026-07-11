@@ -894,12 +894,12 @@ h3.vuelta {
     margin: 0 auto;
 }
 
-/* Ibilbide- eta karrera-profilen irudiak (data/Etapen Profila/…) mugatu.
-   Azaleko irudiak (data/Portadak/…) .profile-container barruan ere badaude,
-   beraz src-aren araberako iragazkia beharrezkoa da. Zuriunea kodetuta ere
-   ager daiteke (%20), bi formak jaso behar dira. */
-.profile-container img[src*="Etapen Profila"],
-.profile-container img[src*="Etapen%20Profila"] {
+/* Ibilbide- eta karrera-profilen irudiak mugatu (800 px).
+   Azaleko irudiak (portadak) .profile-container barruan ere badaude, beraz bereizi behar
+   dira. KLASEZ bereizten dira, ez bidez: profilen karpeta admin-etik alda daiteke
+   (api/ezarpenak.php), eta bide-hautatzaile batek muga galduko luke izena aldatzean.
+   `.profil-irudia` JS-k jartzen du (db-loader.js eta txapelketa-orria.js). */
+.profile-container img.profil-irudia {
     max-width: min(100%, 800px);
 }
 

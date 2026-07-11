@@ -78,32 +78,30 @@ Bestela erabiltzaile batzuek kode zaharra ikusiko dute.
 ## Git errepositorioa
 
 - **Remote:** `https://github.com/OierElor/AramaixoPorra.git`, `main` adarra.
-- **Baztertuta** (.gitignore): `admin/config.php`, `admin/*.log`, **`data/`**.
+- **Baztertuta** (.gitignore): `admin/config.php`, `admin/*.log`, **`data/.htaccess`**.
 - **Commit-mezuak:** euskaraz, laburrak.
 
-## `data/` — zerbitzari-jabetzakoa (⚠ ez git-en)
+## `data/` — git-en trackeatuta (segurua git-pull-arekin)
 
-Lehen `data/` osoa git-en zegoen; orain **git-etik kanpo** dago (`.gitignore`), admin
-paneleko **Fitxategiak** atalak zuzenean zerbitzarian kudeatzen baititu (igo/ezabatu/
-berrizendatu). Zerbitzaria da **iturri bakarra**; igoerak ez daude git-eko babeskopian.
+`data/` osoa **git-en dago** (irudiak, PDFak, etapa-profilak). Hori da eredu **segurua**
+git-pull bidezko hedapenarekin: fitxategiak commit → push → Plesk pull bidez heltzen dira,
+lokala eta zerbitzaria sinkronizatuta.
 
-- **`data/.htaccess`** git-etik kanpo geratzen da; **kodeak sortzen du** (`_ensure_data_guard()`,
-  `admin/lib.php`) edozein fitxategi-eragiketatan. PHP/script exekuzioa itzaltzen du.
+- **Admin paneleko Fitxategiak** atalak zerbitzariko `data/` zuzenean kudeatzen du
+  (igo/ezabatu/berrizendatu). Igoera berriak zerbitzarian **untracked** geratzen dira;
+  ez dute pull-talkarik sortzen `data/`-ra commit-ik egiten ez badugu. Babeskopiarako,
+  eskuz `git add` daitezke.
+- **`data/.htaccess`** git-etik kanpo dago (gitignore); **kodeak sortzen/mantentzen du**
+  (`_ensure_data_guard()`, `admin/lib.php`) edozein fitxategi-eragiketatan.
+  - ⚠️ **EZ `php_flag`**: zerbitzaria **PHP-FPM** da, eta `php_flag` `.htaccess`-ean
+    **HTTP 500** eragiten du karpeta osorako. Babesa `<FilesMatch "\.(php…)$"> Require all
+    denied </FilesMatch>` da (script-etarako sarbidea 403), `admin/.htaccess`-ek darabilena
+    bezala. Auto-sendatzailea: edukia desberdina bada berridazten du.
 - **Igoera-mugak**: Plesk-eko PHP settings-etan `upload_max_filesize` eta `post_max_size`
-  handitu (adib. 32M), etapa-mapa/PDF handiak igotzeko. Muga gaindituz gero, panelak
-  «zerbitzariaren muga gaindituta» erakusten du.
+  handitu (adib. 32M). Muga gaindituz gero, panelak «zerbitzariaren muga gaindituta» dio.
 
-### ⚠️ Migrazioa: `data/` git-etik ateratzea (BACKUP-LEHEN, hurrenkera zorrotza)
-
-`data/` git-etik kentzen duen commit-a Plesk-ek pull egitean, **zerbitzariko `data/`
-EZABATU egingo luke** aurretik babeskopiarik gabe. Hurrenkera hau **derrigorrezkoa** da:
-
-1. **Backup**: Plesk File Manager-en `httpdocs/data` → `httpdocs/data_backup` kopiatu
-   (edo zip deskargatu). ⚠️ Ez saltatu.
-2. **Push** + **Plesk pull** → zerbitzariko `data/` ezabatuko da.
-3. **Restore**: `data_backup` → `data` berrizendatu Plesk-en.
-4. **Egiaztatu** irudiak/PDFak berriz agertzen direla. `data/.htaccess` sortuko da lehen
-   fitxategi-eragiketan (Fitxategiak atala irekitzean) edo eskuz sor daiteke.
+> **Ikasgaia:** `data/` git-etik ateratzea (untrack) arriskutsua da git-pull hedapenarekin —
+> pull-ak zerbitzariko fitxategiak ezaba ditzake. Mantendu `data/` git-en.
 
 ## Cruft / garbiketa-oharrak
 

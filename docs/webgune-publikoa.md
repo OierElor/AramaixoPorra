@@ -48,10 +48,17 @@ bere **profil/ibilbide irudia** (baldin badago) eta emaitza-taula erakusten dira
 - **Datu-basea da egia-iturria**: akordeoian `Karrerak` taulako karrerak bakarrik
   agertzen dira. Egutegiko lasterketa bat oraindik sartu gabe badago, ez da ikusiko;
   admin paneleko **Karrerak** inportatzailearekin gehitu daiteke.
+- **Emaitzak dituen karrera bat EZ da inoiz ezkutatzen**: iragazkia «Kategoria beteta
+  **EDO** emaitzak baditu» da. Segurtasun-sarea da, Kategoriarik gabeko karrera bat
+  (eskuz sortua, adib.) isilean gal ez dadin. `js/tresna-komuna.js`-k iragazki bera
+  darabil, tresnetako puntuak akordeoiarekin eta sailkapenarekin bat etor daitezen.
 - PDFak eta ibilbide-irudia konfigurazioan daudenean bakarrik agertzen dira.
 
 **Karrera-irudiak.** Itzulietan izena sistematikoa da (`Etapa{N}.jpg`, `.png`
-ordezko gisa), beraz ez da konfiguraziorik behar. Klasikoetan izenak ez dira
+ordezko gisa), beraz ez da konfiguraziorik behar. **`{N}` = karreraren `Ordena`**
+(benetako etapa-zenbakia), **ez zerrendako posizioa**: profil-irudiak ez dira jarraituak
+(adib. `Etapa1, 3, 4, 9, 10…`), eta karrera batzuk falta badira posizioak irudi okerra
+emango luke. Irudirik ez badago, isilean ezkutatzen da. Klasikoetan izenak ez dira
 sistematikoak (`paris roubaix.png`, `Braranconne.png`…), beraz konfigurazioan
 `irudiak: { Karrerak_ID: 'fitxategia.png' }` mapa bat behar da.
 

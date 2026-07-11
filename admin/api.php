@@ -121,6 +121,9 @@ try {
                 $table = $body['table'] ?? ''; $vals = $body['data'] ?? [];
                 if (!$table || !$vals) json_error('table eta data behar dira');
                 try {
+                    // Karrerek BETI Kategoria eta Ordena behar dituzte: hutsik utziz gero,
+                    // akordeoian eta tresnetan ezkutatuta geratuko lirateke.
+                    if ($table === 'Karrerak') $vals = normalize_karrera_row($vals);
                     $cols = array_keys($vals);
                     $col_sql = implode(', ', array_map(fn($c)=>quote_ident($c), $cols));
                     $ph = implode(', ', array_fill(0, count($cols), '?'));

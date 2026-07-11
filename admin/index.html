@@ -288,7 +288,7 @@
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5"><strong>Porra irekita</strong> markatzean, porralariek beren porra aurretik bidal dezakete <code>/tresnak/porra-bidali/</code> orritik. Apustuak EZ dira zuzenean gordetzen: <strong>Aurre-porrak</strong> atalean agertuko dira berrikusteko. Txapelketaren <strong>txirrindulari zerrenda inportatuta</strong> egon behar da.</div>
       <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th><th>Porra irekita</th><th>Apustu kop.</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
-      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Ordena</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div><div style="font-size:12px;color:var(--muted)">Karrera batek <strong>Kategoria</strong> behar du; hutsik badago, urte-orriko akordeoian eta tresnetan ezkutatuta gera daiteke.</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Kategoria</th><th>Ordena</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
     </section>
 
     <!-- SAILKAPENAK -->
@@ -357,7 +357,7 @@
         <div class="card"><div class="card-head"><div class="card-title">Txapelketa berria</div></div><div class="card-body"><div class="form-grid"><div class="field"><label>Izena</label><input id="m-txap-izena" placeholder="Tour de France" required/></div><div class="field"><label>Urtea</label><input id="m-txap-urtea" type="number" placeholder="2025" min="1990" max="2100" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-txap-btn">Gehitu txapelketa</button></div></div></div>
         <div class="card"><div class="card-head"><div class="card-title">Porralaria berria</div></div><div class="card-body"><div class="form-grid full"><div class="field"><label>Izena</label><input id="m-porra-izena" placeholder="Porralari izena" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-porra-btn">Gehitu porralaria</button></div></div></div>
         <div class="card"><div class="card-head"><div class="card-title">Txirrindularia berria</div></div><div class="card-body"><div class="form-grid full"><div class="field"><label>Izena</label><input id="m-txirri-izena" placeholder="Pogacar Tadej" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-txirri-btn">Gehitu txirrindularia</button></div></div></div>
-        <div class="card"><div class="card-head"><div class="card-title">Karrera berria</div></div><div class="card-body"><div class="form-grid"><div class="field" style="grid-column:1/-1"><label>Txapelketa</label><select id="m-karrera-txap" required><option value="">— Aukeratu —</option></select></div><div class="field"><label>Izena</label><input id="m-karrera-izena" placeholder="7. etapa" required/></div><div class="field"><label>Urtea</label><input id="m-karrera-urtea" type="number" placeholder="2025" min="1990" max="2100" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-karrera-btn">Gehitu karrera</button></div></div></div>
+        <div class="card"><div class="card-head"><div class="card-title">Karrera berria</div></div><div class="card-body"><div class="form-grid"><div class="field" style="grid-column:1/-1"><label>Txapelketa</label><select id="m-karrera-txap" required><option value="">— Aukeratu —</option></select></div><div class="field"><label>Izena</label><input id="m-karrera-izena" placeholder="7. etapa" required/></div><div class="field"><label>Urtea</label><input id="m-karrera-urtea" type="number" placeholder="2025" min="1990" max="2100" required/></div><div class="field"><label>Kategoria</label><select id="m-karrera-kat"><option value="Etapa" selected>Etapa (itzuliak)</option><option value="Monumentua">Monumentua</option><option value="Proseries">Proseries</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="Berezia">Berezia</option></select></div><div class="field"><label>Ordena <span style="font-weight:400;opacity:.6">(hutsik = automatikoa)</span></label><input id="m-karrera-ordena" type="number" min="1" placeholder="auto"/></div></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Kategoria <strong>derrigorrezkoa</strong> da: hutsik geratuz gero, karrera ez litzateke urte-orriko akordeoian agertuko.</div><div style="margin-top:14px"><button class="btn btn-primary" id="m-karrera-btn">Gehitu karrera</button></div></div></div>
       </div>
     </section>
 
@@ -967,7 +967,11 @@ function renderTxapelketak() {
     a.Txapelketa_ID - b.Txapelketa_ID || _ord(a) - _ord(b) || a.Karrerak_ID - b.Karrerak_ID);
   el("karrerak-tbody").innerHTML = sortedK.map(k => {
     const txap = state.txapelketak.find(t => t.Txapelketa_ID === k.Txapelketa_ID);
+    const katHutsik = !k.Kategoria;   // hutsik → akordeoian/tresnetan ezkuta daiteke
+    const katOpt = KAT_AUKERAK.map(o =>
+      `<option value="${esc(o)}"${String(k.Kategoria || "") === o ? " selected" : ""}>${esc(o || "— hutsik —")}</option>`).join("");
     return `<tr><td class="pk-cell">${esc(k.Karrerak_ID)}</td><td>${esc(txap?.Izena || k.Txapelketa_ID)}</td><td>${esc(k.Izena)}</td><td>${esc(k.Urtea)}</td>` +
+      `<td><select onchange="saveKarreraKat(this, ${k.Karrerak_ID})" title="${katHutsik ? 'Kategoriarik gabe: ezkutatuta gera daiteke' : ''}" style="font-size:12px;background:var(--bg);border:1px solid ${katHutsik ? 'var(--accent)' : 'var(--border)'};border-radius:4px;padding:2px 4px;color:var(--text)">${katOpt}</select></td>` +
       `<td><input type="number" value="${k.Ordena ?? ''}" onchange="saveKarreraOrdena(this, ${k.Karrerak_ID})" style="width:56px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center"></td>` +
       `<td class="row-actions"><button class="btn btn-sm btn-ghost" title="Ezabatu" onclick="deleteKarrera(${k.Karrerak_ID}, this.dataset.iz)" data-iz="${esc(k.Izena)}">🗑</button></td></tr>`;
   }).join("");
@@ -984,6 +988,21 @@ async function saveTxapPorra(inp, tid, zutabea) {
     if (t) t[zutabea] = balioa;
     if (zutabea === "Porra_Irekita") showToast(balioa ? "Porra IREKITA ✓" : "Porra itxita ✓");
     else showToast("Apustu kopurua gordeta ✓");
+  } catch(e) { showToast(e.message, "err"); await reloadData(); }
+}
+
+/** Karreren Kategoria posibleak. Hutsa lehena da (lehendik dauden akatsak erakusteko). */
+const KAT_AUKERAK = ["", "Etapa", "Monumentua", "Proseries", "3", "4", "5", "Berezia"];
+
+/** Kategoria gorde. Hutsik uzteak karrera ezkutatzen du akordeoian eta tresnetan. */
+async function saveKarreraKat(sel, kid) {
+  const v = sel.value;
+  try {
+    await api("api/table-update", { method: "POST", body: JSON.stringify({ table: "Karrerak", pk: { Karrerak_ID: kid }, values: { Kategoria: v === "" ? null : v } }) });
+    showToast(v === "" ? "⚠ Kategoria hutsik: karrera ezkuta daiteke" : "Kategoria gordeta ✓", v === "" ? "err" : "ok");
+    const k = state.karrerak.find(x => x.Karrerak_ID === kid);
+    if (k) k.Kategoria = v === "" ? null : v;
+    sel.style.borderColor = v === "" ? "var(--accent)" : "var(--border)";
   } catch(e) { showToast(e.message, "err"); await reloadData(); }
 }
 
@@ -2213,7 +2232,10 @@ async function loadOsasuna() {
       _osasunaCard("Emaitzarik gabeko etapak", h.stages_no_results, k => `<li>${esc(k.Izena)}</li>`, "Etapa guztiek dute emaitza") +
       _osasunaCard("15 apustu ez dituzten porrak", h.bettors_wrong_picks, b => `<li>${esc(b.Ezizena)} — <strong>${b.n}</strong> apustu</li>`, "Porra guztiek 15 apustu dituzte") +
       _osasunaCard("Dortsalik gabeko txirrindulariak (aukeratuak)", h.picked_no_dortsal, t => `<li>${esc(t.Izena)}</li>`, "Aukeratutako guztiek dute dortsala") +
-      _osasunaCard("Lotu gabeko ezizenak", h.unlinked_ezizenak, e => `<li>${esc(e.Ezizena)}</li>`, "Ezizen guztiak lotuta daude");
+      _osasunaCard("Lotu gabeko ezizenak", h.unlinked_ezizenak, e => `<li>${esc(e.Ezizena)}</li>`, "Ezizen guztiak lotuta daude") +
+      _osasunaCard("Kategoriarik gabeko karrerak", h.karrerak_no_kat,
+        k => `<li>${esc(k.Izena)} — jarri <strong>Kategoria</strong> (eta Ordena) <em>Txapelketak</em> atalean</li>`,
+        "Karrera guztiek dute Kategoria");
   } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
 }
 
@@ -3283,7 +3305,12 @@ async function init() {
     if (!txap) return showToast("Txapelketa hautatu", "err");
     if (!iz) return showToast("Izena hutsik dago", "err");
     if (!ur || ur < 1990 || ur > 2100) return showToast("Urtea 1990–2100 artean egon behar da", "err");
-    manualAdd({table:"Karrerak", data:{Txapelketa_ID:txap, Izena:iz, Urtea:ur}});
+    const kat = el("m-karrera-kat").value;
+    const ord = el("m-karrera-ordena").value.trim();
+    // Ordena hutsik → zerbitzariak automatikoki esleitzen du (normalize_karrera_row)
+    const data = {Txapelketa_ID:txap, Izena:iz, Urtea:ur, Kategoria:kat};
+    if (ord !== "") data.Ordena = Number(ord);
+    manualAdd({table:"Karrerak", data});
   });
   el("btn-undo")?.addEventListener("click", async()=>{
     try{ const r=await api("api/undo",{method:"POST"}); showToast(r.ok?`↩ Desegin: ${r.label}`:r.reason,r.ok?"ok":"err"); await reloadData(); }catch(e){showToast(e.message,"err");}

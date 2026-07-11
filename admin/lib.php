@@ -337,6 +337,33 @@ function row_exists($profile_id, $norm) {
     return [false, ''];
 }
 
+/**
+ * Karrera batek BETI Kategoria eta Ordena izan behar ditu.
+ *
+ * Hutsik utziz gero, karrera hori EZKUTATUTA geratzen da urte-orriko akordeoian eta
+ * tresna publikoetan (`Kategoria` iragazten baitute), nahiz eta emaitzak izan. Hemen
+ * lehenetsiak ezartzen dira, edozein sortze-bidetatik etorrita ere:
+ *   - Kategoria hutsik → 'Etapa'
+ *   - Ordena hutsik    → txapelketako hurrengoa (MAX + 1)
+ */
+function normalize_karrera_row($vals) {
+    $txap = (int)($vals['Txapelketa_ID'] ?? 0);
+
+    $kat = trim((string)($vals['Kategoria'] ?? ''));
+    $vals['Kategoria'] = $kat === '' ? 'Etapa' : $kat;
+
+    $ordena = $vals['Ordena'] ?? null;
+    if ($ordena === '' || $ordena === null) {
+        $max = $txap > 0
+            ? (int)(db_scalar('SELECT COALESCE(MAX(Ordena),0) FROM `Karrerak` WHERE Txapelketa_ID = ?', [$txap]) ?? 0)
+            : 0;
+        $vals['Ordena'] = $max + 1;
+    } else {
+        $vals['Ordena'] = (int)$ordena;
+    }
+    return $vals;
+}
+
 function insert_row($profile_id, $norm) {
     if ($profile_id === 'porralariak') {
         $r = db_exec('INSERT INTO `Porralariak` (Izena) VALUES (?)', [$norm['Izena']]);
@@ -351,7 +378,9 @@ function insert_row($profile_id, $norm) {
         return ['Txapelketa_ID'=>(int)$r['insert_id']];
     }
     if ($profile_id === 'karrerak') {
-        $r = db_exec('INSERT INTO `Karrerak` (Txapelketa_ID, Izena, Urtea) VALUES (?, ?, ?)', [$norm['Txapelketa_ID'],$norm['Izena'],$norm['Urtea']]);
+        $v = normalize_karrera_row($norm);
+        $r = db_exec('INSERT INTO `Karrerak` (Txapelketa_ID, Izena, Urtea, Kategoria, Ordena) VALUES (?, ?, ?, ?, ?)',
+            [$v['Txapelketa_ID'], $v['Izena'], $v['Urtea'], $v['Kategoria'], $v['Ordena']]);
         return ['Karrerak_ID'=>(int)$r['insert_id']];
     }
     if ($profile_id === 'txirrindulari_emaitzak') {
@@ -1419,11 +1448,19 @@ function data_health($txap_id) {
          WHERE k.Txapelketa_ID = ?", [$txap_id])) > 0;
     $has_standings = ((int)db_scalar(
         "SELECT COUNT(*) FROM `TxapelketaSailkapenaPorralariak` WHERE Txapelketa_ID = ?", [$txap_id])) > 0;
+    // Kategoriarik gabeko karrerak: puntuak zenbatzen dira baina sailkapen ofizialean bakarrik;
+    // hemen ikusgai jartzen dira, adminak Kategoria/Ordena jar diezaien (Txapelketak atala).
+    $karrerak_no_kat = db_rows(
+        "SELECT k.Karrerak_ID AS id, k.Izena, k.Ordena
+         FROM `Karrerak` k
+         WHERE k.Txapelketa_ID = ? AND (k.Kategoria IS NULL OR k.Kategoria = '')
+         ORDER BY k.Karrerak_ID", [$txap_id]);
     return [
         'stages_no_results' => $stages_no_results,
         'bettors_wrong_picks' => $bettors_wrong_picks,
         'picked_no_dortsal' => $picked_no_dortsal,
         'unlinked_ezizenak' => $unlinked_ezizenak,
+        'karrerak_no_kat' => $karrerak_no_kat,
         'recalc_needed' => ($has_results && !$has_standings),
     ];
 }

@@ -25,11 +25,19 @@ const Tresna = {
         return rows;
     },
 
-    /** Txapelketako benetako karrerak ordenan (agregatu 'Azken Karrera' kanpo). */
+    /**
+     * Txapelketako benetako karrerak ordenan (agregatu 'Azken Karrera' kanpo).
+     * Kategoria beteta dutenak ETA emaitzak dituzten guztiak: karrera batek emaitzak
+     * baditu, bere puntuak zenbatu behar dira, Kategoria falta bazaio ere.
+     * `js/db-loader.js`-eko akordeoiaren iragazki bera.
+     */
     async karrerak(tid) {
-        return this.q("SELECT Karrerak_ID AS kid, Izena AS izena FROM Karrerak " +
-            "WHERE Txapelketa_ID = ? AND Kategoria IS NOT NULL AND Kategoria <> '' " +
-            "ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID", [tid]);
+        return this.q("SELECT k.Karrerak_ID AS kid, k.Izena AS izena FROM Karrerak k " +
+            "WHERE k.Txapelketa_ID = ? " +
+            "  AND ( (k.Kategoria IS NOT NULL AND k.Kategoria <> '') " +
+            "        OR EXISTS (SELECT 1 FROM KarreraSailkapena ks " +
+            "                   WHERE ks.Karrera_ID = k.Karrerak_ID) ) " +
+            "ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID", [tid]);
     },
 
     /** "{Txapelketa} - {N}. etapa ({Helmuga})" → "{N}. etapa ({Helmuga})".
@@ -53,8 +61,10 @@ const Tresna = {
             " (SELECT COALESCE(SUM(ks.Puntuak),0) FROM PorraApustuak pa " +
             "  JOIN KarreraSailkapena ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
             "  JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID " +
-            "  WHERE pa.Ezizen_ID = ez.Ezizen_ID AND k.Txapelketa_ID = ez.Txapelketa_ID " +
-            "    AND k.Kategoria <> '') AS etapaTot, " +
+            // Kategoria-iragazkirik EZ: KarreraSailkapena-rekin JOIN egiten denez, emaitzak
+            // izatea inplizitua da. Iragazkiak Kategoriarik gabeko etapa baten puntuak
+            // baztertuko lituzke (admin-eko sailkapenak BAI zenbatzen dituenak).
+            "  WHERE pa.Ezizen_ID = ez.Ezizen_ID AND k.Txapelketa_ID = ez.Txapelketa_ID) AS etapaTot, " +
             " e.Posizioa AS ofPos, e.Puntuak AS ofPts " +
             "FROM PorraEzizenak ez " +
             "LEFT JOIN TxapelketaEmaitzaPorralariak e " +
@@ -77,7 +87,7 @@ const Tresna = {
             " (SELECT COALESCE(SUM(ks.Puntuak),0) FROM KarreraSailkapena ks " +
             "  JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID " +
             "  WHERE ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
-            "    AND k.Txapelketa_ID = pa.Txapelketa_ID AND k.Kategoria <> '') AS pts " +
+            "    AND k.Txapelketa_ID = pa.Txapelketa_ID) AS pts " +   // Kategoria-iragazkirik ez (ikus porrak())
             "FROM PorraApustuak pa " +
             "JOIN Txirrindulariak t ON t.Txirrindularia_ID = pa.Txirrindularia_ID " +
             "LEFT JOIN TxirrindulariakTxapleketanParteHartzea h " +
@@ -97,7 +107,7 @@ const Tresna = {
             "JOIN KarreraSailkapena ks ON ks.Karrera_ID = k.Karrerak_ID " +
             "JOIN PorraApustuak pa ON pa.Txirrindularia_ID = ks.Txirrindularia_ID " +
             "  AND pa.Txapelketa_ID = k.Txapelketa_ID " +
-            "WHERE k.Txapelketa_ID = ? AND k.Kategoria <> '' AND pa.Ezizen_ID = ? " +
+            "WHERE k.Txapelketa_ID = ? AND pa.Ezizen_ID = ? " +   // Kategoria-iragazkirik ez (ikus porrak())
             "GROUP BY k.Karrerak_ID", [tid, ezId]);
         const byKid = new Map(rows.map(r => [r.kid, Number(r.pts)]));
         const cum = [];

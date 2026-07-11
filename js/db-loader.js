@@ -220,11 +220,17 @@ class DBLoader {
         container.innerHTML = '<p style="text-align:center;opacity:.6;padding:16px;">Karrerak kargatzen...</p>';
 
         try {
+            // Kategoria beteta duten karrerak ETA emaitzak dituzten guztiak. Bigarren
+            // baldintza segurtasun-sarea da: karrera batek emaitzak baditu, EZ da inoiz
+            // ezkutatuko, nahiz eta Kategoria falta (adib. eskuz sortutakoak).
             const karrerak = await this._query(`
-                SELECT Karrerak_ID AS kid, Izena AS izena, Kategoria AS kat
-                FROM "Karrerak"
-                WHERE Txapelketa_ID = ? AND Kategoria IS NOT NULL AND Kategoria <> ''
-                ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID
+                SELECT k.Karrerak_ID AS kid, k.Izena AS izena, k.Kategoria AS kat, k.Ordena AS ordena
+                FROM "Karrerak" k
+                WHERE k.Txapelketa_ID = ?
+                  AND ( (k.Kategoria IS NOT NULL AND k.Kategoria <> '')
+                        OR EXISTS (SELECT 1 FROM "KarreraSailkapena" ks
+                                   WHERE ks.Karrera_ID = k.Karrerak_ID) )
+                ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID
             `, [txapelketaId]);
 
             if (!karrerak.length) {
@@ -246,7 +252,7 @@ class DBLoader {
                 LEFT JOIN "TxirrindulariakTxapleketanParteHartzea" h
                     ON h.TxapelketaID = k.Txapelketa_ID
                    AND h.TxirrindulariaID = ks.Txirrindularia_ID
-                WHERE k.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> ''
+                WHERE k.Txapelketa_ID = ?
                 ORDER BY ks.Karrera_ID, ks.Sailkapena
             `, [txapelketaId]);
 
@@ -299,7 +305,11 @@ class DBLoader {
                     return tr + '</tr>';
                 }).join('');
 
-                const irudia = this._profilaHtml(irudiFn ? irudiFn(k.kid, i + 1) : null, `${k.izena} profila`);
+                // Etapa-zenbakia `Ordena`-tik dator (ez zerrendako posiziotik): profil-irudiak
+                // etapa-zenbakiz izendatuta daude (Etapa9.jpg) eta ez dira jarraituak. Karrera
+                // batzuk falta badira, posizioak irudi okerra emango luke.
+                const etapaZbk = Number(k.ordena) || (i + 1);
+                const irudia = this._profilaHtml(irudiFn ? irudiFn(k.kid, etapaZbk) : null, `${k.izena} profila`);
 
                 html += `
                     <div class="etapa-item">

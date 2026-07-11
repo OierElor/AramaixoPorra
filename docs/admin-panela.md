@@ -33,10 +33,10 @@ Nabigazio-menuak bi multzo ditu: **Ikus** (begiratu/editatu) eta **Sartu** (datu
 | **Dashboard** | Laburpen-estatistikak, txapelketa baten porra-sailkapena, datu-kalitate txartela |
 | **Porralariak** | Jokalarien zerrenda (bilaketa, izena inline editatu, porra-kop. kalkulatu) |
 | **Txirrindulariak** | Txirrindulariak: izena, `Izen_Formatua` (I·A editorea), izen-ordena aldatu (⇒ I·A / ⇒ A·I), tokiz aldatu |
-| **Txapelketak** | Txapelketak + karrerak (etapak). Txapelketa bakoitzean **Porra irekita** (aurre-porrak onartu) eta **Apustu kop.** (15/25) ezarri; karrerei **Ordena** ezarri, ezabatu, txapelketa esportatu |
+| **Txapelketak** | Txapelketak + karrerak (etapak). Txapelketa bakoitzean **Porra irekita** (aurre-porrak onartu) eta **Apustu kop.** (15/25) ezarri; karrerei **Kategoria** (derrigorrezkoa) eta **Ordena** ezarri, ezabatu, txapelketa esportatu. ⚠️ Kategoriarik gabeko karrera bat urte-orriko akordeoian eta tresnetan ezkuta daiteke |
 | **Sailkapenak** | Txapelketa baten porralari emaitza ofizialak |
 | **Karrera emaitzak** | Etapa/lasterketa baten sailkapena editatu (postua + puntuak) |
-| **Datu-osasuna** | Egiaztapenak txapelketaz: emaitzarik gabeko etapak, 15/25 apustu ez dituzten porrak, dortsalik gabeko txirrindulariak, birkalkulatu behar, izen bikoiztuak. Esportazioa ere |
+| **Datu-osasuna** | Egiaztapenak txapelketaz: emaitzarik gabeko etapak, 15/25 apustu ez dituzten porrak, dortsalik gabeko txirrindulariak, birkalkulatu behar, izen bikoiztuak, **Kategoriarik gabeko karrerak**. Esportazioa ere |
 | **Zuzenketak** | Porralariek bidalitako zuzenketa-proposamenak (`zuzenketak.log`-etik). Menuan zain daudenen **badge**-a. Eskuz konpondu eta kendu |
 | **Aurre-porrak** | Porralariek **aurretik bidalitako porrak** (`aurre-porrak.log`-etik). Menuan **badge**-a. **➡ Inportatu** botoiak `PorraApustuak`-en sartzen ditu (preview + berrespena); porralari berririk **ez da sortzen**, beraz ezizen ezezagunak *Ezizenak lotu* bidez lotu behar dira. Inportatu ondoren 🗑 kendu |
 | **Taula guztiak** | DB taula gordinen editore generikoa: edozein errenkada editatu edo **ezabatu** (🗑). PK zutabeak irakur-bakarrak |

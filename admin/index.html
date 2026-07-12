@@ -2462,6 +2462,14 @@ async function loadFiles(dir="") {
     (state.karrerak || []).forEach(k => { if (k.Profil_Irudia) raceByRel.set(k.Profil_Irudia, k); });
     const txapName = tid => (state.txapelketak.find(t => t.Txapelketa_ID === tid) || {}).Izena || tid;
 
+    // Profil_Irudia zutabea falta bada (migrazioa exekutatu gabe), loturak ezin dira erakutsi/gorde.
+    const zutabeaFalta = inProfilak && state.karrerak.length && !("Profil_Irudia" in state.karrerak[0]);
+    if (zutabeaFalta) {
+      html += `<div style="background:var(--bg);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12.5px;color:var(--accent);line-height:1.5">
+        ⚠ Profil-loturak ezin dira erakutsi: <code>Karrerak.Profil_Irudia</code> zutabea falta da.
+        Exekutatu <strong>db/profil-irudia.sql</strong> phpMyAdmin-en eta berritu.</div>`;
+    }
+
     html += `<div class="fm-grid">`;
     for (const f of r.files) {
       const isImg = ["jpg","jpeg","png","gif","webp"].includes(f.ext);

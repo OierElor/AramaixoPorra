@@ -46,7 +46,7 @@ Nabigazio-menuak bi multzo ditu: **Ikus** (begiratu/editatu) eta **Sartu** (datu
 | Atala | Zer egiten du |
 |---|---|
 | **Eskuz sartu** | Erregistro bakarrak eskuz gehitu (txapelketa, karrera, txirrindularia, emaitzak…) |
-| **Datuak inportatu** | Sistema bateratua (Itzuliak + Klasikoak): 5 bloke — karrerak, startlist (dortsalak), apustuak, emaitzak, sailkapen finalak. Apustuak **dortsalez** lotzen dira. Ikus [INPORTATU-GIDA](../admin/INPORTATU-GIDA.md) |
+| **Datuak inportatu** | Sistema bateratua (Itzuliak + Klasikoak): 6 bloke — karrerak, startlist (dortsalak), apustuak, emaitzak, sailkapen finalak (**porralariak** eta **txirrindulariak**). Sailkapen finaletako `Puntuak` = **TOTAL FINALA** (etapak + orokorra + mendia): grafikoetako amaiera-puntua hortik dator. Apustuak **dortsalez** lotzen dira. Ikus [INPORTATU-GIDA](../admin/INPORTATU-GIDA.md) |
 | **Fitxategiak** | `data/` karpetako fitxategiak kudeatu: nabigatu, **igo**, **ezabatu**, **izena aldatu**, **karpeta sortu**. Irudiek miniatura-aurrebista dute, PDFek esteka. Onartuak: jpg, png, gif, webp, pdf. Karpeta-mapa ere hemen editatzen da (**mota bakoitzaren karpeta**; webgune publikoak berehala jarraitzen du). **Profil-irudi bati karrera lotu** daiteke (🔗), `Etapa{N}.jpg` konbentzioaren ordez (`Karrerak.Profil_Irudia`). Itzulien etapa-profilak `profilak/<kirola>NN/EtapaN.jpg` izena behar dute; klasikoen irudiek `js/txapelketak.js`-eko `irudiak` mapa (eskuz). Ikus [apiak.md](apiak.md) eta [garapena.md](garapena.md) |
 | **Porra editatu** | Porralari baten apustuak (aukeratutako txirrindulariak) ikusi eta zuzendu (gehitu/kendu) |
 | **Sariak** | Txapelketa bakoitzeko sariak (posizioa → saria) |

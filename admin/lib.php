@@ -860,12 +860,55 @@ function import_sailkapenak($payload) {
         $eid = find_ezizen_id($txap, $ez);
         if ($eid === null) { $unknown[] = $ez; continue; }
         try {
-            db_exec('DELETE FROM `TxapelketaEmaitzaPorralariak` WHERE Txapelketa_ID = ? AND Ezizen_ID = ?', [$txap, $eid]);
-            db_exec('INSERT INTO `TxapelketaEmaitzaPorralariak` (Txapelketa_ID, Ezizen_ID, Posizioa, Puntuak) VALUES (?, ?, ?, ?)', [$txap, $eid, $pos, $pts]);
+            // EZ-SUNTSITZAILEA: existitzen bada eguneratu (Puntuak_Generala/Mendikoa gorde).
+            $bada = db_one('SELECT 1 AS x FROM `TxapelketaEmaitzaPorralariak` WHERE Txapelketa_ID = ? AND Ezizen_ID = ?', [$txap, $eid]);
+            if ($bada) {
+                db_exec('UPDATE `TxapelketaEmaitzaPorralariak` SET Posizioa = ?, Puntuak = ? WHERE Txapelketa_ID = ? AND Ezizen_ID = ?', [$pos, $pts, $txap, $eid]);
+            } else {
+                db_exec('INSERT INTO `TxapelketaEmaitzaPorralariak` (Txapelketa_ID, Ezizen_ID, Posizioa, Puntuak) VALUES (?, ?, ?, ?)', [$txap, $eid, $pos, $pts]);
+            }
             $ins++;
         } catch (Exception $e) { $errors[] = $e->getMessage(); }
     }
     return ['sartuta'=>$ins, 'ezizen_ezezagunak'=>$unknown, 'errors'=>$errors];
+}
+
+// ── E2 · Sailkapen finalak (TXIRRINDULARIAK) ────────────────────────────────
+// payload: { txapelketa_id, rows: [ {pos, dortsala?, izena, puntuak}, ... ] }
+//
+// `puntuak` = TOTAL FINALA (etapetako puntuak + sailkapen orokorra + mendia).
+// Grafikoek bonusa hortik eratortzen dute: `bonusa = total − etapetan metatua`
+// (ikus js/tresna-komuna.js `eboluzioaKargatu`). Horregatik amaiera-puntua agertzeko
+// TOTALA sartu behar da, ez etapetako batura hutsa.
+function import_sailkapenak_txirri($payload) {
+    $txap = _imp_txap_id($payload);
+    $rows = $payload['rows'] ?? [];
+    $ins = 0; $errors = []; $unknown = [];
+    foreach ($rows as $r) {
+        $pos = to_int($r['pos'] ?? null);
+        $pts = to_int($r['puntuak'] ?? null);
+        if ($pos === null || $pts === null) continue;
+
+        // Dortsalez lehenik (fidagarriagoa), gero izenez.
+        $rid = null;
+        $di = to_int($r['dortsala'] ?? null);
+        if ($di !== null) $rid = find_txirri_by_dortsala($txap, $di);
+        $nm = trim((string)($r['izena'] ?? ''));
+        if ($rid === null && $nm !== '') $rid = find_txirrindularia_id($nm);
+        if ($rid === null) { $unknown[] = ($nm !== '' ? $nm : (string)($r['dortsala'] ?? '?')); continue; }
+
+        try {
+            // EZ-SUNTSITZAILEA: Puntuak_Sailkapen_Nag / Puntuak_Mendian ez dira ukitzen.
+            $bada = db_one('SELECT 1 AS x FROM `TxapelketaEmaitzaTxirrindulariak` WHERE Txapelketa_ID = ? AND Txirrindularia_ID = ?', [$txap, $rid]);
+            if ($bada) {
+                db_exec('UPDATE `TxapelketaEmaitzaTxirrindulariak` SET Posizioa = ?, Puntuak = ? WHERE Txapelketa_ID = ? AND Txirrindularia_ID = ?', [$pos, $pts, $txap, $rid]);
+            } else {
+                db_exec('INSERT INTO `TxapelketaEmaitzaTxirrindulariak` (Txapelketa_ID, Txirrindularia_ID, Posizioa, Puntuak) VALUES (?, ?, ?, ?)', [$txap, $rid, $pos, $pts]);
+            }
+            $ins++;
+        } catch (Exception $e) { $errors[] = $e->getMessage(); }
+    }
+    return ['sartuta'=>$ins, 'ezezagunak'=>$unknown, 'errors'=>$errors];
 }
 
 // ── A · Karrerak (lasterketa-zerrenda) ──────────────────────────────────────

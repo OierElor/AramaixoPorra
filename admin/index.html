@@ -461,10 +461,18 @@
 
       <!-- E · SAILKAPEN FINALAK -->
       <div class="card"><div class="card-head"><div class="card-title">5 · Sailkapen finalak (porralariak)</div></div><div class="card-body">
-        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Porralari sailkapena: <code>Posizioa · Porreroa · Puntuak</code>. Ezizenak lehendik egon behar dira (apustuetatik).</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Porralari sailkapena: <code>Posizioa · Porreroa · Puntuak</code>. Ezizenak lehendik egon behar dira (apustuetatik).<br>⚠️ <strong>Puntuak = TOTAL FINALA</strong> (etapetakoak + sailkapen orokorra + mendia). Grafikoetako <strong>amaiera-puntua</strong> hortik ateratzen da (<code>totala − etapetan metatua</code>); etapetako batura hutsa sartuz gero, ez da amaiera-punturik agertuko.</div>
         <textarea id="imp-sailkapenak-paste" placeholder="1&#9;Keops&#9;21209&#10;2&#9;La Diva&#9;20457" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
         <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-primary btn-sm" onclick="impSailkapenak()">⬆ Inportatu</button></div>
         <div id="imp-sailkapenak-result" style="margin-top:10px"></div>
+      </div></div>
+
+      <!-- E2 · SAILKAPEN FINALAK (TXIRRINDULARIAK) -->
+      <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">5b · Sailkapen finalak (txirrindulariak)</div></div><div class="card-body">
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Txirrindularien sailkapen finala: <code>Posizioa · [Dortsala] · Txirrindularia · Puntuak</code>. Dortsalez lotzen da (izena ordezko gisa).<br>⚠️ <strong>Puntuak = TOTAL FINALA</strong> (etapetakoak + sailkapen orokorra + mendia). Grafikoetako <strong>amaiera-puntua</strong> hortik dator.</div>
+        <textarea id="imp-sailk-txirri-paste" placeholder="1&#9;1&#9;Jonas Vingegaard&#9;219&#10;2&#9;21&#9;Felix Gall&#9;183" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="impSailkTxirriPreview()">🔍 Aurreikusi</button><button class="btn btn-primary btn-sm" onclick="impSailkTxirri()">⬆ Inportatu</button></div>
+        <div id="imp-sailk-txirri-result" style="margin-top:10px"></div>
       </div></div>
     </section>
 
@@ -2165,6 +2173,51 @@ async function impEtapak() {
 }
 
 // ── E · Sailkapen finalak ────────────────────────────────────────────────────
+/** Txirrindularien sailkapen finala: Posizioa · [Dortsala] · Izena · Puntuak(TOTALA). */
+function parseTxirriStandings(text) {
+  const out = [];
+  for (const row of tourParseGrid(text)) {
+    const cells = row.map(c => (c || "").trim());
+    const ints = cells.filter(c => /^\d+$/.test(c));
+    const name = cells.find(c => c && /[A-Za-zÀ-ÿ]/.test(c) && !/^\d/.test(c)) || null;
+    if (!name || ints.length < 2) continue;
+    if (/posizioa|txirrindularia|puntuak|dortsala/i.test(name)) continue;
+    // ints: [pos, (dortsala), ..., puntuak]. Hiru edo gehiago → bigarrena dortsala.
+    out.push({
+      pos: parseInt(ints[0], 10),
+      dortsala: ints.length >= 3 ? ints[1] : null,
+      izena: name,
+      puntuak: parseInt(ints[ints.length - 1], 10),
+    });
+  }
+  return out;
+}
+
+function impSailkTxirriPreview() {
+  const rows = parseTxirriStandings(el("imp-sailk-txirri-paste")?.value || "");
+  const res = el("imp-sailk-txirri-result");
+  if (!rows.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da sailkapenik antzeman.</div>`; return; }
+  const taula = `<table style="margin-top:8px;font-size:12px;border-collapse:collapse">
+    <thead><tr><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Pos</th><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Dortsala</th><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Txirrindularia</th><th style="text-align:left;padding:2px 0;color:var(--muted)">Puntuak (totala)</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td style="padding:2px 10px 2px 0">${r.pos}</td><td style="padding:2px 10px 2px 0">${r.dortsala ?? "—"}</td><td style="padding:2px 10px 2px 0">${esc(r.izena)}</td><td style="padding:2px 0"><strong>${r.puntuak}</strong></td></tr>`).join("")}</tbody></table>`;
+  res.innerHTML = `<div style="font-size:13px"><strong>${rows.length}</strong> txirrindulari</div>${taula}`;
+}
+
+async function impSailkTxirri() {
+  const txap = impTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
+  const rows = parseTxirriStandings(el("imp-sailk-txirri-paste")?.value || "");
+  if (!rows.length) return showToast("Ez da sailkapenik antzeman", "err");
+  showToast("⏳ Inportatzen...");
+  try {
+    const r = await api("api/import/sailkapenak-txirri", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
+    const unk = (r.ezezagunak||[]).length
+      ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.ezezagunak.length} ezezagun baztertuta: ${r.ezezagunak.slice(0,15).map(esc).join(", ")}</div>` : "";
+    el("imp-sailk-txirri-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.sartuta} txirrindulari sartuta</div>${unk}`;
+    showToast(`✅ ${r.sartuta} sailkapen`);
+    await reloadData();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
 async function impSailkapenak() {
   const txap = impTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
   const rows = parseStandings(el("imp-sailkapenak-paste")?.value || "");

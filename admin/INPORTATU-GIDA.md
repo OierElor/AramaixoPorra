@@ -110,7 +110,7 @@ inportatu aurretik egiaztatzeko. **⬆ Inportatu** (lasterketa honen emaitzak bi
 
 Emaitzak sartu ondoren, joan **Sailkapenak kalkulatu** atalera eta kalkulatu porralarien puntuak.
 
-## 5 · Sailkapen finalak (aukerakoa)
+## 5 · Sailkapen finalak — porralariak (aukerakoa)
 
 Porralarien azken sailkapena (`TxapelketaEmaitzaPorralariak`). Ezizenak lehendik egon behar dira (apustuetatik).
 
@@ -119,6 +119,30 @@ Itsatsi **bloke garbia**: `Posizioa · Porreroa · Puntuak`.
 1	Keops	21209
 2	La Diva	20457
 ```
+
+> ⚠️ **`Puntuak` = TOTAL FINALA**, hau da, etapetako puntuak **+ sailkapen orokorra + mendia**.
+> Grafikoetako **amaiera-puntua** hortik ateratzen da: `bonusa = totala − etapetan metatua`.
+> Etapetako batura hutsa sartuz gero, **ez da amaiera-punturik agertuko** (bonusa 0 baita).
+
+Inportazioa **ez da suntsitzailea**: errenkada existitzen bada, `Posizioa` eta `Puntuak`
+eguneratzen dira; beste zutabeak (`Puntuak_Generala`, `Puntuak_Mendikoa`) ez dira ukitzen.
+
+## 5b · Sailkapen finalak — txirrindulariak (aukerakoa)
+
+Txirrindularien azken sailkapena (`TxapelketaEmaitzaTxirrindulariak`). **Grafikoetan
+"Txirrindulariak" moduko amaiera-puntuak hau behar du.**
+
+Itsatsi: `Posizioa · [Dortsala] · Txirrindularia · Puntuak`. Dortsalez lotzen da
+(izena ordezko gisa).
+```
+1	1	Jonas Vingegaard	219
+2	21	Felix Gall	183
+3	131	Jhonatan Narváez	111
+```
+
+> ⚠️ **`Puntuak` = TOTAL FINALA** (etapetakoak + orokorra + mendia), 5. blokean bezala.
+
+**🔍 Aurreikusi** → parseatutako lerroak. **⬆ Inportatu** (ez-suntsitzailea).
 
 ---
 

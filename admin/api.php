@@ -135,6 +135,7 @@ try {
             case $path === 'import/etapak-preview': json_out(import_etapak_preview($body));
             case $path === 'import/etapak': json_out(import_etapak($body));
             case $path === 'import/sailkapenak': json_out(import_sailkapenak($body));
+            case $path === 'import/sailkapenak-txirri': json_out(import_sailkapenak_txirri($body));
             case $path === 'import/karrerak': json_out(import_karrerak($body));
             case $path === 'proposals/clear': json_out(clear_proposals());
             case $path === 'proposals/delete': json_out(delete_proposal($body['idx'] ?? -1));

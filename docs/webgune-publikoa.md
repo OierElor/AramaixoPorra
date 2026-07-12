@@ -55,10 +55,11 @@ bere **profil/ibilbide irudia** (baldin badago) eta emaitza-taula erakusten dira
 - PDFak eta ibilbide-irudia konfigurazioan daudenean bakarrik agertzen dira.
 
 **Karrera-irudiak.** Itzulietan izena sistematikoa da (`Etapa{N}.jpg`, `.png`
-ordezko gisa), beraz ez da konfiguraziorik behar. **`{N}` = karreraren `Ordena`**
-(benetako etapa-zenbakia), **ez zerrendako posizioa**: profil-irudiak ez dira jarraituak
-(adib. `Etapa1, 3, 4, 9, 10…`), eta karrera batzuk falta badira posizioak irudi okerra
-emango luke. Irudirik ez badago, isilean ezkutatzen da. Klasikoetan izenak ez dira
+ordezko gisa). **Lehentasuna:** (1) karreraren **`Profil_Irudia`** lotura esplizitua
+(admin → Fitxategiak → profil-irudi bati karrera lotu); (2) klasikoen `irudiak` mapa;
+(3) izen-konbentzioa `Etapa{Ordena}.jpg`, non **`{N}` = karreraren `Ordena`** (benetako
+etapa-zenbakia, ez zerrendako posizioa: irudiak ez dira jarraituak, adib. `Etapa1, 3, 4, 9…`).
+Irudirik ez badago, isilean ezkutatzen da. Klasikoetan izenak ez dira
 sistematikoak (`paris roubaix.png`, `Braranconne.png`…), beraz konfigurazioan
 `irudiak: { Karrerak_ID: 'fitxategia.png' }` mapa bat behar da.
 

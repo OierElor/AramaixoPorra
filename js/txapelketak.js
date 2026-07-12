@@ -216,15 +216,20 @@
      * Itzuliak: `Etapa{N}.jpg` eta, huts eginez gero, `Etapa{N}.png`.
      */
     window.TXAPELKETAK.irudiFn = function (cfg) {
-        if (!cfg.profilaDir) return null;
         const U = (fitx) => window.TXAPELKETAK.url('profilak', cfg.profilaDir, fitx);
-        if (cfg.irudiak) {
-            return (karreraId) => {
+        return (karreraId, n, profila) => {
+            // 1) Lotura ESPLIZITUA (Karrerak.Profil_Irudia): profilak-etik zintzilik, adib.
+            //    'tour26/Etapa9.jpg'. Karpeta-aldaketa jasaten du.
+            if (profila) return [window.TXAPELKETAK.url('profilak', profila)];
+            if (!cfg.profilaDir) return [];
+            // 2) Klasikoen mapa (kodean).
+            if (cfg.irudiak) {
                 const fitx = cfg.irudiak[karreraId];
                 return fitx ? [U(fitx)] : [];
-            };
-        }
-        return (_karreraId, n) => [U(`Etapa${n}.jpg`), U(`Etapa${n}.png`)];
+            }
+            // 3) Izen-konbentzioa (itzuliak): Etapa{Ordena}.jpg|.png.
+            return [U(`Etapa${n}.jpg`), U(`Etapa${n}.png`)];
+        };
     };
 
     /** Karpeta-mapa freskatu `/api/ezarpenak.php`-tik. Huts eginez gero, lehenetsiak. */

@@ -68,10 +68,6 @@ try {
                 if (!$karrera) json_error('Karrera ez da aurkitu', 404);
                 $sail = db_rows('SELECT ks.Sailkapena, t.Izena AS Txirrindularia, ks.Puntuak FROM `KarreraSailkapena` ks JOIN `Txirrindulariak` t ON ks.Txirrindularia_ID = t.Txirrindularia_ID WHERE ks.Karrera_ID = ? ORDER BY ks.Sailkapena', [(int)$kid]);
                 json_out(['karrera'=>$karrera,'sailkapena'=>$sail]);
-            case $path === 'sariak':
-                $tid = $_GET['txapelketa_id'] ?? null;
-                if (!$tid) json_error('txapelketa_id parametroa behar da', 400);
-                json_out(get_sariak((int)$tid));
             case $path === 'ezizenak':
                 json_out(api_ezizenak());
             case $path === 'porralaria-ezizenak':
@@ -130,7 +126,6 @@ try {
                     $r = db_exec("INSERT INTO " . quote_ident($table) . " ($col_sql) VALUES ($ph)", array_values($vals));
                     json_out(['ok'=>true,'id'=>$r['insert_id']]);
                 } catch (Exception $e) { json_error($e->getMessage()); }
-            case $path === 'sariak': json_out(save_sariak($body));
             case $path === 'import/startlist-preview': json_out(import_startlist_preview($body));
             case $path === 'import/startlist': json_out(import_startlist($body));
             case $path === 'import/apustuak-preview': json_out(import_apustuak_preview($body));

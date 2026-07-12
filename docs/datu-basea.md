@@ -21,7 +21,7 @@ erreferentzia gisa dago (git-en). Kredentzialak EZ daude dokumentu honetan (ikus
 | Taula | Zutabe nagusiak | Azalpena |
 |---|---|---|
 | **Txapelketak** | `Txapelketa_ID` (PK), `Izena`, `Urtea`, `Porra_Irekita`, `Apustu_Kopurua` | Txapelketak (adib. "Tour de France", 2026). `Porra_Irekita` = 1 bada, **aurre-porrak** onartzen dira (`api/porra.php`). `Apustu_Kopurua` = porra bakoitzeko txirrindulari kopurua (itzuliak **15**, klasikak **25**; NULL → 15). Migrazioa: `db/aurre-porrak.sql` |
-| **Karrerak** | `Karrerak_ID` (PK), `Txapelketa_ID`→, `Izena`, `Urtea`, `Kategoria` | Etapak/lasterketak. `Kategoria` = 'Etapa' (itzuliak) edo UCI kodea (klasikoak). Hutsik = ez da puntuaziorako zenbatzen |
+| **Karrerak** | `Karrerak_ID` (PK), `Txapelketa_ID`→, `Izena`, `Urtea`, `Kategoria`, `Ordena`, `Profil_Irudia` | Etapak/lasterketak. `Kategoria` = 'Etapa' (itzuliak) edo UCI kodea (klasikoak). Hutsik = akordeoian/tresnetan ezkuta daiteke. `Ordena` = etapa-zenbakia (profil-irudia ere hortik: `Etapa{Ordena}.jpg`). `Profil_Irudia` = profil-lotura esplizitua (bidea `profilak`-etik; NULL bada konbentzioa). Migrazioak: `db/ordena.sql`, `db/profil-irudia.sql` |
 | **Txirrindulariak** | `Txirrindularia_ID` (PK), `Izena`, `Izen_Formatua` | Txirrindulariak. `Izen_Formatua` = "Izena"/"Abizena" tokenak (izen-ordena kudeatzeko) |
 | **Porralariak** | `Porralaria_ID` (PK), `Izena`, `Zenbat_Porra` | Jokalariak. `Zenbat_Porra` = zenbat porra jokatu dituen (kalkulatua) |
 

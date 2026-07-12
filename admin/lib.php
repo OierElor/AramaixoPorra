@@ -1332,36 +1332,6 @@ function normalize_izenak() {
     return ['ok'=>true,'changed'=>$changed];
 }
 
-// ─── Sariak ──────────────────────────────────────────────────────────────────
-function get_sariak($txap_id) {
-    return db_rows('SELECT Posizioa, Saria FROM `Sariak` WHERE Txapelketa_ID = ? ORDER BY Posizioa', [$txap_id]);
-}
-
-function save_sariak($payload) {
-    $txap_id = $payload['txapelketa_id'] ?? null;
-    $sariak = $payload['sariak'] ?? [];
-    if (!$txap_id) return ['ok'=>false,'reason'=>'txapelketa_id behar da'];
-    $clean=[]; $seen=[];
-    foreach ($sariak as $s) {
-        $pos = $s['Posizioa'] ?? null;
-        $saria = trim((string)($s['Saria'] ?? ''));
-        if ($pos === null || $pos === '' || $saria === '') continue;
-        if (!is_numeric($pos)) return ['ok'=>false,'reason'=>"Posizio baliogabea: $pos"];
-        $pos = (int)$pos;
-        if (in_array($pos, $seen)) return ['ok'=>false,'reason'=>"Posizioa errepikatuta: $pos"];
-        $seen[] = $pos; $clean[] = [$pos, $saria];
-    }
-    try {
-        if (!db_one('SELECT 1 AS x FROM `Txapelketak` WHERE Txapelketa_ID = ?', [$txap_id]))
-            return ['ok'=>false,'reason'=>"Txapelketa $txap_id ez da existitzen"];
-        db_begin();
-        db_exec('DELETE FROM `Sariak` WHERE Txapelketa_ID = ?', [$txap_id]);
-        foreach ($clean as [$pos, $saria])
-            db_exec('INSERT INTO `Sariak` (Txapelketa_ID, Posizioa, Saria) VALUES (?, ?, ?)', [$txap_id, $pos, $saria]);
-        db_commit();
-        return ['ok'=>true,'count'=>count($clean)];
-    } catch (Exception $e) { db_rollback(); return ['ok'=>false,'reason'=>$e->getMessage()]; }
-}
 
 // ─── Generic table / meta / insert / update ──────────────────────────────────
 function db_meta() {

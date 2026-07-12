@@ -150,6 +150,9 @@
     .fm-fname{font-size:12px;line-height:1.3;word-break:break-word;}
     .fm-meta{font-size:11px;color:var(--muted);}
     .fm-card .fm-actions{justify-content:flex-end;}
+    .fm-lotura{display:flex;align-items:center;gap:2px;font-size:11px;border-top:1px solid var(--border);padding-top:4px;margin-top:2px;}
+    .fm-lotura.lotuta{color:var(--accent2);}
+    .fm-lotura .btn{font-size:11px;padding:1px 4px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     @media(max-width:900px){.sidebar{display:none;}.main{padding:20px;}.stats-row{grid-template-columns:1fr 1fr;}.form-grid{grid-template-columns:1fr;}}
   </style>
 </head>
@@ -175,7 +178,6 @@
     <div class="nav-item" data-section="import"><span class="icon">📥</span> Datuak inportatu</div>
     <div class="nav-item" data-section="fitxategiak"><span class="icon">📁</span> Fitxategiak</div>
     <div class="nav-item" data-section="porra-editatu"><span class="icon">📝</span> Porra editatu</div>
-    <div class="nav-item" data-section="sariak"><span class="icon">🏅</span> Sariak</div>
     <div class="nav-item" data-section="kalkulatu"><span class="icon">📊</span> Sailkapenak kalkulatu</div>
     <div class="nav-item" data-section="merge"><span class="icon">🔀</span> Fusionatu</div>
     
@@ -221,7 +223,6 @@
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
           <div><strong>✏️ Eskuz sartu</strong><br><span style="color:var(--muted)">Erregistro bakarrak eskuz gehitu: porralaria, txirrindularia, txapelketa, karrera, emaitzak.</span></div>
           <div><strong>📥 Datuak inportatu</strong><br><span style="color:var(--muted)">Sistema bateratua (Itzuliak + Klasikoak). 5 bloke: karrerak, startlist (dortsalak), apustuak, emaitzak eta sailkapen finalak. Apustuak dortsalez lotzen dira. Berriz inportatzea segurua.</span></div>
-          <div><strong>🏅 Sariak</strong><br><span style="color:var(--muted)">Txapelketa bakoitzeko sariak kudeatu (posizioa → saria).</span></div>
           <div><strong>📊 Sailkapenak kalkulatu</strong><br><span style="color:var(--muted)">Apustuetatik eta karrera-emaitzetatik porralarien eta txirrindularien puntuak kalkulatu. <strong>Emaitzak sartu ondoren exekutatu.</strong></span></div>
           <div><strong>🔀 Fusionatu</strong><br><span style="color:var(--muted)">Bikoiztutako txirrindulariak edo porralariak batu (bat mantendu, bestea desagertu, loturak berbideratuz).</span></div>
           <div><strong>🏷️ Ezizenak lotu</strong><br><span style="color:var(--muted)">Porra-ezizena bat porralari batekin lotu (nork jokatu duen jakiteko).</span></div>
@@ -553,22 +554,6 @@
       </div></div>
     </section>
 
-    <!-- SARIAK -->
-    <section class="section" id="sec-sariak">
-      <div class="page-header"><div><div class="page-title">🏅 Sariak</div><div class="page-sub">Txapelketa bakoitzeko sariak kudeatu (posizioa → saria)</div></div></div>
-      <div class="card" style="max-width:700px">
-        <div class="card-body">
-          <div class="field">
-            <label>Txapelketa</label>
-            <select id="sariak-txap-sel" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none">
-              <option value="">— Hautatu txapelketa —</option>
-            </select>
-          </div>
-          <div id="sariak-editor" style="margin-top:16px"><div style="color:var(--muted);font-size:13px;padding:8px">Hautatu txapelketa bat sariak ikusteko edo gehitzeko.</div></div>
-        </div>
-      </div>
-    </section>
-
     <!-- SAILKAPENAK KALKULATU -->
     <section class="section" id="sec-kalkulatu">
       <div class="page-header"><div><div class="page-title">📊 Sailkapenak kalkulatu</div><div class="page-sub">Karreren emaitzetatik txirrindulari eta porralari sailkapenak sortu</div></div></div>
@@ -851,7 +836,6 @@ function renderCurrentSection() {
     case "karrera-emaitzak": renderRaceTxapSel(); renderKarreraList(); break;
     case "taulak":           if (state.currentTable) loadGenericTable(state.currentTable); break;
     case "merge":            renderMergeSection(); break;
-    case "sariak":           renderSariakTxapSel(); loadSariak(); break;
     case "kalkulatu":        renderKalkulatuTxapSel(); break;
     case "ezizenak":         loadEzizenak(); break;
     case "banatu":           renderBanatuSection(); break;
@@ -892,7 +876,7 @@ async function reloadData() {
 
   // Beti: arinak diren elementuak (estatistikak, hautagailuak)
   renderStats(); renderDashTxapSel(); renderManualSelects();
-  renderSailTxapSel(); renderRaceTxapSel(); renderSariakTxapSel(); renderKalkulatuTxapSel(); renderUndoList(undoSt);
+  renderSailTxapSel(); renderRaceTxapSel(); renderKalkulatuTxapSel(); renderUndoList(undoSt);
   // Astuna den taula-marrazketa: uneko atalerako bakarrik
   renderCurrentSection();
 }
@@ -2470,16 +2454,39 @@ async function loadFiles(dir="") {
   }
   if (!r.dirs.length && !r.files.length) html += `<div style="color:var(--muted);font-size:13px;padding:16px">Karpeta hutsik.</div>`;
   if (r.files.length) {
+    // Profilen karpetan gaude? Orduan irudi bakoitza karrera bati lotu daiteke.
+    const profilakDir = fmKarpetaMap.profilak || "profilak";
+    const inProfilak = state.fileDir === profilakDir || state.fileDir.startsWith(profilakDir + "/");
+    // Alderantzizko mapa: profilak-erlatiboko bidea → karrera lotua.
+    const raceByRel = new Map();
+    (state.karrerak || []).forEach(k => { if (k.Profil_Irudia) raceByRel.set(k.Profil_Irudia, k); });
+    const txapName = tid => (state.txapelketak.find(t => t.Txapelketa_ID === tid) || {}).Izena || tid;
+
     html += `<div class="fm-grid">`;
     for (const f of r.files) {
       const isImg = ["jpg","jpeg","png","gif","webp"].includes(f.ext);
       const thumb = isImg
         ? `<a href="${esc(f.url)}" target="_blank"><img class="fm-thumb" src="${esc(f.url)}" loading="lazy" alt=""></a>`
         : `<a href="${esc(f.url)}" target="_blank" class="fm-thumb fm-pdf">📄 ${esc(f.ext.toUpperCase())}</a>`;
+
+      // Karrera-lotura (profilak azpiko irudietan soilik). Bidea profilak-etik erlatiboa.
+      let lotura = "";
+      if (isImg && inProfilak) {
+        const rel = f.path.slice(profilakDir.length + 1);   // "tour26/Etapa9.jpg"
+        const k = raceByRel.get(rel);
+        lotura = k
+          ? `<div class="fm-lotura lotuta" title="${esc(txapName(k.Txapelketa_ID))}">
+               <button class="btn btn-sm btn-ghost" data-act="link" data-rel="${esc(rel)}" title="Lotura aldatu">🔗 ${esc(k.Izena)}</button>
+               <button class="btn btn-sm btn-ghost" data-act="unlink" data-kid="${k.Karrerak_ID}" title="Lotura kendu">✖</button>
+             </div>`
+          : `<div class="fm-lotura"><button class="btn btn-sm btn-ghost" data-act="link" data-rel="${esc(rel)}" title="Karrerari lotu">🔗 Lotu karrerari</button></div>`;
+      }
+
       html += `<div class="fm-card">
         ${thumb}
         <div class="fm-fname" title="${esc(f.name)}">${esc(f.name)}</div>
         <div class="fm-meta">${fmSize(f.size)}</div>
+        ${lotura}
         <div class="fm-actions">
           <button class="btn btn-sm btn-ghost" title="Izena aldatu" data-act="rename" ${dataAttrs(f)}>✏️</button>
           <button class="btn btn-sm btn-ghost" title="Ezabatu" data-act="delete" ${dataAttrs(f)}>🗑</button>
@@ -2499,6 +2506,69 @@ function fmClickHandler(e) {
   const path = act.getAttribute("data-path"), name = act.getAttribute("data-name");
   if (act.dataset.act === "delete") fmDelete(path, name);
   else if (act.dataset.act === "rename") fmRename(path, name, act.dataset.dir === "1");
+  else if (act.dataset.act === "link") fmLinkRace(act.getAttribute("data-rel"));
+  else if (act.dataset.act === "unlink") fmUnlinkRace(Number(act.getAttribute("data-kid")));
+}
+
+/** Karrera-hautatzaile dialogoa (txapelketaz taldekatua). Karrerak_ID edo null itzuli. */
+function raceProfileDialog(rel) {
+  return new Promise(resolve => {
+    // Karrera guztiak (Kategoriarik gabekoak barne): edozeini lot dakioke profila.
+    const races = [...(state.karrerak || [])];
+    if (!races.length) { showToast("Ez dago karrerarik", "err"); resolve(undefined); return; }
+    // Txapelketaz taldekatu, txapelketa berrienak lehenengo
+    const byTxap = {};
+    races.forEach(k => { (byTxap[k.Txapelketa_ID] = byTxap[k.Txapelketa_ID] || []).push(k); });
+    const txapak = [...state.txapelketak].sort((a,b) => b.Urtea - a.Urtea || a.Izena.localeCompare(b.Izena));
+    let opts = `<option value="">— Aukeratu karrera —</option>`;
+    for (const t of txapak) {
+      const ks = byTxap[t.Txapelketa_ID]; if (!ks) continue;
+      const _ord = k => (k.Ordena == null ? 1e9 : Number(k.Ordena));
+      ks.sort((a,b) => _ord(a) - _ord(b) || a.Karrerak_ID - b.Karrerak_ID);
+      opts += `<optgroup label="${esc(t.Izena)} ${esc(t.Urtea)}">` +
+        ks.map(k => `<option value="${k.Karrerak_ID}">${esc(k.Izena)}${k.Profil_Irudia ? " · 🔗" : ""}</option>`).join("") +
+        `</optgroup>`;
+    }
+    const ov = document.createElement("div");
+    ov.className = "confirm-overlay"; ov.style.display = "flex";
+    ov.innerHTML = `<div class="confirm-box">
+      <div class="confirm-msg">Zein karrerari lotu <strong>${esc(rel)}</strong> profila?</div>
+      <select id="rpd-sel" style="width:100%;box-sizing:border-box;padding:8px 10px;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px">${opts}</select>
+      <div class="confirm-btns"><button class="btn btn-ghost" id="rpd-no">Utzi</button><button class="btn btn-primary" id="rpd-yes">Lotu</button></div>
+    </div>`;
+    document.body.append(ov);
+    const done = v => { ov.remove(); resolve(v); };
+    ov.querySelector("#rpd-no").onclick = () => done(undefined);
+    ov.querySelector("#rpd-yes").onclick = () => { const v = ov.querySelector("#rpd-sel").value; done(v === "" ? undefined : Number(v)); };
+    ov.onclick = e => { if (e.target === ov) done(undefined); };
+  });
+}
+
+/** Profil-irudi bat karrera bati lotu (Karrerak.Profil_Irudia = profilak-erlatiboko bidea). */
+async function fmLinkRace(rel) {
+  const kid = await raceProfileDialog(rel);
+  if (kid === undefined) return;
+  try {
+    // Irudi bera beste karrera batzuei lotuta badago, kendu (irudia karrera bakarrean).
+    for (const k of (state.karrerak || [])) {
+      if (k.Karrerak_ID !== kid && k.Profil_Irudia === rel) {
+        await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Karrerak", pk:{ Karrerak_ID:k.Karrerak_ID }, values:{ Profil_Irudia:null } }) });
+      }
+    }
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Karrerak", pk:{ Karrerak_ID:kid }, values:{ Profil_Irudia:rel } }) });
+    showToast("Profila karrerari lotuta ✓");
+    await reloadData();
+    loadFiles(state.fileDir);
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function fmUnlinkRace(kid) {
+  try {
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Karrerak", pk:{ Karrerak_ID:kid }, values:{ Profil_Irudia:null } }) });
+    showToast("Lotura kenduta ✓");
+    await reloadData();
+    loadFiles(state.fileDir);
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 async function fmUpload() {
@@ -2554,12 +2624,14 @@ async function fmMkdir() {
 // ── Karpeta-mapa (fitxategi-mota → karpeta). Webgune publikoak jarraitzen du. ─
 const FM_MOTA_IZENA = { arauak:"Arauak", dortsalak:"Dortsalak", porrak:"Porrak", profilak:"Profilak" };
 let fmLehenetsiak = {};
+let fmKarpetaMap = { arauak:"arauak", dortsalak:"dortsalak", porrak:"porrak", profilak:"profilak" };
 
 async function loadKarpetak() {
   const cont = el("fm-karpetak");
   try {
     const r = await api("api/ezarpenak");
     fmLehenetsiak = r.lehenetsiak || {};
+    fmKarpetaMap = { ...fmKarpetaMap, ...r.karpetak };   // profilak izena loturarako
     cont.innerHTML = Object.keys(r.karpetak).map(mota => {
       const bada = r.badaude && r.badaude[mota];
       const abisua = bada ? "" : `<div style="font-size:11px;color:var(--accent);margin-top:3px">⚠ Karpeta ez da existitzen</div>`;
@@ -2869,88 +2941,6 @@ async function doBanatu() {
     if (!r.ok) return showToast(r.reason || "Errorea", "err");
     showToast(`✅ ${r.moved} porra "${r.target_izena}"-(r)i esleituta`);
     await reloadData();
-  } catch(e) { showToast(e.message, "err"); }
-}
-
-// ── Sariak ────────────────────────────────────────────────────────────────────
-function renderSariakTxapSel() {
-  const sel = el("sariak-txap-sel");
-  if (!sel) return;
-  const prev = sel.value;
-  sel.innerHTML = `<option value="">— Hautatu txapelketa —</option>` +
-    state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join("");
-  if (prev) sel.value = prev;
-}
-
-async function loadSariak() {
-  const tid = el("sariak-txap-sel")?.value;
-  const ed = el("sariak-editor");
-  if (!ed) return;
-  if (!tid) { ed.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px">Hautatu txapelketa bat sariak ikusteko edo gehitzeko.</div>`; return; }
-  ed.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px">Kargatzen...</div>`;
-  try {
-    const data = await api("api/sariak?txapelketa_id=" + tid);
-    renderSariakEditor(data);
-  } catch(e) { showToast(e.message, "err"); }
-}
-
-function sariRowHtml(pos, saria) {
-  return `<tr class="sari-row">
-    <td style="width:90px"><input class="cell-input sari-pos" type="number" min="1" value="${esc(pos)}" style="min-width:60px;border-color:var(--border)"/></td>
-    <td><input class="cell-input sari-val" value="${esc(saria)}" placeholder="Adib: 500.00 € edo Afaria" style="border-color:var(--border)"/></td>
-    <td class="row-actions"><button class="btn btn-sm btn-ghost" onclick="this.closest('tr').remove()" title="Kendu">🗑</button></td>
-  </tr>`;
-}
-
-function renderSariakEditor(rows) {
-  const ed = el("sariak-editor");
-  if (!ed) return;
-  const body = (rows && rows.length) ? rows.map(r => sariRowHtml(r.Posizioa, r.Saria)).join("") : "";
-  ed.innerHTML = `
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>Posizioa</th><th>Saria</th><th></th></tr></thead>
-      <tbody id="sariak-tbody">${body}</tbody>
-    </table></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-      <button class="btn btn-ghost btn-sm" onclick="addSariRow()">+ Lerro berria</button>
-      <button class="btn btn-ghost btn-sm" onclick="sariakTemplate(true)">Txantiloia: 1-6 + Afaria</button>
-      <button class="btn btn-ghost btn-sm" onclick="sariakTemplate(false)">Txantiloia: 1-6</button>
-    </div>
-    <div style="margin-top:14px"><button class="btn btn-primary" onclick="saveSariak()">💾 Gorde sariak</button></div>`;
-  if (!body) addSariRow();
-}
-
-function addSariRow(pos, saria) {
-  const tb = el("sariak-tbody");
-  if (!tb) return;
-  if (pos === undefined) {
-    const used = [...tb.querySelectorAll(".sari-pos")].map(i => Number(i.value)).filter(n => n);
-    pos = used.length ? Math.max(...used) + 1 : 1;
-  }
-  tb.insertAdjacentHTML("beforeend", sariRowHtml(pos, saria ?? ""));
-}
-
-async function sariakTemplate(withAfaria) {
-  const tb = el("sariak-tbody");
-  if (!tb) return;
-  if (tb.children.length && !await confirmDialog("Uneko lerroak ordeztu txantiloiarekin?")) return;
-  tb.innerHTML = "";
-  for (let i = 1; i <= 6; i++) addSariRow(i, "");
-  if (withAfaria) addSariRow(7, "Afaria");
-}
-
-async function saveSariak() {
-  const tid = el("sariak-txap-sel")?.value;
-  if (!tid) return showToast("Txapelketa hautatu", "err");
-  const sariak = [...document.querySelectorAll("#sariak-tbody .sari-row")].map(tr => ({
-    Posizioa: Number(tr.querySelector(".sari-pos").value),
-    Saria: tr.querySelector(".sari-val").value.trim(),
-  })).filter(s => s.Posizioa && s.Saria);
-  try {
-    const r = await api("api/sariak", { method: "POST", body: JSON.stringify({ txapelketa_id: Number(tid), sariak }) });
-    if (!r.ok) return showToast(r.reason || "Errorea", "err");
-    showToast(`✅ ${r.count} sari gordeta`);
-    await loadSariak();
   } catch(e) { showToast(e.message, "err"); }
 }
 
@@ -3276,7 +3266,6 @@ async function init() {
   el("ezizen-filter")?.addEventListener("change", renderEzizenak);
   el("banatu-src")?.addEventListener("change", loadBanatuEzizenak);
   el("race-txap-sel")?.addEventListener("change", renderKarreraList);
-  el("sariak-txap-sel")?.addEventListener("change", loadSariak);
   el("kalk-txap-sel")?.addEventListener("change", () => el("kalk-result") && (el("kalk-result").innerHTML = ""));
   document.querySelectorAll(".tab[data-sltab]").forEach(t => {
     t.addEventListener("click", ()=>{

@@ -223,15 +223,24 @@ class DBLoader {
             // Kategoria beteta duten karrerak ETA emaitzak dituzten guztiak. Bigarren
             // baldintza segurtasun-sarea da: karrera batek emaitzak baditu, EZ da inoiz
             // ezkutatuko, nahiz eta Kategoria falta (adib. eskuz sortutakoak).
-            const karrerak = await this._query(`
-                SELECT k.Karrerak_ID AS kid, k.Izena AS izena, k.Kategoria AS kat, k.Ordena AS ordena
+            // `{profila}` bereizita dago: `Profil_Irudia` zutabea migrazioa exekutatu arte
+            // ez dago, eta hura falta bada kontsulta osoak huts egingo luke → akordeoia
+            // hautsi. Beraz zutabe hori gabe berriz saiatzen da (profil-lotura esplizitu gabe).
+            const karreraSQL = (profilaZut) => `
+                SELECT k.Karrerak_ID AS kid, k.Izena AS izena, k.Kategoria AS kat,
+                       k.Ordena AS ordena${profilaZut ? ', k.Profil_Irudia AS profila' : ''}
                 FROM "Karrerak" k
                 WHERE k.Txapelketa_ID = ?
                   AND ( (k.Kategoria IS NOT NULL AND k.Kategoria <> '')
                         OR EXISTS (SELECT 1 FROM "KarreraSailkapena" ks
                                    WHERE ks.Karrera_ID = k.Karrerak_ID) )
-                ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID
-            `, [txapelketaId]);
+                ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID`;
+            let karrerak;
+            try {
+                karrerak = await this._query(karreraSQL(true), [txapelketaId]);
+            } catch (e) {
+                karrerak = await this._query(karreraSQL(false), [txapelketaId]);
+            }
 
             if (!karrerak.length) {
                 container.innerHTML = `
@@ -309,7 +318,9 @@ class DBLoader {
                 // etapa-zenbakiz izendatuta daude (Etapa9.jpg) eta ez dira jarraituak. Karrera
                 // batzuk falta badira, posizioak irudi okerra emango luke.
                 const etapaZbk = Number(k.ordena) || (i + 1);
-                const irudia = this._profilaHtml(irudiFn ? irudiFn(k.kid, etapaZbk) : null, `${k.izena} profila`);
+                // Profil-irudia: karrera batek `Profil_Irudia` esplizitua badu, hura;
+                // bestela izen-konbentzioa (Etapa{Ordena}) edo klasikoen mapa (irudiFn barruan).
+                const irudia = this._profilaHtml(irudiFn ? irudiFn(k.kid, etapaZbk, k.profila) : null, `${k.izena} profila`);
 
                 html += `
                     <div class="etapa-item">

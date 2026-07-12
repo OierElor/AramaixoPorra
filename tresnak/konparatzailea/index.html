@@ -5,17 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Porra konparatzailea</title>
-    <link rel="stylesheet" href="/css/styles.css?v=20260714">
+    <link rel="stylesheet" href="/css/styles.css?v=20260715">
     <link rel="icon" type="image/png" href="/data/portadak/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="/js/db-loader.js?v=20260714"></script>
-    <script src="/js/tresna-komuna.js?v=20260714"></script>
+    <script src="/js/db-loader.js?v=20260715"></script>
+    <script src="/js/tresna-komuna.js?v=20260715"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
-    <script src="/js/layout.js?v=20260714" defer></script>
+    <script src="/js/layout.js?v=20260715" defer></script>
 </head>
 
 <body>
@@ -63,9 +63,9 @@
 
     <script>
         const MAX = 4;
+        // Eboluzio-logika DENA `js/tresna-komuna.js`-tik (geruza bateratua).
         const state = {
-            txapId: null, porrak: [], karrerak: [],
-            allCums: new Map(), allPos: new Map(),
+            txapId: null, porrak: [], datu: null, N_ref: 5,
             hautatuak: [], filter: 'denak', chartDiff: null, chartPos: null,
         };
 
@@ -99,74 +99,10 @@
         async function loadPorrak() {
             state.hautatuak = [];
             state.porrak = await Tresna.porrak(state.txapId);
-            state.karrerak = await Tresna.karrerak(state.txapId);
+            // Geruza bateratua: emaitzarik gabeko karrerak baztertuta + amaiera-puntua
+            state.datu = await Tresna.eboluzioaKargatu(state.txapId, 'porralari');
+            state.N_ref = state.datu.N_ref;
             document.getElementById('porra-input').value = '';
-
-            const tid = state.txapId;
-            const N = state.karrerak.length;
-            const kidx = new Map(state.karrerak.map((k, i) => [k.kid, i]));
-
-            // (porra, karrera) -> puntuak, porra guztientzat
-            const raceRows = await Tresna.q(
-                "SELECT pa.Ezizen_ID AS id, k.Karrerak_ID AS kid, SUM(ks.Puntuak) AS pts " +
-                "FROM PorraApustuak pa " +
-                "JOIN KarreraSailkapena ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
-                "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID AND k.Txapelketa_ID = pa.Txapelketa_ID " +
-                "WHERE pa.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> '' " +
-                "GROUP BY pa.Ezizen_ID, k.Karrerak_ID", [tid]);
-
-            const rawMap = new Map();
-            // Hasi porra guztiak zeroekin
-            state.porrak.forEach(p => rawMap.set(p.id, new Array(N).fill(0)));
-            raceRows.forEach(r => {
-                if (!rawMap.has(r.id)) rawMap.set(r.id, new Array(N).fill(0));
-                const j = kidx.get(r.kid);
-                if (j != null) rawMap.get(r.id)[j] = Number(r.pts) || 0;
-            });
-
-            // Bonus-puntuak azken etapan gehitu (txapelketa bukatutakoan bakarrik daude)
-            if (N > 0) {
-                const bonusRows = await Tresna.q(
-                    "SELECT Ezizen_ID AS id, " +
-                    " COALESCE(Puntuak_Mendikoa,0) + COALESCE(Puntuak_Generala,0) AS bonus " +
-                    "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
-                bonusRows.forEach(r => {
-                    const pts = rawMap.get(r.id);
-                    if (pts && Number(r.bonus) > 0) pts[N - 1] += Number(r.bonus);
-                });
-            }
-
-            // Kumulatiboak
-            state.allCums = new Map();
-            rawMap.forEach((pts, id) => {
-                const cum = [];
-                let s = 0;
-                pts.forEach(p => { s += p; cum.push(s); });
-                state.allCums.set(id, cum);
-            });
-
-            // Posizioa karrera bakoitzaren ostean (kumulatiboen arabera)
-            const porraIds = [...rawMap.keys()];
-            state.allPos = new Map(porraIds.map(id => [id, new Array(N).fill(0)]));
-            for (let j = 0; j < N; j++) {
-                const ranked = porraIds.slice().sort((a, b) =>
-                    (state.allCums.get(b)[j] || 0) - (state.allCums.get(a)[j] || 0));
-                ranked.forEach((id, rank) => state.allPos.get(id)[j] = rank + 1);
-            }
-
-            // Erreferentzia: N_ref. postuaren kumulatiboak → desberdintasuna
-            state.N_ref = 5;
-            const refCum = [];
-            for (let j = 0; j < N; j++) {
-                const sorted = porraIds.slice().sort((a, b) =>
-                    (state.allCums.get(b)[j] || 0) - (state.allCums.get(a)[j] || 0));
-                refCum.push(sorted.length >= state.N_ref
-                    ? state.allCums.get(sorted[state.N_ref - 1])[j] : 0);
-            }
-            state.allDiffs = new Map();
-            state.allCums.forEach((cum, id) => {
-                state.allDiffs.set(id, cum.map((c, j) => c - refCum[j]));
-            });
 
             renderChips();
             document.getElementById('konp-edukia').innerHTML =
@@ -216,6 +152,7 @@
             }
             cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
 
+            const datu = state.datu;
             const teams = await Promise.all(sel.map(p => Tresna.taldea(state.txapId, p.id)));
 
             // Txirrindularien taula
@@ -267,108 +204,20 @@
                     </div>
                 </div>`;
 
-            const fullNames = state.karrerak.map(k => Tresna.karreraLabel(k.izena));
-            const labels = state.karrerak.map((_, i) => i + 1);
-            const commonOpts = {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { position: 'bottom' } },
-                scales: { x: { title: { display: true, text: 'Karrera' } } },
-            };
-
-            // Grafika 1: Desberdintasuna
-            const diffDatasets = sel.map((p, i) => {
-                const color = Tresna.COLORS[i % Tresna.COLORS.length];
-                return { label: p.izena, data: state.allDiffs.get(p.id) || [],
-                    borderColor: color, backgroundColor: color,
-                    borderWidth: 2, pointRadius: 2, tension: 0.15 };
+            // Grafiko biak errendatzaile PARTEKATUAREKIN (Tresna.eboluzioGrafikoa).
+            const entsSel = sel.map((p, i) => {
+                const e = datu.ents.find(x => x.id === p.id) || { id: p.id, izena: p.izena, diff: [], pos: [] };
+                return { ...e, kolorea: Tresna.COLORS[i % Tresna.COLORS.length] };
             });
 
             if (state.chartDiff) state.chartDiff.destroy();
-            state.chartDiff = new Chart(document.getElementById('konp-diff-grafikoa'), {
-                type: 'line',
-                data: { labels, datasets: diffDatasets },
-                options: {
-                    ...commonOpts,
-                    plugins: {
-                        ...commonOpts.plugins,
-                        tooltip: {
-                            callbacks: {
-                                title: items => fullNames[items[0].dataIndex],
-                                label: ctx => {
-                                    const v = ctx.raw;
-                                    return `${ctx.dataset.label}: ${v > 0 ? '+' : ''}${v} p.`;
-                                },
-                            },
-                        },
-                    },
-                    scales: {
-                        x: commonOpts.scales.x,
-                        y: {
-                            title: { display: true, text: `Desberdintasuna (${state.N_ref}. postuarekiko)` },
-                            grid: {
-                                color: ctx => ctx.tick.value === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.08)',
-                                lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
-                            },
-                        },
-                    },
-                },
-            });
-
-            // Grafika 2: Posizioa + erreferentzia-lerroa N_ref. postuaren mailan
-            const posDatasets = [
-                ...sel.map((p, i) => {
-                    const color = Tresna.COLORS[i % Tresna.COLORS.length];
-                    return { label: p.izena, data: state.allPos.get(p.id) || [],
-                        borderColor: color, backgroundColor: color,
-                        borderWidth: 2, pointRadius: 2, tension: 0.15 };
-                }),
-                {
-                    label: `${state.N_ref}. postua (erreferentzia)`,
-                    data: new Array(labels.length).fill(state.N_ref),
-                    borderColor: 'rgba(255,140,0,0.8)', backgroundColor: 'transparent',
-                    borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0,
-                },
-            ];
+            state.chartDiff = Tresna.eboluzioGrafikoa(
+                document.getElementById('konp-diff-grafikoa'), datu, entsSel, 'diff');
 
             if (state.chartPos) state.chartPos.destroy();
-            state.chartPos = new Chart(document.getElementById('konp-pos-grafikoa'), {
-                type: 'line',
-                data: { labels, datasets: posDatasets },
-                options: {
-                    ...commonOpts,
-                    plugins: {
-                        ...commonOpts.plugins,
-                        legend: {
-                            position: 'bottom',
-                            labels: { filter: item => !item.text.includes('erreferentzia') },
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: items => fullNames[items[0].dataIndex],
-                                label: ctx => {
-                                    if (ctx.dataset.borderDash) return null;
-                                    return `${ctx.dataset.label}: ${ctx.raw}. postua`;
-                                },
-                                filter: ctx => !ctx.dataset.borderDash,
-                            },
-                        },
-                    },
-                    scales: {
-                        x: commonOpts.scales.x,
-                        y: {
-                            reverse: true, min: 1,
-                            title: { display: true, text: 'Posizioa' },
-                            ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v + '.' : '' },
-                            grid: {
-                                color: ctx => ctx.tick.value === state.N_ref
-                                    ? 'rgba(255,140,0,0.5)' : 'rgba(0,0,0,0.08)',
-                                lineWidth: ctx => ctx.tick.value === state.N_ref ? 2 : 1,
-                            },
-                        },
-                    },
-                },
-            });
+            state.chartPos = Tresna.eboluzioGrafikoa(
+                document.getElementById('konp-pos-grafikoa'), datu, entsSel, 'postua',
+                { errefLerroa: true });
         }
 
         document.addEventListener('DOMContentLoaded', init);

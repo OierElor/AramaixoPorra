@@ -36,11 +36,39 @@ Metodo/laguntzaile nagusiak:
 | **Zuzenketak proposatu** | `tresnak/zuzenketak/` | Porralarien akats-jakinarazpenen formularioa (ikus [apiak.md](apiak.md)). |
 | **Porra bidali** | `tresnak/porra-bidali/` | **Aurre-porrak**: adminak *irekitako* txapelketetan, porralariek beren 15 (edo 25) txirrindulari aukeratzen dituzte startlist-etik eta porra aurretik bidaltzen dute. `POST /api/porra.php` — **ez du datu-basea idazten**. Anboto tabernara joan behar da hala ere. |
 
+## Eboluzio-geruza BATERATUA (grafiko-tresnak)
+
+**Grafikoak**, **Porra fitxa** eta **Porra konparatzailea** lehen logika **bera bikoiztuta**
+zuten. Orain `js/tresna-komuna.js`-ko geruza **bakarra** darabilte:
+
+| Funtzioa | Zertarako |
+|---|---|
+| `Tresna.karrerakEmaitzekin(tid)` | **Emaitzak dituzten karrerak SOILIK** (ordenan) |
+| `Tresna.eboluzioaKargatu(tid, mota)` | Datu-geruza osoa: `pts`, `cum`, `pos`, `diff`, `total`, `bonusa` |
+| `Tresna.eboluzioGrafikoa(canvas, datu, ents, metrika, opts)` | Errendatzaile partekatua |
+| `Tresna.lineChart(canvas, opts)` | Chart.js oinarri komuna (**4 tresnek** darabilte) |
+
+Bi jokabide garrantzitsu:
+
+- **Emaitzarik gabeko karrerak EZ dira erakusten.** Lehen lerro lau luze bat marrazten zuten
+  (adib. Tour 2026: 21 karrera baina **8** emaitzekin). Orain 8 puntu erakusten dira.
+- **Amaiera-puntua** (**itzuli handietan bakarrik**): azken karreraren ondoren puntu bat,
+  **sailkapen ofizialeko puntuekin**, zeinek **sailkapen orokorreko eta mendiko puntuak jada
+  barne baititu**. `bonusa = ofiziala − etapetan metatua` (adib. Tour 2025 «Peeny Lane»:
+  1113 → **1558**, +445).
+  - `Puntuak_Generala`/`Puntuak_Mendikoa` zutabeak **EZ dira erabiltzen**: ia hutsik daude.
+  - Klasikoetan **ez da erakusten** (han ofiziala ez da «etapak + bonusa»).
+  - Bonusik ez badago (emaitza ofizialak bonusik gabe sartuta), ez da erakusten: puntu lau
+    erredundante bat besterik ez litzateke.
+
+**Porralariak konparatzailea**-k datu-logika propioa du (ardatza = **txapelketak**, ez
+karrerak), baina **`Tresna.lineChart` partekatua** darabil errendatzeko.
+
 ## Patroi komuna
 
 Tresna gehienek egitura bera dute:
 1. Txapelketa `<select>` bat (batzuek porralaria/txirrindulari bilatzailea ere).
 2. `Tresna.q(...)` bidez datuak kargatu.
-3. Taula edo Chart.js grafikoetan errendatu.
+3. Taula edo `Tresna.lineChart` grafikoetan errendatu.
 
 Datuak **irakurketa hutsa** dira: tresnek ez dute inoiz idazten (`q.php` SELECT soilik da).

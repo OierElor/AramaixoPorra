@@ -5,17 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Porralariak konparatzailea</title>
-    <link rel="stylesheet" href="/css/styles.css?v=20260714">
+    <link rel="stylesheet" href="/css/styles.css?v=20260715">
     <link rel="icon" type="image/png" href="/data/portadak/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="/js/db-loader.js?v=20260714"></script>
-    <script src="/js/tresna-komuna.js?v=20260714"></script>
+    <script src="/js/db-loader.js?v=20260715"></script>
+    <script src="/js/tresna-komuna.js?v=20260715"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
-    <script src="/js/layout.js?v=20260714" defer></script>
+    <script src="/js/layout.js?v=20260715" defer></script>
 </head>
 
 <body>
@@ -285,34 +285,19 @@
                         </div>
                     </div>`;
 
+                // Errendatzaile PARTEKATUA (`Tresna.lineChart`). Datu-logika berezia da
+                // (ardatza = txapelketak, ez karrerak), baina itxura eta tooltip-ak
+                // beste grafiko-tresnekin bateratuta daude.
                 if (state.chart) state.chart.destroy();
-                state.chart = new Chart(document.getElementById('konp-grafikoa'), {
-                    type: 'line',
-                    data: { labels: txList.map(tx => tx.txap), datasets },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { position: 'bottom' },
-                            tooltip: {
-                                callbacks: {
-                                    label: c => c.raw != null
-                                        ? `${c.dataset.label}: ${c.raw}. postua`
-                                        : `${c.dataset.label}: parte hartu gabe`,
-                                },
-                            },
-                        },
-                        scales: {
-                            x: { ticks: { maxRotation: 45, font: { size: 11 } } },
-                            y: {
-                                reverse: true,
-                                beginAtZero: false,
-                                min: 1,
-                                title: { display: true, text: 'Posizioa (1. onena)' },
-                                ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v + '.' : '' },
-                            },
-                        },
-                    },
+                state.chart = Tresna.lineChart(document.getElementById('konp-grafikoa'), {
+                    labels: txList.map(tx => tx.txap),
+                    datasets,
+                    xTitle: 'Txapelketa',
+                    yTitle: 'Posizioa (1. onena)',
+                    alderantziz: true,
+                    tooltipEtiketa: c => c.raw != null
+                        ? `${c.dataset.label}: ${c.raw}. postua`
+                        : `${c.dataset.label}: parte hartu gabe`,
                 });
             } catch (err) {
                 cont.innerHTML = `<p style="text-align:center;color:red;">Errorea: ${err.message}</p>`;

@@ -5,17 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Porra fitxa</title>
-    <link rel="stylesheet" href="/css/styles.css?v=20260714">
+    <link rel="stylesheet" href="/css/styles.css?v=20260715">
     <link rel="icon" type="image/png" href="/data/portadak/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="/js/db-loader.js?v=20260714"></script>
-    <script src="/js/tresna-komuna.js?v=20260714"></script>
+    <script src="/js/db-loader.js?v=20260715"></script>
+    <script src="/js/tresna-komuna.js?v=20260715"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
-    <script src="/js/layout.js?v=20260714" defer></script>
+    <script src="/js/layout.js?v=20260715" defer></script>
 </head>
 
 <body>
@@ -43,10 +43,10 @@
     </div>
 
     <script>
+        // Eboluzio-logika DENA `js/tresna-komuna.js`-tik (geruza bateratua).
         const state = {
-            txapId: null, porrak: [], karrerak: [],
-            allCums: new Map(), allPos: new Map(), allDiffs: new Map(),
-            N_ref: 5, chartDiff: null, chartPos: null,
+            txapId: null, porrak: [], datu: null,
+            chartDiff: null, chartPos: null,
         };
 
         async function init() {
@@ -70,68 +70,8 @@
             document.getElementById('fitxa-edukia').innerHTML = '';
             document.getElementById('porra-input').value = '';
             state.porrak = await Tresna.porrak(state.txapId);
-            state.karrerak = await Tresna.karrerak(state.txapId);
-
-            const tid = state.txapId;
-            const N = state.karrerak.length;
-            const kidx = new Map(state.karrerak.map((k, i) => [k.kid, i]));
-
-            const raceRows = await Tresna.q(
-                "SELECT pa.Ezizen_ID AS id, k.Karrerak_ID AS kid, SUM(ks.Puntuak) AS pts " +
-                "FROM PorraApustuak pa " +
-                "JOIN KarreraSailkapena ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
-                "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID AND k.Txapelketa_ID = pa.Txapelketa_ID " +
-                "WHERE pa.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> '' " +
-                "GROUP BY pa.Ezizen_ID, k.Karrerak_ID", [tid]);
-
-            const rawMap = new Map();
-            state.porrak.forEach(p => rawMap.set(p.id, new Array(N).fill(0)));
-            raceRows.forEach(r => {
-                if (!rawMap.has(r.id)) rawMap.set(r.id, new Array(N).fill(0));
-                const j = kidx.get(r.kid);
-                if (j != null) rawMap.get(r.id)[j] = Number(r.pts) || 0;
-            });
-
-            // Bonus-puntuak azken etapan gehitu (txapelketa bukatutakoan bakarrik daude)
-            if (N > 0) {
-                const bonusRows = await Tresna.q(
-                    "SELECT Ezizen_ID AS id, " +
-                    " COALESCE(Puntuak_Mendikoa,0) + COALESCE(Puntuak_Generala,0) AS bonus " +
-                    "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
-                bonusRows.forEach(r => {
-                    const pts = rawMap.get(r.id);
-                    if (pts && Number(r.bonus) > 0) pts[N - 1] += Number(r.bonus);
-                });
-            }
-
-            state.allCums = new Map();
-            rawMap.forEach((pts, id) => {
-                const cum = [];
-                let s = 0;
-                pts.forEach(p => { s += p; cum.push(s); });
-                state.allCums.set(id, cum);
-            });
-
-            const porraIds = [...rawMap.keys()];
-            state.allPos = new Map(porraIds.map(id => [id, new Array(N).fill(0)]));
-            for (let j = 0; j < N; j++) {
-                const ranked = porraIds.slice().sort((a, b) =>
-                    (state.allCums.get(b)[j] || 0) - (state.allCums.get(a)[j] || 0));
-                ranked.forEach((id, rank) => state.allPos.get(id)[j] = rank + 1);
-            }
-
-            state.N_ref = 5;
-            const refCum = [];
-            for (let j = 0; j < N; j++) {
-                const sorted = porraIds.slice().sort((a, b) =>
-                    (state.allCums.get(b)[j] || 0) - (state.allCums.get(a)[j] || 0));
-                refCum.push(sorted.length >= state.N_ref
-                    ? state.allCums.get(sorted[state.N_ref - 1])[j] : 0);
-            }
-            state.allDiffs = new Map();
-            state.allCums.forEach((cum, id) => {
-                state.allDiffs.set(id, cum.map((c, j) => c - refCum[j]));
-            });
+            // Emaitzarik gabeko karrerak baztertuta + amaiera-puntua (itzuli handietan)
+            state.datu = await Tresna.eboluzioaKargatu(state.txapId, 'porralari');
         }
 
         async function renderFitxa(porra) {
@@ -139,9 +79,11 @@
             cont.innerHTML = '<p style="text-align:center;opacity:.6;">Kargatzen...</p>';
 
             const taldea = await Tresna.taldea(state.txapId, porra.id);
-            const cum = state.allCums.get(porra.id) || [];
-            const etapaTot = cum.length ? cum[cum.length - 1] : 0;
-            const bonusa = (porra.total != null && porra.total > etapaTot) ? (porra.total - etapaTot) : 0;
+            const datu = state.datu;
+            const ent = datu.ents.find(e => e.id === porra.id);
+            const N_ref = datu.N_ref;
+            const etapaTot = ent ? ent.metatua : 0;
+            const bonusa = ent ? ent.bonusa : 0;
 
             const teamRows = taldea.map(r =>
                 `<tr><td class="name-col">${r.izena}</td>` +
@@ -155,7 +97,7 @@
                         <div><div style="font-size:1.8em;font-weight:bold;">${porra.pos}.</div><div style="opacity:.6;">Postua</div></div>
                         <div><div style="font-size:1.8em;font-weight:bold;">${porra.total}</div><div style="opacity:.6;">Puntuak</div></div>
                     </div>
-                    ${bonusa ? `<p style="opacity:.6;font-size:.85em;">Etapetan: ${etapaTot} + sailkapen-bonusa: ${bonusa}</p>` : ''}
+                    ${bonusa ? `<p style="opacity:.6;font-size:.85em;">Etapetan: ${etapaTot} + sailkapen-bonusa (orokorra + mendia): ${bonusa}</p>` : ''}
                 </div>
                 <div class="tables-container stacked">
                     <div class="table-wrapper" style="max-width:520px;margin:0 auto;">
@@ -170,106 +112,25 @@
                 </div>
                 <div class="grafiko-oihala">
                     <h3 class="grafikoak" style="text-align:center;">DESBERDINTASUNA</h3>
-                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">${state.N_ref}. postuarekiko</p>
+                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">${N_ref}. postuarekiko</p>
                     <div style="position:relative;height:280px;"><canvas id="fitxa-diff-grafikoa"></canvas></div>
                 </div>
                 <div class="grafiko-oihala">
                     <h3 class="grafikoak" style="text-align:center;">POSIZIOA</h3>
-                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">Etapa bakoitzaren osteko sailkapena · marra laranja = ${state.N_ref}. postua (erreferentzia)</p>
+                    <p style="text-align:center;opacity:.55;font-size:.82em;margin-top:-4px;">Etapa bakoitzaren osteko sailkapena · marra laranja = ${N_ref}. postua (erreferentzia)</p>
                     <div style="position:relative;height:280px;"><canvas id="fitxa-pos-grafikoa"></canvas></div>
                 </div>`;
 
             if (state.chartDiff) state.chartDiff.destroy();
             if (state.chartPos) state.chartPos.destroy();
+            if (!ent) return;
 
-            const fullNames = state.karrerak.map(k => Tresna.karreraLabel(k.izena));
-            const labels = state.karrerak.map((_, i) => i + 1);
-            const color = '#43a047';
-            const commonOpts = {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { display: false } },
-                scales: { x: { title: { display: true, text: 'Karrera' } } },
-            };
-
-            state.chartDiff = new Chart(document.getElementById('fitxa-diff-grafikoa'), {
-                type: 'line',
-                data: { labels, datasets: [{
-                    label: porra.izena,
-                    data: state.allDiffs.get(porra.id) || [],
-                    borderColor: color, backgroundColor: color,
-                    borderWidth: 2, pointRadius: 2, tension: 0.15,
-                }] },
-                options: {
-                    ...commonOpts,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: items => fullNames[items[0].dataIndex],
-                                label: ctx => { const v = ctx.raw; return `${v > 0 ? '+' : ''}${v} p.`; },
-                            },
-                        },
-                    },
-                    scales: {
-                        x: commonOpts.scales.x,
-                        y: {
-                            title: { display: true, text: `Desberdintasuna (${state.N_ref}. postuarekiko)` },
-                            grid: {
-                                color: ctx => ctx.tick.value === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.08)',
-                                lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
-                            },
-                        },
-                    },
-                },
-            });
-
-            state.chartPos = new Chart(document.getElementById('fitxa-pos-grafikoa'), {
-                type: 'line',
-                data: { labels, datasets: [
-                    {
-                        label: porra.izena,
-                        data: state.allPos.get(porra.id) || [],
-                        borderColor: color, backgroundColor: color,
-                        borderWidth: 2, pointRadius: 2, tension: 0.15,
-                    },
-                    {
-                        label: `${state.N_ref}. postua (erreferentzia)`,
-                        data: new Array(labels.length).fill(state.N_ref),
-                        borderColor: 'rgba(255,140,0,0.8)', backgroundColor: 'transparent',
-                        borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0,
-                    },
-                ] },
-                options: {
-                    ...commonOpts,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: items => fullNames[items[0].dataIndex],
-                                label: ctx => {
-                                    if (ctx.dataset.borderDash) return null;
-                                    return `${ctx.raw}. postua`;
-                                },
-                                filter: ctx => !ctx.dataset.borderDash,
-                            },
-                        },
-                    },
-                    scales: {
-                        x: commonOpts.scales.x,
-                        y: {
-                            reverse: true, min: 1,
-                            title: { display: true, text: 'Posizioa' },
-                            ticks: { stepSize: 1, callback: v => Number.isInteger(v) ? v + '.' : '' },
-                            grid: {
-                                color: ctx => ctx.tick.value === state.N_ref
-                                    ? 'rgba(255,140,0,0.5)' : 'rgba(0,0,0,0.08)',
-                                lineWidth: ctx => ctx.tick.value === state.N_ref ? 2 : 1,
-                            },
-                        },
-                    },
-                },
-            });
+            const sel = [{ ...ent, kolorea: '#43a047' }];
+            state.chartDiff = Tresna.eboluzioGrafikoa(
+                document.getElementById('fitxa-diff-grafikoa'), datu, sel, 'diff', { legenda: false });
+            state.chartPos = Tresna.eboluzioGrafikoa(
+                document.getElementById('fitxa-pos-grafikoa'), datu, sel, 'postua',
+                { legenda: false, errefLerroa: true });
         }
 
         document.addEventListener('DOMContentLoaded', init);

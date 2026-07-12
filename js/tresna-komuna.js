@@ -96,24 +96,126 @@ const Tresna = {
             "ORDER BY pts DESC, t.Izena", [tid, ezId]);
     },
 
+    // ─── EBOLUZIO-GERUZA BATERATUA ──────────────────────────────────────────
+    // Grafiko-tresna guztien (grafikoak, porra-fitxa, konparatzailea) datu-iturri
+    // BAKARRA. Lehen hiruretan bikoiztuta zegoen.
+
     /**
-     * Porra baten puntu metatuak karrera bakoitzean (karrera-ordenan lerrokatuta).
-     * @returns {number[]} karrerak.length luzerako array metatua.
+     * Karrerak **EMAITZEKIN SOILIK**, ordenan. Emaitzarik gabekoak ez dira grafikoan
+     * agertzen: bestela lerro laua marrazten zuten (adib. Tour 2026: 21 karrera, 8 emaitzekin).
      */
-    async eboluzioa(tid, ezId, karrerak) {
-        const rows = await this.q(
-            "SELECT k.Karrerak_ID AS kid, COALESCE(SUM(ks.Puntuak),0) AS pts " +
-            "FROM Karrerak k " +
-            "JOIN KarreraSailkapena ks ON ks.Karrera_ID = k.Karrerak_ID " +
-            "JOIN PorraApustuak pa ON pa.Txirrindularia_ID = ks.Txirrindularia_ID " +
-            "  AND pa.Txapelketa_ID = k.Txapelketa_ID " +
-            "WHERE k.Txapelketa_ID = ? AND pa.Ezizen_ID = ? " +   // Kategoria-iragazkirik ez (ikus porrak())
-            "GROUP BY k.Karrerak_ID", [tid, ezId]);
-        const byKid = new Map(rows.map(r => [r.kid, Number(r.pts)]));
-        const cum = [];
-        let s = 0;
-        karrerak.forEach(k => { s += (byKid.get(k.kid) || 0); cum.push(s); });
-        return cum;
+    async karrerakEmaitzekin(tid) {
+        return this.q(
+            "SELECT k.Karrerak_ID AS kid, k.Izena AS izena FROM Karrerak k " +
+            "WHERE k.Txapelketa_ID = ? " +
+            "  AND EXISTS (SELECT 1 FROM KarreraSailkapena ks " +
+            "              WHERE ks.Karrera_ID = k.Karrerak_ID) " +
+            "ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID", [tid]);
+    },
+
+    /**
+     * Eboluzio-datuak txapelketa batean: puntu metatuak, postua eta erreferentziarekiko
+     * desberdintasuna karreraz karrera.
+     *
+     * **AMAIERA-PUNTUA** (itzuli handietan bakarrik): azken karreraren ondoren puntu bat
+     * gehitzen da **sailkapen ofizialeko puntuekin**, zeinak sailkapen orokorreko eta
+     * mendiko puntuak **jada barne baititu**. `bonusa = ofiziala − etapetan metatua`.
+     *   - `Puntuak_Generala`/`Puntuak_Mendikoa` zutabeak EZ dira erabiltzen: ia hutsik daude.
+     *   - Klasikoetan EZ (han ofiziala ez da "etapak + bonusa").
+     *   - Bonusik ez badago (adib. emaitza ofizialak bonusik gabe sartu badira), EZ da
+     *     erakusten: puntu lau erredundante bat besterik ez litzateke.
+     *
+     * @param {number} tid  Txapelketa_ID
+     * @param {'txirrindulari'|'porralari'} mota
+     * @returns {{karrerak, labelak, ents, N_ref, refLabel, badaAmaiera, N}}
+     *          `ents[i] = { id, izena, pts[], cum[], pos[], diff[], metatua, total, bonusa }`
+     */
+    async eboluzioaKargatu(tid, mota) {
+        const txapRows = await this.q(
+            "SELECT Izena AS izena FROM Txapelketak WHERE Txapelketa_ID = ?", [tid]);
+        const txapIzena = txapRows.length ? String(txapRows[0].izena) : '';
+        const itzuliHandia = !/klasik/i.test(txapIzena);
+
+        const karrerak = await this.karrerakEmaitzekin(tid);
+        const N = karrerak.length;
+        const kidx = new Map(karrerak.map((k, j) => [k.kid, j]));
+
+        let rows, ofRows, N_ref, refLabel;
+        if (mota === 'txirrindulari') {
+            rows = await this.q(
+                "SELECT ks.Txirrindularia_ID AS id, t.Izena AS izena, ks.Karrera_ID AS kid, ks.Puntuak AS pts " +
+                "FROM KarreraSailkapena ks " +
+                "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID " +
+                "JOIN Txirrindulariak t ON t.Txirrindularia_ID = ks.Txirrindularia_ID " +
+                "WHERE k.Txapelketa_ID = ?", [tid]);
+            ofRows = await this.q(
+                "SELECT Txirrindularia_ID AS id, Puntuak AS ofiziala " +
+                "FROM TxapelketaEmaitzaTxirrindulariak WHERE Txapelketa_ID = ?", [tid]);
+            N_ref = itzuliHandia ? 15 : 25;
+            refLabel = `${N_ref}. txirrindularia (talde ideala)`;
+        } else {
+            rows = await this.q(
+                "SELECT pa.Ezizen_ID AS id, ez.Ezizena AS izena, k.Karrerak_ID AS kid, SUM(ks.Puntuak) AS pts " +
+                "FROM PorraApustuak pa " +
+                "JOIN KarreraSailkapena ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
+                "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID AND k.Txapelketa_ID = pa.Txapelketa_ID " +
+                "JOIN PorraEzizenak ez ON ez.Ezizen_ID = pa.Ezizen_ID " +
+                "WHERE pa.Txapelketa_ID = ? " +
+                "GROUP BY pa.Ezizen_ID, ez.Ezizena, k.Karrerak_ID", [tid]);
+            ofRows = await this.q(
+                "SELECT Ezizen_ID AS id, Puntuak AS ofiziala " +
+                "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
+            N_ref = 5;
+            refLabel = `${N_ref}. porra (erreferentzia)`;
+        }
+
+        const ofMap = new Map();
+        ofRows.forEach(r => { if (r.ofiziala != null) ofMap.set(r.id, Number(r.ofiziala)); });
+
+        // Entitateak eraiki: puntuak karrera-ordenan
+        const map = new Map();
+        rows.forEach(r => {
+            if (!map.has(r.id)) map.set(r.id, { id: r.id, izena: r.izena, pts: new Array(N).fill(0) });
+            const j = kidx.get(r.kid);
+            if (j != null) map.get(r.id).pts[j] = Number(r.pts) || 0;
+        });
+        const ents = [...map.values()];
+
+        // Metatua + amaiera-puntua
+        ents.forEach(e => {
+            const cum = [];
+            let s = 0;
+            e.pts.forEach(p => { s += p; cum.push(s); });
+            e.metatua = s;
+            e.ofiziala = ofMap.has(e.id) ? ofMap.get(e.id) : null;
+            e.bonusa = e.ofiziala != null ? e.ofiziala - s : 0;
+            e.cum = cum;
+        });
+
+        // Amaiera-puntua: itzuli handia + emaitza ofizialak + norbaitek bonusa
+        const badaAmaiera = itzuliHandia && ofMap.size > 0 && ents.some(e => e.bonusa !== 0);
+        if (badaAmaiera) {
+            ents.forEach(e => e.cum.push(e.ofiziala != null ? e.ofiziala : e.metatua));
+        } else {
+            ents.forEach(e => { e.bonusa = 0; });
+        }
+        ents.forEach(e => { e.total = e.cum.length ? e.cum[e.cum.length - 1] : 0; });
+
+        // Postua eta desberdintasuna puntu bakoitzean (amaiera barne)
+        const P = N + (badaAmaiera ? 1 : 0);
+        for (let j = 0; j < P; j++) {
+            const order = [...ents].sort((a, b) => b.cum[j] - a.cum[j]);
+            order.forEach((e, rank) => { (e.pos = e.pos || new Array(P).fill(0))[j] = rank + 1; });
+            const ref = order.length >= N_ref ? order[N_ref - 1].cum[j] : 0;
+            ents.forEach(e => { (e.diff = e.diff || new Array(P).fill(0))[j] = e.cum[j] - ref; });
+        }
+
+        ents.sort((a, b) => b.total - a.total);
+
+        const labelak = karrerak.map((_, i) => String(i + 1));
+        if (badaAmaiera) labelak.push('Amaiera');
+
+        return { karrerak, labelak, ents, N_ref, refLabel, badaAmaiera, N };
     },
 
     /**
@@ -173,23 +275,102 @@ const Tresna = {
         input.addEventListener('blur', () => setTimeout(hide, 150));
     },
 
-    /** Chart.js lerro-grafiko baten konfigurazio komuna (eboluziorako). */
-    lineChart(canvas, karrerak, datasets, yTitle) {
-        const fullNames = karrerak.map(k => Tresna.karreraLabel(k.izena));
+    // ─── GRAFIKO-ERRENDATZAILE PARTEKATUA ───────────────────────────────────
+
+    /**
+     * Chart.js lerro-grafiko baten oinarri komuna. Grafiko-tresna GUZTIEK hau erabiltzen
+     * dute (itxura eta tooltip-ak leku bakarrean).
+     */
+    lineChart(canvas, { labels, datasets, xTitle, yTitle, alderantziz = false, legenda = true,
+                        zeroLerroa = false, tooltipIzenburua = null, tooltipEtiketa = null }) {
+        const y = alderantziz
+            ? { reverse: true, min: 1, title: { display: true, text: yTitle }, ticks: { precision: 0 } }
+            : { title: { display: true, text: yTitle } };
+        if (zeroLerroa) {
+            y.grid = {
+                color: ctx => ctx.tick.value === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.08)',
+                lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
+            };
+        }
         return new Chart(canvas, {
             type: 'line',
-            data: { labels: karrerak.map((_, i) => i + 1), datasets },
+            data: { labels, datasets },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: { callbacks: { title: items => fullNames[items[0].dataIndex] } },
+                    legend: { display: legenda, position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            ...(tooltipIzenburua ? { title: tooltipIzenburua } : {}),
+                            ...(tooltipEtiketa ? { label: tooltipEtiketa } : {}),
+                        },
+                        // Erreferentzia-marra etena ez erakutsi tooltip-ean
+                        filter: ctx => !ctx.dataset.borderDash,
+                    },
                 },
                 scales: {
-                    x: { title: { display: true, text: 'Karrera' } },
-                    y: { beginAtZero: true, title: { display: true, text: yTitle || 'Puntu metatuak' } },
+                    x: { title: { display: true, text: xTitle || 'Karrera' } },
+                    y,
                 },
+            },
+        });
+    },
+
+    /**
+     * Eboluzio-grafikoa (`eboluzioaKargatu`-ren datuekin). Hiru tresnek partekatzen dute.
+     *
+     * @param canvas   HTMLCanvasElement
+     * @param datu     `Tresna.eboluzioaKargatu()`-ren emaitza
+     * @param entsSel  Marraztu beharreko entitateak; bakoitzak `kolorea` izan behar du
+     * @param metrika  'diff' (erreferentziarekiko aldea) | 'postua'
+     * @param opts     { legenda = true, errefLerroa = false }
+     *                 `errefLerroa`: marra etena N_ref postuan ('postua' metrikan).
+     */
+    eboluzioGrafikoa(canvas, datu, entsSel, metrika, opts = {}) {
+        const { legenda = true, errefLerroa = false } = opts;
+        const usePos = metrika === 'postua';
+        // Tooltip-eko izenburua: karreraren izena, edo amaiera-puntuaren azalpena.
+        const izenburuak = datu.karrerak.map(k => Tresna.karreraLabel(k.izena));
+        if (datu.badaAmaiera) izenburuak.push('Sailkapen finala (orokorra + mendia barne)');
+
+        // Amaiera-puntua nabarmendu (puntu handiagoa azkenean)
+        const pointRadius = datu.badaAmaiera
+            ? datu.labelak.map((_, i) => (i === datu.labelak.length - 1 ? 5 : 2))
+            : 2;
+
+        const datasets = entsSel.map(e => ({
+            label: e.izena,
+            data: usePos ? e.pos : e.diff,
+            borderColor: e.kolorea,
+            backgroundColor: e.kolorea,
+            borderWidth: 2,
+            pointRadius,
+            tension: 0.15,
+        }));
+
+        if (usePos && errefLerroa) {
+            datasets.push({
+                label: `${datu.N_ref}. postua (erreferentzia)`,
+                data: new Array(datu.labelak.length).fill(datu.N_ref),
+                borderColor: 'rgba(255,140,0,0.8)', backgroundColor: 'transparent',
+                borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0,
+            });
+        }
+
+        return Tresna.lineChart(canvas, {
+            labels: datu.labelak,
+            datasets,
+            legenda,
+            yTitle: usePos ? 'Postua' : `Desberdintasuna: ${datu.refLabel}`,
+            alderantziz: usePos,
+            zeroLerroa: !usePos,
+            tooltipIzenburua: items => izenburuak[items[0].dataIndex],
+            tooltipEtiketa: ctx => {
+                if (ctx.dataset.borderDash) return null;          // erreferentzia-marra
+                const v = ctx.raw;
+                return usePos ? `${ctx.dataset.label}: ${v}. postua`
+                              : `${ctx.dataset.label}: ${v > 0 ? '+' : ''}${v} p.`;
             },
         });
     },

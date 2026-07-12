@@ -5,17 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Grafikoak</title>
-    <link rel="stylesheet" href="/css/styles.css?v=20260714">
+    <link rel="stylesheet" href="/css/styles.css?v=20260715">
     <link rel="icon" type="image/png" href="/data/portadak/favicon.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="/js/db-loader.js?v=20260714"></script>
-    <script src="/js/tresna-komuna.js?v=20260714"></script>
+    <script src="/js/db-loader.js?v=20260715"></script>
+    <script src="/js/tresna-komuna.js?v=20260715"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
-    <script src="/js/layout.js?v=20260714" defer></script>
+    <script src="/js/layout.js?v=20260715" defer></script>
 </head>
 
 <body>
@@ -73,30 +73,21 @@
     </div>
 
     <script>
-        const COLORS = [
-            '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#42d4f4',
-            '#f032e6', '#bfef45', '#fabed4', '#469990', '#9a6324', '#808000',
-            '#000075', '#e6754b', '#1f78b4', '#33a02c'
-        ];
+        // Kolore eta eboluzio-logika DENA `js/tresna-komuna.js`-tik dator (geruza bateratua).
+        const COLORS = Tresna.COLORS;
 
         const state = {
             txapId: null,
             mota: 'txirrindulari',   // 'txirrindulari' | 'porralari'
-            metrika: 'puntuak',      // 'puntuak' | 'postua'
-            karrerak: [],            // [{kid, izena}]
-            entitateak: [],          // [{id, izena, pts:[], cum:[], pos:[], total}]
+            metrika: 'puntuak',      // 'puntuak' (= desberdintasuna) | 'postua'
+            datu: null,              // Tresna.eboluzioaKargatu()-ren emaitza
+            entitateak: [],          // datu.ents (koloreekin)
             hautatuak: new Set(),
             chart: null,
         };
 
-        function karreraLabel(izena) {
-            const p = String(izena).split(' - ');
-            return p.length > 1 ? p[p.length - 1] : izena;
-        }
-
         async function init() {
-            const rows = await window.dbLoader.query(
-                "SELECT Txapelketa_ID AS id, Izena AS izena, Urtea AS urtea FROM Txapelketak ORDER BY Urtea DESC, Izena");
+            const rows = await Tresna.txapelketak();
             const sel = document.getElementById('txap-select');
             sel.innerHTML = rows.map(r => `<option value="${r.id}">${r.izena}</option>`).join('');
             state.txapId = rows.length ? rows[0].id : null;
@@ -113,12 +104,10 @@
                 item => {
                     if (!state.hautatuak.has(item.id)) {
                         state.hautatuak.add(item.id);
-                        entInp.value = '';
                         renderChips();
                         renderChart();
-                    } else {
-                        entInp.value = '';
                     }
+                    entInp.value = '';
                 }
             );
             document.getElementById('gehitu-btn').addEventListener('click', addFromInput);
@@ -138,92 +127,14 @@
             if (tid == null) return;
             document.getElementById('chip-zerrenda').innerHTML = '<span style="opacity:.6;">Kargatzen...</span>';
 
-            // 1) Karrerak ordenan (agregatu "Azken Karrera" baztertu: Kategoria hutsa)
-            state.karrerak = await window.dbLoader.query(
-                "SELECT Karrerak_ID AS kid, Izena AS izena FROM Karrerak " +
-                "WHERE Txapelketa_ID = ? AND Kategoria IS NOT NULL AND Kategoria <> '' ORDER BY Karrerak_ID", [tid]);
-            const kidx = new Map(state.karrerak.map((k, i) => [k.kid, i]));
-            const N = state.karrerak.length;
+            // Geruza bateratua: emaitzarik gabeko karrerak baztertuta + amaiera-puntua
+            // (itzuli handietan, sailkapen ofizialetik: orokorra + mendia barne).
+            state.datu = await Tresna.eboluzioaKargatu(tid, state.mota);
+            state.entitateak = state.datu.ents;
+            state.entitateak.forEach((e, i) => { e.kolorea = COLORS[i % COLORS.length]; });
 
-            // 2) (entitate, karrera) -> puntuak
-            let rows;
-            if (state.mota === 'txirrindulari') {
-                rows = await window.dbLoader.query(
-                    "SELECT ks.Txirrindularia_ID AS id, t.Izena AS izena, ks.Karrera_ID AS kid, ks.Puntuak AS pts " +
-                    "FROM KarreraSailkapena ks " +
-                    "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID " +
-                    "JOIN Txirrindulariak t ON t.Txirrindularia_ID = ks.Txirrindularia_ID " +
-                    "WHERE k.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> ''", [tid]);
-            } else {
-                rows = await window.dbLoader.query(
-                    "SELECT pa.Ezizen_ID AS id, ez.Ezizena AS izena, k.Karrerak_ID AS kid, SUM(ks.Puntuak) AS pts " +
-                    "FROM PorraApustuak pa " +
-                    "JOIN KarreraSailkapena ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID " +
-                    "JOIN Karrerak k ON k.Karrerak_ID = ks.Karrera_ID AND k.Txapelketa_ID = pa.Txapelketa_ID " +
-                    "JOIN PorraEzizenak ez ON ez.Ezizen_ID = pa.Ezizen_ID " +
-                    "WHERE pa.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> '' " +
-                    "GROUP BY pa.Ezizen_ID, k.Karrerak_ID", [tid]);
-            }
-
-            // 3) entitateak eraiki (puntu-array karrera-ordenan)
-            const map = new Map();
-            rows.forEach(r => {
-                if (!map.has(r.id)) map.set(r.id, { id: r.id, izena: r.izena, pts: new Array(N).fill(0) });
-                const j = kidx.get(r.kid);
-                if (j != null) map.get(r.id).pts[j] = Number(r.pts) || 0;
-            });
-            // Bonus-puntuak azken etapan gehitu (txapelketa bukatutakoan bakarrik daude)
-            if (N > 0) {
-                const bonusRows = state.mota === 'txirrindulari'
-                    ? await window.dbLoader.query(
-                        "SELECT Txirrindularia_ID AS id, " +
-                        " COALESCE(Puntuak_Mendian,0) + COALESCE(Puntuak_Sailkapen_Nag,0) AS bonus " +
-                        "FROM TxapelketaEmaitzaTxirrindulariak WHERE Txapelketa_ID = ?", [tid])
-                    : await window.dbLoader.query(
-                        "SELECT Ezizen_ID AS id, " +
-                        " COALESCE(Puntuak_Mendikoa,0) + COALESCE(Puntuak_Generala,0) AS bonus " +
-                        "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
-                bonusRows.forEach(r => {
-                    const e = map.get(r.id);
-                    if (e && Number(r.bonus) > 0) e.pts[N - 1] += Number(r.bonus);
-                });
-            }
-
-            const ents = [...map.values()];
-            ents.forEach(e => {
-                e.cum = [];
-                let s = 0;
-                for (let j = 0; j < N; j++) { s += e.pts[j]; e.cum.push(s); }
-                e.total = s;
-            });
-            ents.sort((a, b) => b.total - a.total);
-
-            // 4) postua karrera bakoitzean (cum-aren arabera)
-            for (let j = 0; j < N; j++) {
-                const order = [...ents].sort((a, b) => b.cum[j] - a.cum[j]);
-                order.forEach((e, rank) => { (e.pos = e.pos || [])[j] = rank + 1; });
-            }
-
-            // 5) erreferentzia-puntua karrera bakoitzean → desberdintasuna
-            let N_ref;
-            if (state.mota === 'txirrindulari') {
-                const sel = document.getElementById('txap-select');
-                const txName = sel.options[sel.selectedIndex]?.text || '';
-                N_ref = /klasik/i.test(txName) ? 25 : 15;
-            } else {
-                N_ref = 5;
-            }
-            const refCum = [];
-            for (let j = 0; j < N; j++) {
-                const sorted = [...ents].sort((a, b) => b.cum[j] - a.cum[j]);
-                refCum.push(sorted.length >= N_ref ? sorted[N_ref - 1].cum[j] : 0);
-            }
-            ents.forEach(e => { e.diff = refCum.map((ref, j) => e.cum[j] - ref); });
-            state.N_ref = N_ref;
-
-            state.entitateak = ents;
             document.getElementById('entitate-input').value = '';
-            state.hautatuak = new Set(ents.slice(0, 5).map(e => e.id));
+            state.hautatuak = new Set(state.entitateak.slice(0, 5).map(e => e.id));
 
             renderChips();
             renderChart();
@@ -237,12 +148,11 @@
             }
             const sel = state.entitateak.filter(e => state.hautatuak.has(e.id));
             box.innerHTML = sel.length
-                ? sel.map(e => {
-                    const color = COLORS[state.entitateak.indexOf(e) % COLORS.length];
-                    return `<button type="button" class="grafiko-chip" data-id="${e.id}" ` +
-                        `style="border-color:${color};color:${color};">${e.izena} ` +
-                        `<span style="opacity:.5;">(${e.total})</span> <span class="chip-x">×</span></button>`;
-                }).join('')
+                ? sel.map(e =>
+                    `<button type="button" class="grafiko-chip" data-id="${e.id}" ` +
+                    `style="border-color:${e.kolorea};color:${e.kolorea};">${e.izena} ` +
+                    `<span style="opacity:.5;">(${e.total})</span> <span class="chip-x">×</span></button>`
+                ).join('')
                 : '<span style="opacity:.6;">Gehitu izenak bilatzailetik.</span>';
             box.querySelectorAll('.grafiko-chip').forEach(btn =>
                 btn.addEventListener('click', () => {
@@ -266,64 +176,13 @@
         }
 
         function renderChart() {
-            const ents = state.entitateak.filter(e => state.hautatuak.has(e.id));
-            const fullNames = state.karrerak.map(k => karreraLabel(k.izena));
-            const labels = state.karrerak.map((k, i) => i + 1);
-            const usePos = state.metrika === 'postua';
-
-            const refLabel = state.mota === 'txirrindulari'
-                ? `${state.N_ref}. txirrindularia (talde ideala)`
-                : `${state.N_ref}. porra (erreferentzia)`;
-
-            const datasets = ents.map((e, i) => {
-                const color = COLORS[state.entitateak.indexOf(e) % COLORS.length];
-                return {
-                    label: e.izena,
-                    data: usePos ? e.pos : e.diff,
-                    borderColor: color,
-                    backgroundColor: color,
-                    borderWidth: 2,
-                    pointRadius: 2,
-                    tension: 0.15,
-                };
-            });
-
-            const cfg = {
-                type: 'line',
-                data: { labels, datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { position: 'bottom' },
-                        tooltip: {
-                            callbacks: {
-                                title: items => fullNames[items[0].dataIndex],
-                                label: usePos ? undefined : ctx => {
-                                    const v = ctx.raw;
-                                    return `${ctx.dataset.label}: ${v > 0 ? '+' : ''}${v} p.`;
-                                },
-                            },
-                        },
-                    },
-                    scales: {
-                        x: { title: { display: true, text: 'Karrera' } },
-                        y: usePos
-                            ? { reverse: true, min: 1, title: { display: true, text: 'Postua' }, ticks: { precision: 0 } }
-                            : {
-                                title: { display: true, text: `Desberdintasuna: ${refLabel}` },
-                                grid: {
-                                    color: ctx => ctx.tick.value === 0 ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.08)',
-                                    lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1,
-                                },
-                            },
-                    },
-                },
-            };
-
+            if (!state.datu) return;
+            const sel = state.entitateak.filter(e => state.hautatuak.has(e.id));
             if (state.chart) state.chart.destroy();
-            state.chart = new Chart(document.getElementById('grafikoa'), cfg);
+            // 'puntuak' toggle-ak desberdintasuna esan nahi du (erreferentziarekiko aldea)
+            const metrika = state.metrika === 'postua' ? 'postua' : 'diff';
+            state.chart = Tresna.eboluzioGrafikoa(
+                document.getElementById('grafikoa'), state.datu, sel, metrika);
         }
 
         document.addEventListener('DOMContentLoaded', init);

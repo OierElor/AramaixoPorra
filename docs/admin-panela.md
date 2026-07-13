@@ -34,6 +34,7 @@ Nabigazio-menuak bi multzo ditu: **Ikus** (begiratu/editatu) eta **Sartu** (datu
 | **Porralariak** | Jokalarien zerrenda (bilaketa, izena inline editatu, porra-kop. kalkulatu) |
 | **Txirrindulariak** | Txirrindulariak: izena, `Izen_Formatua` (I·A editorea), izen-ordena aldatu (⇒ I·A / ⇒ A·I), tokiz aldatu |
 | **Txapelketak** | Txapelketak + karrerak (etapak). Txapelketa bakoitzean **Porra irekita** (aurre-porrak onartu) eta **Apustu kop.** (15/25) ezarri; karrerei **Kategoria** (derrigorrezkoa) eta **Ordena** ezarri, ezabatu, txapelketa esportatu. ⚠️ Kategoriarik gabeko karrera bat urte-orriko akordeoian eta tresnetan ezkuta daiteke |
+| **Karrera motak** | **Moten katalogoa** (`KarreraMotak`): sortu, berrizendatu, ordenatu, ezabatu — bakoitzaren **erabilera-kopurua** erakusten da. Eta **karrerei mota esleitu** (txapelketaz txapelketa, edo denak batera). ⚠️ **Mota ≠ Kategoria**: Kategoriak akordeoiaren iragazkia eta puntuazioa gidatzen ditu; mota ezaugarri independentea da (desnibela/lurraldea). Migrazioa: `db/karrera-motak.sql` |
 | **Sailkapenak** | Txapelketa baten porralari emaitza ofizialak |
 | **Karrera emaitzak** | Etapa/lasterketa baten sailkapena editatu (postua + puntuak) |
 | **Datu-osasuna** | Egiaztapenak txapelketaz: emaitzarik gabeko etapak, 15/25 apustu ez dituzten porrak, dortsalik gabeko txirrindulariak, birkalkulatu behar, izen bikoiztuak, **Kategoriarik gabeko karrerak**. Esportazioa ere |

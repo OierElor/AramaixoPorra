@@ -166,6 +166,7 @@
     <div class="nav-item" data-section="porralariak"><span class="icon">🏆</span> Porralariak</div>
     <div class="nav-item" data-section="txirrindulariak"><span class="icon">🚴</span> Txirrindulariak</div>
     <div class="nav-item" data-section="txapelketak"><span class="icon">🗓️</span> Txapelketak</div>
+    <div class="nav-item" data-section="motak"><span class="icon">🏔️</span> Karrera motak</div>
     <div class="nav-item" data-section="sailkapenak"><span class="icon">📋</span> Sailkapenak</div>
     <div class="nav-item" data-section="karrera-emaitzak"><span class="icon">🏁</span> Karrera emaitzak</div>
     <div class="nav-item" data-section="osasuna"><span class="icon">🩺</span> Datu-osasuna</div>
@@ -290,6 +291,40 @@
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5"><strong>Porra irekita</strong> markatzean, porralariek beren porra aurretik bidal dezakete <code>/tresnak/porra-bidali/</code> orritik. Apustuak EZ dira zuzenean gordetzen: <strong>Aurre-porrak</strong> atalean agertuko dira berrikusteko. Txapelketaren <strong>txirrindulari zerrenda inportatuta</strong> egon behar da.</div>
       <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th><th>Porra irekita</th><th>Apustu kop.</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
       <div class="card"><div class="card-head"><div class="card-title">Karrerak</div><div style="font-size:12px;color:var(--muted)">Karrera batek <strong>Kategoria</strong> behar du; hutsik badago, urte-orriko akordeoian eta tresnetan ezkutatuta gera daiteke.</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Kategoria</th><th>Ordena</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
+    </section>
+
+    <!-- KARRERA MOTAK -->
+    <section class="section" id="sec-motak">
+      <div class="page-header"><div><div class="page-title">🏔️ Karrera motak</div><div class="page-sub">Motak sortu/kudeatu eta karrera bakoitzari esleitu</div></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        <strong>Mota</strong> = karreraren ezaugarria (desnibela/lurraldea), adib. <code>&lt;2000 m</code>.
+        ⚠️ Ez nahasi <strong>Kategoria</strong>-rekin (<code>Etapa</code> / UCI kodea): hark akordeoiaren iragazkia eta puntuazioa gidatzen ditu; <strong>mota independentea da</strong>.
+        Mota bat berrizendatzean, hura darabilten karrera guztiek automatikoki jarraitzen dute (izena leku bakarrean dago).
+      </div>
+      <div id="motak-abisua"></div>
+
+      <div id="motak-edukia" hidden>
+        <!-- A · KATALOGOA -->
+        <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">Motak (katalogoa)</div></div><div class="card-body">
+          <div class="form-grid" style="margin-bottom:12px">
+            <div class="field"><label>Mota berria</label><input id="mota-izena" placeholder="Adib. 2000-3000 m"/></div>
+            <div class="field"><label>Ordena <span style="font-weight:400;opacity:.6">(aukerakoa)</span></label><input id="mota-ordena" type="number" min="1" placeholder="auto"/></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="sortuMota()">➕ Gehitu mota</button>
+          <div class="tbl-wrap" style="margin-top:14px"><table><thead><tr><th>ID</th><th>Izena</th><th>Ordena</th><th>Erabilerak</th><th></th></tr></thead><tbody id="motak-tbody"></tbody></table></div>
+        </div></div>
+
+        <!-- B · KARREREI ESLEITU -->
+        <div class="card"><div class="card-head"><div class="card-title">Karrerei mota esleitu</div></div><div class="card-body">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+            <select id="motak-txap-sel" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:260px"><option value="">— Aukeratu txapelketa —</option></select>
+            <span style="font-size:12px;color:var(--muted)">Denak batera:</span>
+            <select id="motak-denak-sel" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-size:12px;outline:none"></select>
+            <button class="btn btn-ghost btn-sm" onclick="motaDenei()">Ezarri denei</button>
+          </div>
+          <div id="motak-karrerak"></div>
+        </div></div>
+      </div>
     </section>
 
     <!-- SAILKAPENAK -->
@@ -840,6 +875,7 @@ function renderCurrentSection() {
     case "porralariak":      renderPorralariak(); break;
     case "txirrindulariak":  renderTxirrindulariak(); break;
     case "txapelketak":      renderTxapelketak(); break;
+    case "motak":            loadMotak(); break;
     case "sailkapenak":      renderSailkapena(); break;
     case "karrera-emaitzak": renderRaceTxapSel(); renderKarreraList(); break;
     case "taulak":           if (state.currentTable) loadGenericTable(state.currentTable); break;
@@ -996,6 +1032,156 @@ async function saveKarreraKat(sel, kid) {
     if (k) k.Kategoria = v === "" ? null : v;
     sel.style.borderColor = v === "" ? "var(--accent)" : "var(--border)";
   } catch(e) { showToast(e.message, "err"); await reloadData(); }
+}
+
+// ── Karrera motak (KarreraMotak katalogoa + Karrerak.Mota_ID) ────────────────
+// Mota EZ da Kategoria: hura akordeoiaren iragazkia gidatzen du; mota independentea da.
+state.motak = [];
+
+async function loadMotak() {
+  const abisua = el("motak-abisua");
+  const edukia = el("motak-edukia");
+  let r;
+  try { r = await api("api/motak"); }
+  catch(e) { abisua.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; return; }
+
+  if (!r.bada) {
+    // Migrazioa exekutatu gabe: panela ez da hausten, abisua bakarrik.
+    edukia.hidden = true;
+    abisua.innerHTML = `<div style="background:var(--bg);border:1px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--accent);line-height:1.6">
+      ⚠ <strong>Migrazioa falta da.</strong> <code>KarreraMotak</code> taula ez da existitzen.<br>
+      Exekutatu <strong>db/karrera-motak.sql</strong> phpMyAdmin-en eta berritu orria.</div>`;
+    return;
+  }
+  abisua.innerHTML = "";
+  edukia.hidden = false;
+  state.motak = r.motak || [];
+
+  // A · Katalogoa
+  el("motak-tbody").innerHTML = state.motak.length
+    ? state.motak.map(m => `<tr>
+        <td class="pk-cell">${esc(m.Mota_ID)}</td>
+        <td><span class="name-text">${esc(m.Izena)}</span>
+            <button class="btn-inline-edit" title="Berrizendatu" onclick="renameMota(${m.Mota_ID}, this.dataset.iz)" data-iz="${esc(m.Izena)}">✏️</button></td>
+        <td><input type="number" value="${m.Ordena ?? ""}" onchange="saveMotaOrdena(this, ${m.Mota_ID})" style="width:56px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center"></td>
+        <td>${esc(m.Erabilerak)}</td>
+        <td class="row-actions"><button class="btn btn-sm btn-ghost" title="Ezabatu" onclick="ezabatuMota(${m.Mota_ID}, this.dataset.iz, ${m.Erabilerak})" data-iz="${esc(m.Izena)}">🗑</button></td>
+      </tr>`).join("")
+    : `<tr><td colspan="5" style="color:var(--muted);font-size:13px">Ez dago motarik. Sortu bat goian.</td></tr>`;
+
+  // B · Karrerei esleitu: txapelketa-hautatzailea + "denak batera" dropdown-a
+  const sel = el("motak-txap-sel");
+  const prev = sel.value;
+  sel.innerHTML = `<option value="">— Aukeratu txapelketa —</option>` +
+    state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join("");
+  if (prev) sel.value = prev;
+  el("motak-denak-sel").innerHTML = motaOptions(null);
+  renderMotaKarrerak();
+}
+
+/** Mota-aukerak <option> gisa (hutsa = motarik gabe). */
+function motaOptions(hautatua) {
+  return `<option value="">— motarik gabe —</option>` +
+    state.motak.map(m => `<option value="${m.Mota_ID}"${String(hautatua ?? "") === String(m.Mota_ID) ? " selected" : ""}>${esc(m.Izena)}</option>`).join("");
+}
+
+function renderMotaKarrerak() {
+  const cont = el("motak-karrerak");
+  const tid = Number(el("motak-txap-sel").value);
+  if (!tid) { cont.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px">Hautatu txapelketa bat karrerak ikusteko.</div>`; return; }
+
+  const _ord = k => (k.Ordena == null ? 1e9 : Number(k.Ordena));
+  const ks = state.karrerak.filter(k => k.Txapelketa_ID === tid)
+    .sort((a, b) => _ord(a) - _ord(b) || a.Karrerak_ID - b.Karrerak_ID);
+
+  if (!ks.length) { cont.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px">Txapelketa honek ez du karrerarik.</div>`; return; }
+
+  cont.innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>Ordena</th><th>Izena</th><th>Kategoria</th><th>Mota</th></tr></thead>
+    <tbody>${ks.map(k => `<tr>
+      <td>${k.Ordena ?? "—"}</td>
+      <td>${esc(k.Izena)}</td>
+      <td style="color:var(--muted)">${esc(k.Kategoria || "—")}</td>
+      <td><select onchange="saveKarreraMota(this, ${k.Karrerak_ID})" style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);min-width:140px">${motaOptions(k.Mota_ID)}</select></td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+
+/** Karrera bati mota esleitu (dagoen `table-update` route-a). */
+async function saveKarreraMota(sel, kid) {
+  const v = sel.value === "" ? null : Number(sel.value);
+  try {
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Karrerak", pk:{ Karrerak_ID:kid }, values:{ Mota_ID:v } }) });
+    showToast("Mota gordeta ✓");
+    const k = state.karrerak.find(x => x.Karrerak_ID === kid);
+    if (k) k.Mota_ID = v;
+    await loadMotak();   // erabilera-kopuruak freskatu
+  } catch(e) { showToast(e.message, "err"); await reloadData(); }
+}
+
+/** Txapelketa osoko karrera guztiei mota bera ezarri. */
+async function motaDenei() {
+  const tid = Number(el("motak-txap-sel").value);
+  if (!tid) return showToast("Hautatu txapelketa bat", "err");
+  const v = el("motak-denak-sel").value === "" ? null : Number(el("motak-denak-sel").value);
+  const ks = state.karrerak.filter(k => k.Txapelketa_ID === tid);
+  const izena = v == null ? "— motarik gabe —" : (state.motak.find(m => m.Mota_ID === v) || {}).Izena;
+  if (!(await confirmDialog(`${ks.length} karrerari "${izena}" ezarri?`))) return;
+  showToast("⏳ Gordetzen...");
+  try {
+    for (const k of ks) {
+      await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Karrerak", pk:{ Karrerak_ID:k.Karrerak_ID }, values:{ Mota_ID:v } }) });
+      k.Mota_ID = v;
+    }
+    showToast(`✅ ${ks.length} karrera eguneratuta`);
+    await loadMotak();
+  } catch(e) { showToast(e.message, "err"); await reloadData(); }
+}
+
+/** Mota berrizendatu. Izena taula bakarrean dagoenez, karrera lotu GUZTIEK jarraitzen dute. */
+async function renameMota(id, izena) {
+  const berria = await promptDialog("Motaren izen berria:", izena);
+  if (berria === null || berria.trim() === "" || berria.trim() === izena) return;
+  const m = state.motak.find(x => x.Mota_ID === id);
+  try {
+    await api("api/motak/save", { method:"POST", body: JSON.stringify({ id, izena: berria.trim(), ordena: m ? m.Ordena : null }) });
+    showToast("Berrizendatuta ✓");
+    await loadMotak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function sortuMota() {
+  const izena = el("mota-izena").value.trim();
+  if (!izena) return showToast("Izena behar da", "err");
+  const ord = el("mota-ordena").value.trim();
+  try {
+    await api("api/motak/save", { method:"POST", body: JSON.stringify({ izena, ordena: ord === "" ? null : Number(ord) }) });
+    showToast("Mota sortuta ✓");
+    el("mota-izena").value = ""; el("mota-ordena").value = "";
+    await loadMotak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function saveMotaOrdena(inp, id) {
+  const v = inp.value.trim();
+  const m = state.motak.find(x => x.Mota_ID === id);
+  try {
+    await api("api/motak/save", { method:"POST", body: JSON.stringify({ id, izena: m.Izena, ordena: v === "" ? null : Number(v) }) });
+    showToast("Ordena gordeta ✓");
+    await loadMotak();
+  } catch(e) { showToast(e.message, "err"); await loadMotak(); }
+}
+
+async function ezabatuMota(id, izena, erabilerak) {
+  const abisua = erabilerak > 0
+    ? `\n\n⚠ ${erabilerak} karrerak darabilte: motarik gabe geratuko dira (ez dira ezabatuko).`
+    : "";
+  if (!(await confirmDialog(`"${izena}" mota ezabatu?${abisua}`))) return;
+  try {
+    const r = await api("api/motak/delete", { method:"POST", body: JSON.stringify({ id }) });
+    showToast(r.askatuta ? `Ezabatuta ✓ (${r.askatuta} karrera askatuta)` : "Ezabatuta ✓");
+    await reloadData();
+    await loadMotak();
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 async function saveKarreraOrdena(inp, kid) {
@@ -3327,6 +3513,7 @@ async function init() {
   el("ezizen-filter")?.addEventListener("change", renderEzizenak);
   el("banatu-src")?.addEventListener("change", loadBanatuEzizenak);
   el("race-txap-sel")?.addEventListener("change", renderKarreraList);
+  el("motak-txap-sel")?.addEventListener("change", renderMotaKarrerak);
   el("kalk-txap-sel")?.addEventListener("change", () => el("kalk-result") && (el("kalk-result").innerHTML = ""));
   document.querySelectorAll(".tab[data-sltab]").forEach(t => {
     t.addEventListener("click", ()=>{

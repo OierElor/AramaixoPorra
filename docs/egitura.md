@@ -69,7 +69,8 @@ AramaixoPorra/
 │   ├── Datuak 260707.sql       # Datu-basearen dump-a (erreferentzia)
 │   ├── ordena.sql              # Migrazioa: Karrerak.Ordena
 │   ├── aurre-porrak.sql        # Migrazioa: Txapelketak.Porra_Irekita + Apustu_Kopurua
-│   └── profil-irudia.sql       # Migrazioa: Karrerak.Profil_Irudia (profil-lotura)
+│   ├── profil-irudia.sql       # Migrazioa: Karrerak.Profil_Irudia (profil-lotura)
+│   └── karrera-motak.sql       # Migrazioa: KarreraMotak taula + Karrerak.Mota_ID
 │
 ├── data/                       # Baliabide estatikoak — GIT-EN trackeatuta, MOTAKA antolatuta
 │   ├── .htaccess               # Script exekuzioa galarazi (gitignore; kodeak mantentzen du)

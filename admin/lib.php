@@ -1589,6 +1589,64 @@ function clear_proposals() { return _log_clear(_proposals_file()); }
 
 function delete_proposal($idx) { return _log_delete(_proposals_file(), $idx); }
 
+// ─── Karrera-motak (KarreraMotak katalogoa + Karrerak.Mota_ID) ──────────────
+// MOTA = karreraren ezaugarria (desnibela/lurraldea), adib. '<2000 m'.
+// ⚠️ EZ da `Karrerak.Kategoria` ('Etapa'/UCI kodea): hura akordeoiaren iragazkia eta
+// puntuazioa gidatzen ditu. Mota independentea da.
+// Migrazioa: db/karrera-motak.sql. Exekutatu gabe egon daiteke → `bada` faltsu itzultzen da
+// eta panelak abisua erakusten du (ez da errorerik botatzen).
+
+function _motak_bada() {
+    return db_table_exists('KarreraMotak');
+}
+
+/** Motak + zenbat karrerak darabilten (erabilerak). Taula ez badago, `bada` = false. */
+function karrera_motak() {
+    if (!_motak_bada()) return ['bada' => false, 'motak' => []];
+    $motak = db_rows(
+        'SELECT m.Mota_ID, m.Izena, m.Ordena,
+                (SELECT COUNT(*) FROM `Karrerak` k WHERE k.Mota_ID = m.Mota_ID) AS Erabilerak
+         FROM `KarreraMotak` m
+         ORDER BY (m.Ordena IS NULL), m.Ordena, m.Izena');
+    return ['bada' => true, 'motak' => $motak];
+}
+
+/** Mota sortu (id gabe) edo berrizendatu (id-rekin). Izena bakarra izan behar da. */
+function save_karrera_mota($payload) {
+    if (!_motak_bada()) throw new Exception('KarreraMotak taula ez da existitzen: exekutatu db/karrera-motak.sql');
+    $id = $payload['id'] ?? null;
+    $izena = trim((string)($payload['izena'] ?? ''));
+    if ($izena === '') throw new Exception('Izena behar da');
+    if (strlen($izena) > 80) throw new Exception('Izena luzeegia (max 80)');
+
+    $ord = $payload['ordena'] ?? null;
+    $ord = ($ord === '' || $ord === null) ? null : (int)$ord;
+
+    // Izen bikoiztuak ukatu (bere burua kanpo, berrizendatzean)
+    $bikoitza = $id === null
+        ? db_one('SELECT Mota_ID FROM `KarreraMotak` WHERE Izena = ?', [$izena])
+        : db_one('SELECT Mota_ID FROM `KarreraMotak` WHERE Izena = ? AND Mota_ID <> ?', [$izena, (int)$id]);
+    if ($bikoitza) throw new Exception("'$izena' mota existitzen da jada");
+
+    if ($id === null) {
+        $r = db_exec('INSERT INTO `KarreraMotak` (Izena, Ordena) VALUES (?, ?)', [$izena, $ord]);
+        return ['ok' => true, 'id' => (int)$r['insert_id']];
+    }
+    db_exec('UPDATE `KarreraMotak` SET Izena = ?, Ordena = ? WHERE Mota_ID = ?', [$izena, $ord, (int)$id]);
+    return ['ok' => true, 'id' => (int)$id];
+}
+
+/** Mota ezabatu. LEHENIK hura darabilten karrerak askatzen dira (Mota_ID = NULL). */
+function delete_karrera_mota($id) {
+    if (!_motak_bada()) throw new Exception('KarreraMotak taula ez da existitzen');
+    $id = (int)$id;
+    if ($id <= 0) throw new Exception('Mota baliogabea');
+    $r = db_exec('UPDATE `Karrerak` SET Mota_ID = NULL WHERE Mota_ID = ?', [$id]);
+    $askatuta = (int)($r['affected'] ?? 0);
+    db_exec('DELETE FROM `KarreraMotak` WHERE Mota_ID = ?', [$id]);
+    return ['ok' => true, 'askatuta' => $askatuta];
+}
+
 // ─── Aurre-porrak (testu-fitxategia, DB gabe) ───────────────────────────────
 // api/porra.php-k admin/aurre-porrak.log-en eransten ditu; hemen irakurtzen dira.
 // Blokearen formatua (ikus api/porra.php):

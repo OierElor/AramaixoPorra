@@ -105,12 +105,17 @@ const Tresna = {
      * agertzen: bestela lerro laua marrazten zuten (adib. Tour 2026: 21 karrera, 8 emaitzekin).
      */
     async karrerakEmaitzekin(tid) {
-        return this.q(
+        // `Emaitzarik_Ez = 1` markatutakoak baztertu (akordeoiak bezala): karrera horiek
+        // ez dute zenbatzen. Zutabea migrazioa exekutatu arte ez dago → gabe berriz saiatu.
+        const sql = ezMarka =>
             "SELECT k.Karrerak_ID AS kid, k.Izena AS izena FROM Karrerak k " +
             "WHERE k.Txapelketa_ID = ? " +
+            (ezMarka ? "  AND COALESCE(k.Emaitzarik_Ez, 0) = 0 " : "") +
             "  AND EXISTS (SELECT 1 FROM KarreraSailkapena ks " +
             "              WHERE ks.Karrera_ID = k.Karrerak_ID) " +
-            "ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID", [tid]);
+            "ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID";
+        try { return await this.q(sql(true), [tid]); }
+        catch (e) { return this.q(sql(false), [tid]); }
     },
 
     /**

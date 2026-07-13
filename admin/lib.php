@@ -1432,10 +1432,15 @@ function delete_table_row($table_name, $pk_values) {
 // ─── Datu-osasuna (txapelketa baten egiaztapenak) ────────────────────────────
 function data_health($txap_id) {
     $txap_id = (int)$txap_id;
+    // «Emaitzarik ez du izango» markatutako karrerak EZ dira salatu behar (adib. bertan
+    // behera utzitako etapak). Zutabea egon ezean (migrazioa exekutatu gabe), baldintza
+    // hori kendu egiten da eta lehen bezala jokatzen du.
+    $ez_marka = _desnibela_bada() ? " AND COALESCE(k.Emaitzarik_Ez, 0) = 0" : "";
     $stages_no_results = db_rows(
         "SELECT k.Karrerak_ID AS id, k.Izena FROM `Karrerak` k
          WHERE k.Txapelketa_ID = ? AND k.Kategoria IS NOT NULL AND k.Kategoria <> ''
            AND NOT EXISTS (SELECT 1 FROM `KarreraSailkapena` ks WHERE ks.Karrera_ID = k.Karrerak_ID)
+           $ez_marka
          ORDER BY k.Karrerak_ID", [$txap_id]);
     $bettors_wrong_picks = db_rows(
         "SELECT ez.Ezizen_ID AS id, ez.Ezizena, COUNT(pa.Txirrindularia_ID) AS n
@@ -1600,15 +1605,39 @@ function _motak_bada() {
     return db_table_exists('KarreraMotak');
 }
 
+/**
+ * Zutabe bat existitzen den (migrazioa exekutatu gabe egon daiteke).
+ * Emaitza cachean gordetzen da eskaera bakoitzeko.
+ */
+function db_column_exists($table, $column) {
+    static $cache = [];
+    $key = $table . '.' . $column;
+    if (!isset($cache[$key])) {
+        $cache[$key] = false;
+        foreach (db_table_columns($table) as $c) {
+            if (strcasecmp($c['name'], $column) === 0) { $cache[$key] = true; break; }
+        }
+    }
+    return $cache[$key];
+}
+
+/** `Karrerak.Desnibela` eta `Karrerak.Emaitzarik_Ez` badaude (db/desnibela.sql). */
+function _desnibela_bada() {
+    return db_column_exists('Karrerak', 'Desnibela')
+        && db_column_exists('Karrerak', 'Emaitzarik_Ez');
+}
+
 /** Motak + zenbat karrerak darabilten (erabilerak). Taula ez badago, `bada` = false. */
 function karrera_motak() {
-    if (!_motak_bada()) return ['bada' => false, 'motak' => []];
+    // `desnibela` = db/desnibela.sql exekutatuta dagoen (Desnibela + Emaitzarik_Ez zutabeak).
+    $desnibela = _desnibela_bada();
+    if (!_motak_bada()) return ['bada' => false, 'motak' => [], 'desnibela' => $desnibela];
     $motak = db_rows(
         'SELECT m.Mota_ID, m.Izena, m.Ordena,
                 (SELECT COUNT(*) FROM `Karrerak` k WHERE k.Mota_ID = m.Mota_ID) AS Erabilerak
          FROM `KarreraMotak` m
          ORDER BY (m.Ordena IS NULL), m.Ordena, m.Izena');
-    return ['bada' => true, 'motak' => $motak];
+    return ['bada' => true, 'motak' => $motak, 'desnibela' => $desnibela];
 }
 
 /** Mota sortu (id gabe) edo berrizendatu (id-rekin). Izena bakarra izan behar da. */

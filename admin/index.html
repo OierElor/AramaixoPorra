@@ -295,11 +295,11 @@
 
     <!-- KARRERA MOTAK -->
     <section class="section" id="sec-motak">
-      <div class="page-header"><div><div class="page-title">🏔️ Karrera motak</div><div class="page-sub">Motak sortu/kudeatu eta karrera bakoitzari esleitu</div></div></div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
-        <strong>Mota</strong> = karreraren ezaugarria (desnibela/lurraldea), adib. <code>&lt;2000 m</code>.
-        ⚠️ Ez nahasi <strong>Kategoria</strong>-rekin (<code>Etapa</code> / UCI kodea): hark akordeoiaren iragazkia eta puntuazioa gidatzen ditu; <strong>mota independentea da</strong>.
-        Mota bat berrizendatzean, hura darabilten karrera guztiek automatikoki jarraitzen dute (izena leku bakarrean dago).
+      <div class="page-header"><div><div class="page-title">🏔️ Karrera motak</div><div class="page-sub">Motak, desnibela eta karreren ezaugarriak kudeatu</div></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+        <strong>Mota</strong> = zuk definitzen duzun karrera-ezaugarria (katalogo kudeagarria). Mota bat berrizendatzean, hura darabilten karrera guztiek automatikoki jarraitzen dute.<br>
+        <strong>Desnibela</strong> = metroak (zenbaki hutsa). <strong>«Emaitzarik ez»</strong> = karrera horrek ez du <strong>inoiz</strong> emaitzarik izango (adib. bertan behera utzitako etapa): urte-orriko <strong>akordeoian ez da agertuko</strong> eta <strong>Datu-osasunak ez du salatuko</strong>.<br>
+        ⚠️ Ez nahasi <strong>Kategoria</strong>-rekin (<code>Etapa</code> / UCI kodea): hark akordeoiaren iragazkia eta puntuazioa gidatzen ditu.
       </div>
       <div id="motak-abisua"></div>
 
@@ -1045,6 +1045,8 @@ async function loadMotak() {
   try { r = await api("api/motak"); }
   catch(e) { abisua.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; return; }
 
+  state.desnibelaBada = !!r.desnibela;   // db/desnibela.sql exekutatuta dagoen
+
   if (!r.bada) {
     // Migrazioa exekutatu gabe: panela ez da hausten, abisua bakarrik.
     edukia.hidden = true;
@@ -1096,14 +1098,52 @@ function renderMotaKarrerak() {
 
   if (!ks.length) { cont.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px">Txapelketa honek ez du karrerarik.</div>`; return; }
 
+  // Desnibela eta «Emaitzarik ez» zutabeak db/desnibela.sql exekutatu arte ez daude.
+  const dBada = state.desnibelaBada;
+  const dHead = dBada ? `<th>Desnibela (m)</th><th title="Karrera honek ez du inoiz emaitzarik izango">Emaitzarik ez</th>` : "";
+
   cont.innerHTML = `<div class="tbl-wrap"><table>
-    <thead><tr><th>Ordena</th><th>Izena</th><th>Kategoria</th><th>Mota</th></tr></thead>
-    <tbody>${ks.map(k => `<tr>
-      <td>${k.Ordena ?? "—"}</td>
-      <td>${esc(k.Izena)}</td>
-      <td style="color:var(--muted)">${esc(k.Kategoria || "—")}</td>
-      <td><select onchange="saveKarreraMota(this, ${k.Karrerak_ID})" style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);min-width:140px">${motaOptions(k.Mota_ID)}</select></td>
-    </tr>`).join("")}</tbody></table></div>`;
+    <thead><tr><th>Ordena</th><th>Izena</th><th>Kategoria</th><th>Mota</th>${dHead}</tr></thead>
+    <tbody>${ks.map(k => {
+      const ezDu = Number(k.Emaitzarik_Ez) === 1;
+      const dCells = dBada
+        ? `<td><input type="number" min="0" step="10" value="${k.Desnibela ?? ""}" placeholder="—" onchange="saveKarreraDesnibela(this, ${k.Karrerak_ID})" style="width:80px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:right"></td>` +
+          `<td style="text-align:center"><input type="checkbox" ${ezDu ? "checked" : ""} onchange="saveKarreraEmaitzarikEz(this, ${k.Karrerak_ID})" title="Markatuta: akordeoian ez da agertuko eta Datu-osasunak ez du salatuko"></td>`
+        : "";
+      return `<tr${ezDu ? ' style="opacity:.55"' : ""}>
+        <td>${k.Ordena ?? "—"}</td>
+        <td>${esc(k.Izena)}</td>
+        <td style="color:var(--muted)">${esc(k.Kategoria || "—")}</td>
+        <td><select onchange="saveKarreraMota(this, ${k.Karrerak_ID})" style="font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);min-width:140px">${motaOptions(k.Mota_ID)}</select></td>
+        ${dCells}
+      </tr>`;
+    }).join("")}</tbody></table></div>` +
+    (dBada ? "" : `<div style="margin-top:10px;font-size:12px;color:var(--accent);line-height:1.5">
+      ⚠ <strong>Desnibela</strong> eta <strong>«Emaitzarik ez»</strong> zutabeak falta dira.
+      Exekutatu <strong>db/desnibela.sql</strong> phpMyAdmin-en eta berritu.</div>`);
+}
+
+/** Karrera baten desnibela (metroak) gorde. */
+async function saveKarreraDesnibela(inp, kid) {
+  const v = inp.value.trim();
+  try {
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Karrerak", pk:{ Karrerak_ID:kid }, values:{ Desnibela: v === "" ? null : Number(v) } }) });
+    showToast("Desnibela gordeta ✓");
+    const k = state.karrerak.find(x => x.Karrerak_ID === kid);
+    if (k) k.Desnibela = v === "" ? null : Number(v);
+  } catch(e) { showToast(e.message, "err"); await reloadData(); }
+}
+
+/** «Ez du inoiz emaitzarik izango» marka. Akordeoian ezkutatzen du. */
+async function saveKarreraEmaitzarikEz(chk, kid) {
+  const v = chk.checked ? 1 : 0;
+  try {
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Karrerak", pk:{ Karrerak_ID:kid }, values:{ Emaitzarik_Ez: v } }) });
+    showToast(v ? "Markatuta: akordeoian ez da agertuko" : "Marka kenduta ✓");
+    const k = state.karrerak.find(x => x.Karrerak_ID === kid);
+    if (k) k.Emaitzarik_Ez = v;
+    renderMotaKarrerak();
+  } catch(e) { showToast(e.message, "err"); await reloadData(); }
 }
 
 /** Karrera bati mota esleitu (dagoen `table-update` route-a). */

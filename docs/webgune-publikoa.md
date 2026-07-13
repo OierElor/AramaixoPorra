@@ -48,7 +48,10 @@ bere **profil/ibilbide irudia** (baldin badago) eta emaitza-taula erakusten dira
 - **Datu-basea da egia-iturria**: akordeoian `Karrerak` taulako karrerak bakarrik
   agertzen dira. Egutegiko lasterketa bat oraindik sartu gabe badago, ez da ikusiko;
   admin paneleko **Karrerak** inportatzailearekin gehitu daiteke.
-- **Emaitzak dituen karrera bat EZ da inoiz ezkutatzen**: iragazkia «Kategoria beteta
+- **`Emaitzarik_Ez = 1` markatutakoak EZ dira agertzen**: inoiz emaitzarik izango ez badute
+  (adib. bertan behera utzitako etapa), panel huts iraunkorra litzateke. Admin panelean
+  markatzen da (*Karrera motak* atala). Grafikoetan ere ez dira zenbatzen.
+- **Emaitzak dituen karrera bat EZ da bestela inoiz ezkutatzen**: iragazkia «Kategoria beteta
   **EDO** emaitzak baditu» da. Segurtasun-sarea da, Kategoriarik gabeko karrera bat
   (eskuz sortua, adib.) isilean gal ez dadin. `js/tresna-komuna.js`-k iragazki bera
   darabil, tresnetako puntuak akordeoiarekin eta sailkapenarekin bat etor daitezen.

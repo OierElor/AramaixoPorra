@@ -223,24 +223,31 @@ class DBLoader {
             // Kategoria beteta duten karrerak ETA emaitzak dituzten guztiak. Bigarren
             // baldintza segurtasun-sarea da: karrera batek emaitzak baditu, EZ da inoiz
             // ezkutatuko, nahiz eta Kategoria falta (adib. eskuz sortutakoak).
-            // `{profila}` bereizita dago: `Profil_Irudia` zutabea migrazioa exekutatu arte
-            // ez dago, eta hura falta bada kontsulta osoak huts egingo luke → akordeoia
-            // hautsi. Beraz zutabe hori gabe berriz saiatzen da (profil-lotura esplizitu gabe).
-            const karreraSQL = (profilaZut) => `
+            //
+            // `Emaitzarik_Ez = 1` markatutakoak EZ dira erakusten: inoiz emaitzarik izango
+            // ez badute (adib. bertan behera utzitako etapa), panel huts iraunkorra litzateke.
+            //
+            // Zutabe berriak (`Profil_Irudia`, `Emaitzarik_Ez`) migrazioak exekutatu arte ez
+            // daude, eta falta badira kontsultak huts egingo luke → akordeoia hautsi. Beraz
+            // maila jaitsiz saiatzen da: dena → profila gabe → biak gabe.
+            const karreraSQL = (profila, ezMarka) => `
                 SELECT k.Karrerak_ID AS kid, k.Izena AS izena, k.Kategoria AS kat,
-                       k.Ordena AS ordena${profilaZut ? ', k.Profil_Irudia AS profila' : ''}
+                       k.Ordena AS ordena${profila ? ', k.Profil_Irudia AS profila' : ''}
                 FROM "Karrerak" k
                 WHERE k.Txapelketa_ID = ?
+                  ${ezMarka ? 'AND COALESCE(k.Emaitzarik_Ez, 0) = 0' : ''}
                   AND ( (k.Kategoria IS NOT NULL AND k.Kategoria <> '')
                         OR EXISTS (SELECT 1 FROM "KarreraSailkapena" ks
                                    WHERE ks.Karrera_ID = k.Karrerak_ID) )
                 ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID`;
-            let karrerak;
-            try {
-                karrerak = await this._query(karreraSQL(true), [txapelketaId]);
-            } catch (e) {
-                karrerak = await this._query(karreraSQL(false), [txapelketaId]);
+            let karrerak = null;
+            for (const [profila, ezMarka] of [[true, true], [true, false], [false, false]]) {
+                try {
+                    karrerak = await this._query(karreraSQL(profila, ezMarka), [txapelketaId]);
+                    break;
+                } catch (e) { /* zutaberen bat falta: maila jaitsi */ }
             }
+            if (karrerak === null) throw new Error('Ezin izan dira karrerak kargatu');
 
             if (!karrerak.length) {
                 container.innerHTML = `

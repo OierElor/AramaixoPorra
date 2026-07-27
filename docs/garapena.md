@@ -68,8 +68,20 @@ function`, eta karreren akordeoia **hutsik** agertzen da errore-mezurik gabe.
 ```
 
 `js/db-loader.js`, `js/txapelketak.js`, `js/txapelketa-orria.js`, `js/layout.js` edo
-`css/styles.css` aldatzean, **`?v=` eguneratu 18 stub-etan** (data bat nahikoa da).
-Bestela erabiltzaile batzuek kode zaharra ikusiko dute.
+`css/styles.css` aldatzean, **`?v=` eguneratu behar da orri publiko GUZTIETAN** (data bat
+nahikoa da). Bestela erabiltzaile batzuek kode zaharra ikusiko dute.
+
+**Automatikoki — `./bump-version.sh`:** ez eguneratu eskuz. Script honek `?v=YYYYMMDD`
+git-trackeatutako HTML/PHP guztietan aldatzen du komando bakarrean (35 fitxategi, 145 aipamen):
+
+```bash
+./bump-version.sh            # gaurko data (YYYYMMDD)
+./bump-version.sh 20260801   # data zehatza
+```
+
+Ondoren `git diff --stat` begiratu, commit + push (gero Plesk pull). `admin/index.html`-ek
+`?v=`-rik ez du (index.php-k zerbitzatzen du) → ez da ukitzen. **Deploy-fluxua orri publiko
+bat aldatzean:** editatu → `./bump-version.sh` → commit → push → Plesk pull.
 
 > Aukera iraunkorragoa: erroko `.htaccess` batean `Cache-Control: no-cache`
 > ezartzea `.js`/`.css`-entzat (ETag bidezko 304 merkeak). Hostalia/Plesk-en

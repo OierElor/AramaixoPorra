@@ -1592,12 +1592,18 @@ function data_health($txap_id) {
            AND NOT EXISTS (SELECT 1 FROM `KarreraSailkapena` ks WHERE ks.Karrera_ID = k.Karrerak_ID)
            $ez_marka
          ORDER BY k.Karrerak_ID", [$txap_id]);
+    // Apustu kopuru zuzena txapelketaren araberakoa da (itzuliak 15, klasikak 25).
+    $apustu_kop = 15;
+    if (db_column_exists('Txapelketak', 'Apustu_Kopurua')) {
+        $ak = db_scalar('SELECT Apustu_Kopurua FROM `Txapelketak` WHERE Txapelketa_ID = ?', [$txap_id]);
+        if ($ak !== null && (int)$ak > 0) $apustu_kop = (int)$ak;
+    }
     $bettors_wrong_picks = db_rows(
         "SELECT ez.Ezizen_ID AS id, ez.Ezizena, COUNT(pa.Txirrindularia_ID) AS n
          FROM `PorraEzizenak` ez
          LEFT JOIN `PorraApustuak` pa ON pa.Ezizen_ID = ez.Ezizen_ID AND pa.Txapelketa_ID = ez.Txapelketa_ID
          WHERE ez.Txapelketa_ID = ?
-         GROUP BY ez.Ezizen_ID, ez.Ezizena HAVING n <> 15
+         GROUP BY ez.Ezizen_ID, ez.Ezizena HAVING n <> $apustu_kop
          ORDER BY n, ez.Ezizena", [$txap_id]);
     $picked_no_dortsal = db_rows(
         "SELECT DISTINCT t.Txirrindularia_ID AS id, t.Izena
@@ -1623,7 +1629,32 @@ function data_health($txap_id) {
          FROM `Karrerak` k
          WHERE k.Txapelketa_ID = ? AND (k.Kategoria IS NULL OR k.Kategoria = '')
          ORDER BY k.Karrerak_ID", [$txap_id]);
+    // Egoera-laburpena (kontrol-panela): urteroko fluxuaren argazkia toki batean.
+    $ezizenak_guztira = (int)db_scalar('SELECT COUNT(*) FROM `PorraEzizenak` WHERE Txapelketa_ID = ?', [$txap_id]);
+    $apustu_osoak = (int)db_scalar(
+        "SELECT COUNT(*) FROM (
+            SELECT ez.Ezizen_ID FROM `PorraEzizenak` ez
+            LEFT JOIN `PorraApustuak` pa ON pa.Ezizen_ID = ez.Ezizen_ID AND pa.Txapelketa_ID = ez.Txapelketa_ID
+            WHERE ez.Txapelketa_ID = ?
+            GROUP BY ez.Ezizen_ID HAVING COUNT(pa.Txirrindularia_ID) = $apustu_kop) x", [$txap_id]);
+    $amaituta = null;
+    if (db_column_exists('Txapelketak', 'Amaituta'))
+        $amaituta = ((int)db_scalar('SELECT COALESCE(Amaituta,0) FROM `Txapelketak` WHERE Txapelketa_ID = ?', [$txap_id])) === 1;
+    $laburpena = [
+        'karrerak'          => (int)db_scalar('SELECT COUNT(*) FROM `Karrerak` WHERE Txapelketa_ID = ?', [$txap_id]),
+        'karrerak_kat'      => (int)db_scalar("SELECT COUNT(*) FROM `Karrerak` WHERE Txapelketa_ID = ? AND Kategoria IS NOT NULL AND Kategoria <> ''", [$txap_id]),
+        'karrerak_emaitza'  => (int)db_scalar('SELECT COUNT(DISTINCT ks.Karrera_ID) FROM `KarreraSailkapena` ks JOIN `Karrerak` k ON k.Karrerak_ID = ks.Karrera_ID WHERE k.Txapelketa_ID = ?', [$txap_id]),
+        'startlist'         => (int)db_scalar('SELECT COUNT(*) FROM `TxirrindulariakTxapleketanParteHartzea` WHERE TxapelketaID = ?', [$txap_id]),
+        'ezizenak'          => $ezizenak_guztira,
+        'apustu_kop'        => $apustu_kop,
+        'apustu_osoak'      => $apustu_osoak,
+        'emaitzak'          => $has_results,
+        'kalkulatuta'       => $has_standings,
+        'emaitza_ofizialak' => ((int)db_scalar('SELECT COUNT(*) FROM `TxapelketaEmaitzaPorralariak` WHERE Txapelketa_ID = ?', [$txap_id])) > 0,
+        'amaituta'          => $amaituta,
+    ];
     return [
+        'laburpena' => $laburpena,
         'stages_no_results' => $stages_no_results,
         'bettors_wrong_picks' => $bettors_wrong_picks,
         'picked_no_dortsal' => $picked_no_dortsal,
@@ -1688,6 +1719,60 @@ function export_txapelketa($txap_id) {
         'TxapelketaEmaitzaTxirrindulariak' => db_rows('SELECT * FROM `TxapelketaEmaitzaTxirrindulariak` WHERE Txapelketa_ID = ?', [$txap_id]),
         'Sariak' => db_table_exists('Sariak') ? db_rows('SELECT * FROM `Sariak` WHERE Txapelketa_ID = ?', [$txap_id]) : [],
     ];
+}
+
+// ─── DB babeskopia OSOA (snapshot arina) ─────────────────────────────────────
+// Taula guztiak errenkada guztiekin JSON batean. Segurtasun-sarea migrazio/fusio
+// arriskutsuen aurretik. Oharra: phpMyAdmin da SQL restore ofiziala; hau snapshot azkarra.
+function db_full_backup() {
+    $meta = db_meta();
+    $tables = [];
+    foreach ($meta['tables'] as $t) {
+        $tables[$t] = db_rows('SELECT * FROM ' . quote_ident($t));
+    }
+    return [
+        'exported_at' => date('c'),
+        'db' => $meta['db_path'],
+        'taula_kopurua' => count($tables),
+        'tables' => $tables,
+    ];
+}
+
+// ─── Migrazio-egoera bateratua ───────────────────────────────────────────────
+// Migrazio (db/*.sql) bakoitza zer eskema-objekturi dagokion + exekutatuta dagoen.
+// `db_table_exists`/`db_column_exists`-ekin egiaztatzen da; SQL testua diskotik dakar
+// (fitxategiak deployatuta daude) panelean kopiatzeko.
+function migration_status() {
+    // [fitxategia, deskribapena, [egiaztapenak]]. Egiaztapena: 'Taula' edo 'Taula.Zutabea'.
+    $defs = [
+        ['ordena.sql',       'Karrerak.Ordena (etapa-zenbakia)',        ['Karrerak.Ordena']],
+        ['aurre-porrak.sql', 'Txapelketak: aurre-porrak + apustu kop.', ['Txapelketak.Porra_Irekita', 'Txapelketak.Apustu_Kopurua']],
+        ['profil-irudia.sql','Karrerak.Profil_Irudia (profil-lotura)',  ['Karrerak.Profil_Irudia']],
+        ['karrera-motak.sql','KarreraMotak katalogoa + Karrerak.Mota_ID',['KarreraMotak', 'Karrerak.Mota_ID']],
+        ['desnibela.sql',    'Karrerak: desnibela + «Emaitzarik ez»',   ['Karrerak.Desnibela', 'Karrerak.Emaitzarik_Ez']],
+        ['amaituta.sql',     'Txapelketak.Amaituta (txapelketa itxi)',  ['Txapelketak.Amaituta']],
+    ];
+    $out = [];
+    foreach ($defs as [$fitx, $azalpena, $checks]) {
+        $falta = [];
+        foreach ($checks as $c) {
+            if (strpos($c, '.') !== false) {
+                [$tbl, $col] = explode('.', $c, 2);
+                if (!db_column_exists($tbl, $col)) $falta[] = $c;
+            } else {
+                if (!db_table_exists($c)) $falta[] = $c;
+            }
+        }
+        $path = __DIR__ . '/../db/' . $fitx;
+        $out[] = [
+            'fitxategia' => 'db/' . $fitx,
+            'azalpena'   => $azalpena,
+            'eginda'     => empty($falta),
+            'falta'      => $falta,
+            'sql'        => is_file($path) ? file_get_contents($path) : null,
+        ];
+    }
+    return ['migrazioak' => $out];
 }
 
 // ─── Zuzenketa-proposamenak (testu-fitxategia, DB gabe) ──────────────────────

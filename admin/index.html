@@ -170,6 +170,7 @@
     <div class="nav-item" data-section="sailkapenak"><span class="icon">📋</span> Sailkapenak</div>
     <div class="nav-item" data-section="karrera-emaitzak"><span class="icon">🏁</span> Karrera emaitzak</div>
     <div class="nav-item" data-section="osasuna"><span class="icon">🩺</span> Datu-osasuna</div>
+    <div class="nav-item" data-section="datu-basea"><span class="icon">🗄️</span> Datu-basea</div>
     <div class="nav-item" data-section="zuzenketak"><span class="icon">📮</span> Zuzenketak <span class="badge" id="nav-zuzenketak-badge" style="display:none;margin-left:auto"></span></div>
     <div class="nav-item" data-section="aurre-porrak"><span class="icon">📥</span> Aurre-porrak <span class="badge" id="nav-aurre-porrak-badge" style="display:none;margin-left:auto"></span></div>
     <div class="nav-item" data-section="taulak"><span class="icon">▦</span> Taula guztiak</div>
@@ -560,6 +561,24 @@
       </div></div>
     </section>
 
+    <!-- DATU-BASEA -->
+    <section class="section" id="sec-datu-basea">
+      <div class="page-header"><div><div class="page-title">🗄️ Datu-basea</div><div class="page-sub">Babeskopia osoa eta migrazioen egoera</div></div></div>
+      <div class="card" style="margin-bottom:16px"><div class="card-body">
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px">💾 Babeskopia osoa</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">DB osoaren argazkia (taula guztiak, JSON). Segurtasun-sarea migrazio edo fusio arriskutsuen aurretik. <em>Oharra: berrezartzeko SQL ofiziala phpMyAdmin-etik egiten da; hau snapshot azkarra da.</em></div>
+        <button class="btn btn-primary btn-sm" onclick="downloadFullBackup()">⬇ Deskargatu babeskopia osoa (JSON)</button>
+      </div></div>
+      <div class="card"><div class="card-body">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:600">🧬 Migrazioen egoera</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadDBEgoera()" style="margin-left:auto">🔄 Freskatu</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Eskema-migrazio bakoitza (<code>db/*.sql</code>) exekutatuta dagoen. Faltakoen SQL kopiatzeko prest dago (phpMyAdmin-en exekutatu).</div>
+        <div id="db-migrazioak"></div>
+      </div></div>
+    </section>
+
     <!-- ZUZENKETAK -->
     <section class="section" id="sec-zuzenketak">
       <div class="page-header"><div><div class="page-title">📮 Zuzenketak</div><div class="page-sub">Porralariek bidalitako zuzenketa-proposamenak</div></div>
@@ -914,6 +933,7 @@ function renderCurrentSection() {
     case "import":           renderImportSelectors(); break;
     case "finalak":          renderFinalakSelectors(); break;
     case "osasuna":          renderOsasunaSelectors(); break;
+    case "datu-basea":       loadDBEgoera(); break;
     case "zuzenketak":       loadProposals(); break;
     case "aurre-porrak":     loadAurrePorrak(); break;
     case "fitxategiak":      loadKarpetak(); loadFiles(state.fileDir || ""); break;
@@ -2633,9 +2653,10 @@ async function loadOsasuna() {
           <span style="color:var(--accent);font-weight:700">⚠ Bai</span></div></div>`
       : `<div class="card" style="margin-bottom:12px"><div class="card-body" style="display:flex;justify-content:space-between;align-items:center">
           <strong style="font-size:13px">Sailkapenak kalkulatuta</strong><span style="color:#4ade80;font-weight:700">✓</span></div></div>`;
-    res.innerHTML = recalc +
+    const ak = h.laburpena?.apustu_kop ?? 15;
+    res.innerHTML = _egoeraTira(h.laburpena) + recalc +
       _osasunaCard("Emaitzarik gabeko etapak", h.stages_no_results, k => `<li>${esc(k.Izena)}</li>`, "Etapa guztiek dute emaitza") +
-      _osasunaCard("15 apustu ez dituzten porrak", h.bettors_wrong_picks, b => `<li>${esc(b.Ezizena)} — <strong>${b.n}</strong> apustu</li>`, "Porra guztiek 15 apustu dituzte") +
+      _osasunaCard(`${ak} apustu ez dituzten porrak`, h.bettors_wrong_picks, b => `<li>${esc(b.Ezizena)} — <strong>${b.n}</strong> apustu</li>`, `Porra guztiek ${ak} apustu dituzte`) +
       _osasunaCard("Dortsalik gabeko txirrindulariak (aukeratuak)", h.picked_no_dortsal, t => `<li>${esc(t.Izena)}</li>`, "Aukeratutako guztiek dute dortsala") +
       _osasunaCard("Lotu gabeko ezizenak", h.unlinked_ezizenak, e => `<li>${esc(e.Ezizena)}</li>`, "Ezizen guztiak lotuta daude") +
       _osasunaCard("Kategoriarik gabeko karrerak", h.karrerak_no_kat,
@@ -2655,6 +2676,64 @@ async function loadDups(kind) {
         `<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">${g.map(x => `<span>${esc(x.Izena)} <span style="color:var(--muted)">#${x.id}</span></span>`).join(" · ")}</div>`
       ).join("");
   } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
+}
+
+// Egoera-tira (kontrol-panela): txapelketaren urteroko fluxuaren argazkia.
+function _egoeraTira(l) {
+  if (!l) return "";
+  const pilula = (etiketa, balioa, ondo) => {
+    const kolorea = ondo === null ? "var(--muted)" : (ondo ? "#4ade80" : "var(--accent)");
+    const marka = ondo === null ? "" : (ondo ? " ✓" : " ⚠");
+    return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;min-width:96px">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">${etiketa}</div>
+      <div style="font-size:13px;font-weight:700;color:${kolorea}">${balioa}${marka}</div></div>`;
+  };
+  const b01 = v => v ? "Bai" : "—";
+  const items = [
+    pilula("Karrerak", `${l.karrerak}`, l.karrerak > 0 ? true : null),
+    pilula("Kategoriaduna", `${l.karrerak_kat}/${l.karrerak}`, l.karrerak === 0 ? null : l.karrerak_kat === l.karrerak),
+    pilula("Emaitzaduna", `${l.karrerak_emaitza}/${l.karrerak}`, l.karrerak === 0 ? null : (l.karrerak_emaitza > 0)),
+    pilula("Startlist", `${l.startlist}`, l.startlist > 0 ? true : null),
+    pilula("Ezizenak", `${l.ezizenak}`, l.ezizenak > 0 ? true : null),
+    pilula(`Apustu osoak (${l.apustu_kop})`, `${l.apustu_osoak}/${l.ezizenak}`, l.ezizenak === 0 ? null : l.apustu_osoak === l.ezizenak),
+    pilula("Emaitzak", b01(l.emaitzak), l.emaitzak ? true : null),
+    pilula("Kalkulatuta", b01(l.kalkulatuta), l.kalkulatuta ? true : null),
+    pilula("Emaitza ofizialak", b01(l.emaitza_ofizialak), l.emaitza_ofizialak ? true : null),
+    pilula("Itxita", l.amaituta === null ? "?" : b01(l.amaituta), l.amaituta),
+  ];
+  return `<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--muted)">Egoera orokorra</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${items.join("")}</div></div>`;
+}
+
+// ── Datu-basea: babeskopia osoa + migrazioen egoera ──────────────────────────
+function downloadFullBackup() {
+  // Basic Auth nabigatzaileak jartzen du; Content-Disposition-ek deskarga eragiten du.
+  const a = document.createElement("a");
+  a.href = "api/backup"; a.download = "";
+  document.body.appendChild(a); a.click(); a.remove();
+  showToast("⬇ Babeskopia deskargatzen...");
+}
+
+async function loadDBEgoera() {
+  const cont = el("db-migrazioak"); if (!cont) return;
+  cont.innerHTML = `<div style="color:var(--muted);font-size:13px">Kargatzen...</div>`;
+  try {
+    const r = await api("api/migrations");
+    cont.innerHTML = r.migrazioak.map(m => {
+      const kolorea = m.eginda ? "#4ade80" : "var(--accent)";
+      const marka = m.eginda ? "✓ Eginda" : "⚠ Falta";
+      const sqlBlok = m.eginda ? "" :
+        `<details style="margin-top:8px"><summary style="font-size:12px;cursor:pointer;color:var(--accent2)">SQL erakutsi (phpMyAdmin-en exekutatu)</summary>
+          <pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px;overflow:auto;margin-top:6px;white-space:pre-wrap">${esc(m.sql || "(fitxategia ez da aurkitu)")}</pre>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Falta: ${m.falta.map(esc).join(", ")}</div></details>`;
+      return `<div class="card" style="margin-bottom:10px"><div class="card-body" style="padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+          <div><div style="font-size:13px;font-weight:600"><code>${esc(m.fitxategia)}</code></div>
+            <div style="font-size:12px;color:var(--muted)">${esc(m.azalpena)}</div></div>
+          <span style="color:${kolorea};font-weight:700;font-size:13px;white-space:nowrap">${marka}</span>
+        </div>${sqlBlok}</div></div>`;
+    }).join("");
+  } catch(e) { cont.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
 }
 
 async function exportTxapelketa(selId) {

@@ -103,6 +103,17 @@ try {
                 try { json_out(read_ezarpenak()); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'motak':
                 try { json_out(karrera_motak()); } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'migrations':
+                try { json_out(migration_status()); } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'backup':
+                try {
+                    $data = db_full_backup();
+                    $fn = 'aramaixoporra-backup-' . date('Ymd-Hi') . '.json';
+                    header('Content-Type: application/json; charset=utf-8');
+                    header('Content-Disposition: attachment; filename="' . $fn . '"');
+                    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                    exit;
+                } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'meta':
                 json_out(db_meta());
             case $path === 'undo-state':

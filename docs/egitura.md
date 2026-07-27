@@ -5,6 +5,7 @@ Proiektuaren erroa `aramaixoporra.eus`-en `httpdocs/` bihurtzen da (Plesk pull b
 ```
 AramaixoPorra/
 ├── index.html                  # Hasiera-orria (azalak / karrusela)
+├── bump-version.sh             # Cache-bertsioa (?v=) orri publiko guztietan eguneratu
 ├── robots.txt                  # Bilatzaileentzako arauak
 ├── sitemap.xml                 # Guneko mapa (SEO)
 │

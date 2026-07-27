@@ -290,7 +290,7 @@
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5"><strong>Porra irekita</strong> markatzean, porralariek beren porra aurretik bidal dezakete <code>/tresnak/porra-bidali/</code> orritik. Apustuak EZ dira zuzenean gordetzen: <strong>Aurre-porrak</strong> atalean agertuko dira berrikusteko. Txapelketaren <strong>txirrindulari zerrenda inportatuta</strong> egon behar da.</div>
       <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th><th>Porra irekita</th><th>Apustu kop.</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
-      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div><div style="font-size:12px;color:var(--muted)">Karrera batek <strong>Kategoria</strong> behar du; hutsik badago, urte-orriko akordeoian eta tresnetan ezkutatuta gera daiteke.</div></div><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Kategoria</th><th>Ordena</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
+      <div class="card"><div class="card-head"><div class="card-title">Karrerak</div><div style="font-size:12px;color:var(--muted)">Karrera batek <strong>Kategoria</strong> behar du; hutsik badago, urte-orriko akordeoian eta tresnetan ezkutatuta gera daiteke. <strong>Desnibela</strong> (metroak) eta <strong>«Emaitzarik ez»</strong> ere hemen edita daitezke.</div></div><div class="tbl-wrap"><table><thead id="karrerak-thead"><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Kategoria</th><th>Ordena</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
     </section>
 
     <!-- KARRERA MOTAK -->
@@ -993,14 +993,26 @@ function renderTxapelketak() {
   const _ord = k => (k.Ordena == null ? 1e9 : Number(k.Ordena));
   const sortedK = [...state.karrerak].sort((a, b) =>
     a.Txapelketa_ID - b.Txapelketa_ID || _ord(a) - _ord(b) || a.Karrerak_ID - b.Karrerak_ID);
+  // Desnibela/Emaitzarik_Ez zutabeak db/desnibela.sql exekutatuta badaude bakarrik (state-tik
+  // atzematen da, api/karrerak SELECT * baita) → nabigazio-ordenaren mende ez egoteko.
+  const dBada = state.karrerak.length > 0 && ("Desnibela" in state.karrerak[0]);
+  const kHead = el("karrerak-thead");
+  if (kHead) kHead.innerHTML = `<tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Kategoria</th><th>Ordena</th>` +
+    (dBada ? `<th>Desnibela (m)</th><th title="Karrera honek ez du inoiz emaitzarik izango">Emaitzarik ez</th>` : "") + `<th></th></tr>`;
   el("karrerak-tbody").innerHTML = sortedK.map(k => {
     const txap = state.txapelketak.find(t => t.Txapelketa_ID === k.Txapelketa_ID);
     const katHutsik = !k.Kategoria;   // hutsik → akordeoian/tresnetan ezkuta daiteke
     const katOpt = KAT_AUKERAK.map(o =>
       `<option value="${esc(o)}"${String(k.Kategoria || "") === o ? " selected" : ""}>${esc(o || "— hutsik —")}</option>`).join("");
-    return `<tr><td class="pk-cell">${esc(k.Karrerak_ID)}</td><td>${esc(txap?.Izena || k.Txapelketa_ID)}</td><td>${esc(k.Izena)}</td><td>${esc(k.Urtea)}</td>` +
+    const ezDu = Number(k.Emaitzarik_Ez) === 1;
+    const dCells = dBada
+      ? `<td><input type="number" min="0" step="10" value="${k.Desnibela ?? ""}" placeholder="—" onchange="saveKarreraDesnibela(this, ${k.Karrerak_ID})" style="width:80px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:right"></td>` +
+        `<td style="text-align:center"><input type="checkbox" ${ezDu ? "checked" : ""} onchange="saveKarreraEmaitzarikEz(this, ${k.Karrerak_ID})" title="Markatuta: akordeoian ez da agertuko"></td>`
+      : "";
+    return `<tr${ezDu ? ' style="opacity:.55"' : ""}><td class="pk-cell">${esc(k.Karrerak_ID)}</td><td>${esc(txap?.Izena || k.Txapelketa_ID)}</td><td>${esc(k.Izena)}</td><td>${esc(k.Urtea)}</td>` +
       `<td><select onchange="saveKarreraKat(this, ${k.Karrerak_ID})" title="${katHutsik ? 'Kategoriarik gabe: ezkutatuta gera daiteke' : ''}" style="font-size:12px;background:var(--bg);border:1px solid ${katHutsik ? 'var(--accent)' : 'var(--border)'};border-radius:4px;padding:2px 4px;color:var(--text)">${katOpt}</select></td>` +
       `<td><input type="number" value="${k.Ordena ?? ''}" onchange="saveKarreraOrdena(this, ${k.Karrerak_ID})" style="width:56px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center"></td>` +
+      dCells +
       `<td class="row-actions"><button class="btn btn-sm btn-ghost" title="Ezabatu" onclick="deleteKarrera(${k.Karrerak_ID}, this.dataset.iz)" data-iz="${esc(k.Izena)}">🗑</button></td></tr>`;
   }).join("");
 }
@@ -1142,7 +1154,9 @@ async function saveKarreraEmaitzarikEz(chk, kid) {
     showToast(v ? "Markatuta: akordeoian ez da agertuko" : "Marka kenduta ✓");
     const k = state.karrerak.find(x => x.Karrerak_ID === kid);
     if (k) k.Emaitzarik_Ez = v;
-    renderMotaKarrerak();
+    // Errenkadaren opakotasuna zuzenean (bi tauletan dabil: Karrera motak eta Txapelketak).
+    const tr = chk.closest("tr");
+    if (tr) tr.style.opacity = v ? ".55" : "";
   } catch(e) { showToast(e.message, "err"); await reloadData(); }
 }
 

@@ -177,6 +177,7 @@
     <div class="nav-section">Sartu</div>
     <div class="nav-item" data-section="add-manual"><span class="icon">✏️</span> Eskuz sartu</div>
     <div class="nav-item" data-section="import"><span class="icon">📥</span> Datuak inportatu</div>
+    <div class="nav-item" data-section="finalak"><span class="icon">🥇</span> Puntu finalak</div>
     <div class="nav-item" data-section="fitxategiak"><span class="icon">📁</span> Fitxategiak</div>
     <div class="nav-item" data-section="porra-editatu"><span class="icon">📝</span> Porra editatu</div>
     <div class="nav-item" data-section="kalkulatu"><span class="icon">📊</span> Sailkapenak kalkulatu</div>
@@ -289,7 +290,7 @@
         </div>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5"><strong>Porra irekita</strong> markatzean, porralariek beren porra aurretik bidal dezakete <code>/tresnak/porra-bidali/</code> orritik. Apustuak EZ dira zuzenean gordetzen: <strong>Aurre-porrak</strong> atalean agertuko dira berrikusteko. Txapelketaren <strong>txirrindulari zerrenda inportatuta</strong> egon behar da.</div>
-      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th><th>Porra irekita</th><th>Apustu kop.</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Urtea</th><th>Porra irekita</th><th>Apustu kop.</th><th title="Txapelketa itxita/bukatuta">Amaituta</th></tr></thead><tbody id="txap-tbody"></tbody></table></div></div>
       <div class="card"><div class="card-head"><div class="card-title">Karrerak</div><div style="font-size:12px;color:var(--muted)">Karrera batek <strong>Kategoria</strong> behar du; hutsik badago, urte-orriko akordeoian eta tresnetan ezkutatuta gera daiteke. <strong>Desnibela</strong> (metroak) eta <strong>«Emaitzarik ez»</strong> ere hemen edita daitezke.</div></div><div class="tbl-wrap"><table><thead id="karrerak-thead"><tr><th>ID</th><th>Txapelketa</th><th>Izena</th><th>Urtea</th><th>Kategoria</th><th>Ordena</th><th></th></tr></thead><tbody id="karrerak-tbody"></tbody></table></div></div>
     </section>
 
@@ -508,6 +509,24 @@
         <textarea id="imp-sailk-txirri-paste" placeholder="1&#9;1&#9;Jonas Vingegaard&#9;219&#10;2&#9;21&#9;Felix Gall&#9;183" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
         <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="impSailkTxirriPreview()">🔍 Aurreikusi</button><button class="btn btn-primary btn-sm" onclick="impSailkTxirri()">⬆ Inportatu</button></div>
         <div id="imp-sailk-txirri-result" style="margin-top:10px"></div>
+      </div></div>
+    </section>
+
+    <!-- PUNTU FINALAK -->
+    <section class="section" id="sec-finalak">
+      <div class="page-header"><div><div class="page-title">🥇 Puntu finalak</div><div class="page-sub">Itzuli handi baten sailkapen orokorreko eta mendiko puntuak → totala + txapelketa itxi</div></div></div>
+      <div id="finalak-abisua"></div>
+      <div class="card" style="margin-bottom:16px"><div class="card-body">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div class="field" style="margin:0"><label>Txapelketa</label>
+            <select id="finalak-txap" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:220px"><option value="">— Aukeratu —</option></select></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5">Porralari bakoitzaren <code>Ezizena · Generala · Mendia</code> itsatsi (zutabeak; mendia hutsik → 0). Ezizenak lehendik egon behar dira (apustuetatik).<br>Tresnak <strong>totala</strong> kalkulatzen du: <code>etapetako puntuak + generala + mendia</code>, postuak esleitzen ditu, eta gordetzean <strong>txapelketa ITXITZEN</strong> du (<code>Amaituta = 1</code>, aurre-porrak itxita).</div>
+      </div></div>
+      <div class="card"><div class="card-body">
+        <textarea id="finalak-paste" placeholder="Abeto power 2&#9;505&#9;80&#10;Ajax&#9;505&#9;95" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="finalakPreview()">🔍 Aurreikusi</button><button class="btn btn-primary btn-sm" onclick="finalakCommit()">🥇 Gorde eta txapelketa itxi</button></div>
+        <div id="finalak-result" style="margin-top:14px"></div>
       </div></div>
     </section>
 
@@ -884,6 +903,7 @@ function renderCurrentSection() {
     case "ezizenak":         loadEzizenak(); break;
     case "banatu":           renderBanatuSection(); break;
     case "import":           renderImportSelectors(); break;
+    case "finalak":          renderFinalakSelectors(); break;
     case "osasuna":          renderOsasunaSelectors(); break;
     case "zuzenketak":       loadProposals(); break;
     case "aurre-porrak":     loadAurrePorrak(); break;
@@ -978,6 +998,8 @@ function renderTxirrindulariak() {
 function renderTxapelketak() {
   // Zutabeak db/aurre-porrak.sql exekutatu arte ez daude: kontrolak orduan bakarrik.
   const badaPorraZut = state.txapelketak.some(t => "Porra_Irekita" in t);
+  // Amaituta zutabea db/amaituta.sql exekutatuta badago bakarrik (state-tik atzematen da).
+  const badaAmaitutaZut = state.txapelketak.some(t => "Amaituta" in t);
   const inputEstiloa = "width:64px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center";
   el("txap-tbody").innerHTML = state.txapelketak.map(t => {
     const tid = t.Txapelketa_ID;
@@ -985,7 +1007,10 @@ function renderTxapelketak() {
       ? `<td><input type="checkbox" ${Number(t.Porra_Irekita) === 1 ? "checked" : ""} onchange="saveTxapPorra(this, ${tid}, 'Porra_Irekita')"></td>` +
         `<td><input type="number" min="1" value="${t.Apustu_Kopurua ?? ""}" onchange="saveTxapPorra(this, ${tid}, 'Apustu_Kopurua')" style="${inputEstiloa}"></td>`
       : `<td colspan="2" style="color:var(--muted);font-size:12px" title="db/aurre-porrak.sql exekutatu phpMyAdmin-en">— migrazioa falta da —</td>`;
-    return `<tr><td class="pk-cell">${esc(tid)}</td><td>${esc(t.Izena)}</td><td>${esc(t.Urtea)}</td>${kontrolak}</tr>`;
+    const amaitutaZ = badaAmaitutaZut
+      ? `<td style="text-align:center"><input type="checkbox" ${Number(t.Amaituta) === 1 ? "checked" : ""} onchange="saveTxapPorra(this, ${tid}, 'Amaituta')" title="Txapelketa itxita/bukatuta"></td>`
+      : `<td style="color:var(--muted);font-size:12px" title="db/amaituta.sql exekutatu phpMyAdmin-en">—</td>`;
+    return `<tr><td class="pk-cell">${esc(tid)}</td><td>${esc(t.Izena)}</td><td>${esc(t.Urtea)}</td>${kontrolak}${amaitutaZ}</tr>`;
   }).join("");
   const exSel = el("txap-export-sel");
   if (exSel) { const prev = exSel.value; exSel.innerHTML = `<option value="">— Txapelketa —</option>` +
@@ -1019,7 +1044,7 @@ function renderTxapelketak() {
 
 /** Txapelketa baten Porra_Irekita (checkbox) edo Apustu_Kopurua (zenbakia) gorde. */
 async function saveTxapPorra(inp, tid, zutabea) {
-  const balioa = zutabea === "Porra_Irekita"
+  const balioa = (zutabea === "Porra_Irekita" || zutabea === "Amaituta")
     ? (inp.checked ? 1 : 0)
     : (inp.value.trim() === "" ? null : Number(inp.value));
   try {
@@ -1027,6 +1052,7 @@ async function saveTxapPorra(inp, tid, zutabea) {
     const t = state.txapelketak.find(x => x.Txapelketa_ID === tid);
     if (t) t[zutabea] = balioa;
     if (zutabea === "Porra_Irekita") showToast(balioa ? "Porra IREKITA ✓" : "Porra itxita ✓");
+    else if (zutabea === "Amaituta") showToast(balioa ? "Txapelketa AMAITUTA ✓" : "Amaituta kendua ✓");
     else showToast("Apustu kopurua gordeta ✓");
   } catch(e) { showToast(e.message, "err"); await reloadData(); }
 }
@@ -2468,6 +2494,93 @@ async function impSailkapenak() {
     const unk = (r.ezizen_ezezagunak||[]).length ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.ezizen_ezezagunak.length} ezizen ezezagun baztertuta: ${r.ezizen_ezezagunak.slice(0,15).map(esc).join(", ")}</div>` : "";
     el("imp-sailkapenak-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.sartuta} sailkapen sartuta</div>${unk}`;
     showToast(`✅ ${r.sartuta} sailkapen`);
+    await reloadData();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+// ── Puntu finalak (itzuli handiak): generala + mendia → totala + txapelketa itxi ──
+function finalakTxap() { return el("finalak-txap")?.value || ""; }
+
+// Testua → [{ezizena, generala, mendia}]. Zutabeka (tab/;/,): izena + bi zenbaki oso.
+// Ezizenak zenbakia izan dezakete (adib. «Abeto power 2»): zelula OSOA digitua bada bakarrik
+// hartzen da zenbakitzat, beraz izena ondo bereizten da.
+function finalakParse(text) {
+  const grid = tourParseGrid(text);
+  const out = [];
+  for (const row of grid) {
+    let name = null;
+    for (const c of row) { const v = (c||"").trim(); if (v && /[A-Za-zÀ-ÿ]/.test(v) && !/^\d+$/.test(v)) { name = v; break; } }
+    const ints = [];
+    for (const c of row) { const v = (c||"").trim(); if (/^\d+$/.test(v)) ints.push(parseInt(v,10)); }
+    if (!name || /ezizena|porrero|generala|mendia/i.test(name)) continue;
+    out.push({ ezizena: name, generala: ints[0] ?? 0, mendia: ints[1] ?? 0 });
+  }
+  return out;
+}
+
+function renderFinalakSelectors() {
+  const s = el("finalak-txap");
+  if (s) {
+    const prev = s.value;
+    s.innerHTML = `<option value="">— Aukeratu —</option>` +
+      state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join("");
+    if (prev) s.value = prev;
+  }
+  // Migrazio-abisua: Amaituta zutabea db/amaituta.sql exekutatuta badago (state-tik detektatu).
+  const abisua = el("finalak-abisua"); if (!abisua) return;
+  const bada = state.txapelketak.length > 0 && ("Amaituta" in state.txapelketak[0]);
+  abisua.innerHTML = bada ? "" : `<div style="background:var(--bg);border:1px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--accent);line-height:1.6;margin-bottom:12px">
+    ⚠ <strong>Migrazioa falta da.</strong> <code>Txapelketak.Amaituta</code> zutabea ez da existitzen.<br>
+    Exekutatu <strong>db/amaituta.sql</strong> phpMyAdmin-en. Bien bitartean, gordetzeak aurre-porrak itxiko ditu baina ez du «Amaituta» markarik jarriko.</div>`;
+}
+
+function _finalakTaula(rows, ezezagunak) {
+  const unk = (ezezagunak||[]).length
+    ? `<div style="color:var(--accent);font-size:12px;margin-bottom:8px">⚠ ${ezezagunak.length} ezizen lotu gabe (idatz-akatsak?): ${ezezagunak.slice(0,15).map(esc).join(", ")}</div>` : "";
+  const taula = `<table style="margin-top:4px;font-size:12px;border-collapse:collapse">
+    <thead><tr>
+      <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Pos</th>
+      <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Ezizena</th>
+      <th style="text-align:right;padding:2px 10px 2px 0;color:var(--muted)">Etapak</th>
+      <th style="text-align:right;padding:2px 10px 2px 0;color:var(--muted)">Generala</th>
+      <th style="text-align:right;padding:2px 10px 2px 0;color:var(--muted)">Mendia</th>
+      <th style="text-align:right;padding:2px 0;color:var(--muted)">Totala</th>
+    </tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td style="padding:2px 10px 2px 0">${r.pos}</td>
+      <td style="padding:2px 10px 2px 0">${esc(r.ezizena)}</td>
+      <td style="padding:2px 10px 2px 0;text-align:right;color:var(--muted)">${r.etapak}</td>
+      <td style="padding:2px 10px 2px 0;text-align:right">${r.generala}</td>
+      <td style="padding:2px 10px 2px 0;text-align:right">${r.mendia}</td>
+      <td style="padding:2px 0;text-align:right"><strong>${r.total}</strong></td>
+    </tr>`).join("")}</tbody></table>`;
+  return `${unk}<div style="font-size:13px;margin-bottom:4px"><strong>${rows.length}</strong> porralari</div>${taula}`;
+}
+
+async function finalakPreview() {
+  const txap = finalakTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
+  const rows = finalakParse(el("finalak-paste")?.value || "");
+  try {
+    const r = await api("api/finalize/preview", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
+    if (!r.rows || !r.rows.length) { el("finalak-result").innerHTML = `<div style="color:var(--accent);font-size:12px">Txapelketa honek ez du apusturik (PorraApustuak).</div>`; return; }
+    el("finalak-result").innerHTML = _finalakTaula(r.rows, r.ezezagunak);
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function finalakCommit() {
+  const txap = finalakTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
+  const rows = finalakParse(el("finalak-paste")?.value || "");
+  const ok = await confirmDialog("Puntu finalak gordeko dira eta txapelketa AMAITUTZAT markatuko da (aurre-porrak itxita). Berriz exekutatuz eguneratu daiteke. Jarraitu?");
+  if (!ok) return;
+  showToast("⏳ Gordetzen...");
+  try {
+    const r = await api("api/finalize/commit", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
+    if (!r.ok) return showToast(r.reason || "Errorea", "err");
+    const unk = (r.ezizen_ezezagunak||[]).length
+      ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.ezizen_ezezagunak.length} ezizen lotu gabe: ${r.ezizen_ezezagunak.slice(0,15).map(esc).join(", ")}</div>` : "";
+    const marka = r.amaituta ? "Txapelketa AMAITUTA ✓" : "aurre-porrak itxita (Amaituta zutabea falta)";
+    el("finalak-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.sartuta} porralari gordeta · ${marka}</div>${unk}`;
+    showToast(`✅ ${r.sartuta} porralari · itxita`);
     await reloadData();
   } catch(e) { showToast(e.message, "err"); }
 }

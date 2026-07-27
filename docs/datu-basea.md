@@ -20,7 +20,7 @@ erreferentzia gisa dago (git-en). Kredentzialak EZ daude dokumentu honetan (ikus
 
 | Taula | Zutabe nagusiak | Azalpena |
 |---|---|---|
-| **Txapelketak** | `Txapelketa_ID` (PK), `Izena`, `Urtea`, `Porra_Irekita`, `Apustu_Kopurua` | Txapelketak (adib. "Tour de France", 2026). `Porra_Irekita` = 1 bada, **aurre-porrak** onartzen dira (`api/porra.php`). `Apustu_Kopurua` = porra bakoitzeko txirrindulari kopurua (itzuliak **15**, klasikak **25**; NULL → 15). Migrazioa: `db/aurre-porrak.sql` |
+| **Txapelketak** | `Txapelketa_ID` (PK), `Izena`, `Urtea`, `Porra_Irekita`, `Apustu_Kopurua`, `Amaituta` | Txapelketak (adib. "Tour de France", 2026). `Porra_Irekita` = 1 bada, **aurre-porrak** onartzen dira (`api/porra.php`). `Apustu_Kopurua` = porra bakoitzeko txirrindulari kopurua (itzuliak **15**, klasikak **25**; NULL → 15). `Amaituta` = 1 bada, txapelketa **itxita/bukatuta** (admin-en marka; *Puntu finalak* tresnak jartzen du, `Porra_Irekita`-rekin batera). Migrazioak: `db/aurre-porrak.sql`, `db/amaituta.sql` |
 | **Karrerak** | `Karrerak_ID` (PK), `Txapelketa_ID`→, `Izena`, `Urtea`, `Kategoria`, `Ordena`, `Profil_Irudia`, `Mota_ID`→ | Etapak/lasterketak. `Kategoria` = 'Etapa' (itzuliak) edo UCI kodea (klasikoak). Hutsik = akordeoian/tresnetan ezkuta daiteke. `Ordena` = etapa-zenbakia (profil-irudia ere hortik: `Etapa{Ordena}.jpg`). `Profil_Irudia` = profil-lotura esplizitua (bidea `profilak`-etik; NULL bada konbentzioa). `Mota_ID` → `KarreraMotak` (desnibela/lurraldea; **`Kategoria`-tik independentea**). Migrazioak: `db/ordena.sql`, `db/profil-irudia.sql`, `db/karrera-motak.sql` |
 | **Txirrindulariak** | `Txirrindularia_ID` (PK), `Izena`, `Izen_Formatua` | Txirrindulariak. `Izen_Formatua` = "Izena"/"Abizena" tokenak (izen-ordena kudeatzeko) |
 | **Porralariak** | `Porralaria_ID` (PK), `Izena`, `Zenbat_Porra` | Jokalariak. `Zenbat_Porra` = zenbat porra jokatu dituen (kalkulatua) |
@@ -72,6 +72,11 @@ Txirrindulariak ∞──1 TxirrindulariakTxapleketanParteHartzea 1──∞ Txa
    (eboluzioa) berreraikitzen ditu apustuetatik eta karrera-emaitzetatik.
 4. `TxapelketaEmaitza*` = azken emaitza ofizialak (zuzenean inporta daitezke, edo
    kalkuluak betetzen ditu).
+5. **Itzuli handietan**, porralariaren azken puntuazioa = **etapetako puntuak +
+   generala + mendia** (`TxapelketaEmaitzaPorralariak.Puntuak = Puntuak_Generala +
+   Puntuak_Mendikoa + etapetakoak`). Admin paneleko **Puntu finalak** tresnak porralari
+   bakoitzaren generala/mendia hartu, etapetako puntuak batu (auto) eta **totala** idazten
+   du, postuekin batera; ondoren txapelketa **ixten** du (`Amaituta = 1`, `Porra_Irekita = 0`).
 
 Webguneak lehenik `TxapelketaEmaitza*` erakusten du; hori ezean, azken
 `TxapelketaSailkapena*` (fallback-a `db-loader.js`-n).

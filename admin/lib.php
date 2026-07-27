@@ -911,6 +911,116 @@ function import_sailkapenak_txirri($payload) {
     return ['sartuta'=>$ins, 'ezezagunak'=>$unknown, 'errors'=>$errors];
 }
 
+// ── Puntu finalak: itzuli handien sailkapen finala + txapelketa itxi ─────────
+// Porralari bakoitzaren SAILKAPEN OROKORREKO (generala) eta MENDIKO puntuak sartu;
+// tresnak TOTALA kalkulatzen du: total = etapetako puntuak + generala + mendia
+// (egiaztatua: TxapelketaEmaitzaPorralariak.Puntuak = etapak + Generala + Mendikoa).
+// Etapetako puntuak KarreraSailkapena-tik datoz (emaitzarik gabeko/«Emaitzarik ez»
+// karrerak ez daude hor, beraz ez dira zenbatzen).
+
+function _finalize_amaituta_bada() { return db_column_exists('Txapelketak', 'Amaituta'); }
+
+// Preview eta commit-ek partekatzen duten kalkulua. Ez du ezer idazten.
+// Itzultzen du: ['rows'=>[...ordenatuta postuz...], 'ezezagunak'=>[...]].
+function _finalize_konputatu($txap, $paste_rows) {
+    // Parte-hartzaileak (apustua dutenak), calculate_porralari_sailkapena bezala.
+    $parte = db_rows(
+        'SELECT DISTINCT pa.Ezizen_ID AS eid, ez.Ezizena AS izena
+         FROM `PorraApustuak` pa
+         JOIN `PorraEzizenak` ez ON ez.Ezizen_ID = pa.Ezizen_ID
+         WHERE pa.Txapelketa_ID = ?
+         ORDER BY ez.Ezizena', [$txap]);
+
+    // Etapetako puntuak porralariko (batura bakarrean).
+    $etapak = [];
+    foreach (db_rows(
+        'SELECT pa.Ezizen_ID AS eid, COALESCE(SUM(ks.Puntuak),0) AS pts
+         FROM `PorraApustuak` pa
+         JOIN `KarreraSailkapena` ks ON ks.Txirrindularia_ID = pa.Txirrindularia_ID
+         JOIN `Karrerak` k ON k.Karrerak_ID = ks.Karrera_ID
+         WHERE pa.Txapelketa_ID = ? AND k.Txapelketa_ID = ?
+         GROUP BY pa.Ezizen_ID', [$txap, $txap]) as $r)
+        $etapak[(int)$r['eid']] = (int)$r['pts'];
+
+    // Itsatsitako lerroak parte-hartzaileei lotu (izenez; zehatza → fuzzy).
+    $bonus = [];        // eid => ['gen'=>int, 'men'=>int]
+    $ezezagunak = [];
+    foreach ($paste_rows as $pr) {
+        $izena = trim((string)($pr['ezizena'] ?? ''));
+        if ($izena === '') continue;
+        $gen = to_int($pr['generala'] ?? null) ?? 0;
+        $men = to_int($pr['mendia'] ?? null) ?? 0;
+        $eid = null; $norm = normalize_name($izena);
+        foreach ($parte as $p) { if (normalize_name($p['izena']) === $norm) { $eid = (int)$p['eid']; break; } }
+        if ($eid === null) {
+            $best = 0;
+            foreach ($parte as $p) {
+                $s = fuzzy_name_score($izena, $p['izena']);
+                if ($s > $best) { $best = $s; $eid = (int)$p['eid']; }
+            }
+            if ($best < 85) $eid = null;  // seguru ez → ezezaguna
+        }
+        if ($eid === null) { $ezezagunak[] = $izena; continue; }
+        $bonus[$eid] = ['gen'=>$gen, 'men'=>$men];
+    }
+
+    // Errenkadak osatu: total = etapak + gen + men (itsatsi gabekoak → 0).
+    $rows = [];
+    foreach ($parte as $p) {
+        $eid = (int)$p['eid'];
+        $et = $etapak[$eid] ?? 0;
+        $gen = $bonus[$eid]['gen'] ?? 0;
+        $men = $bonus[$eid]['men'] ?? 0;
+        $rows[] = ['ezizen_id'=>$eid, 'ezizena'=>$p['izena'],
+                   'etapak'=>$et, 'generala'=>$gen, 'mendia'=>$men, 'total'=>$et+$gen+$men];
+    }
+    // Totalez ordenatu; postuak (berdinketak postu bera partekatzen dute).
+    usort($rows, fn($a,$b) => $b['total'] <=> $a['total']);
+    $pos = 0; $prev = null;
+    foreach ($rows as $i => &$r) {
+        if ($prev === null || $r['total'] !== $prev) { $pos = $i + 1; $prev = $r['total']; }
+        $r['pos'] = $pos;
+    }
+    unset($r);
+    return ['rows'=>$rows, 'ezezagunak'=>$ezezagunak];
+}
+
+// payload: { txapelketa_id, rows: [ {ezizena, generala, mendia}, ... ] }
+function finalize_porralariak_preview($payload) {
+    $txap = _imp_txap_id($payload);
+    $res = _finalize_konputatu($txap, $payload['rows'] ?? []);
+    $res['amaituta_bada'] = _finalize_amaituta_bada();
+    return $res;
+}
+
+function finalize_porralariak_commit($payload) {
+    $txap = _imp_txap_id($payload);
+    $res = _finalize_konputatu($txap, $payload['rows'] ?? []);
+    if (!$res['rows']) return ['ok'=>false, 'reason'=>'Txapelketa honek ez du apusturik (PorraApustuak)'];
+    $amaituta_bada = _finalize_amaituta_bada();
+    $ins = 0;
+    try {
+        db_begin();
+        foreach ($res['rows'] as $r) {
+            $eid = $r['ezizen_id'];
+            $bada = db_one('SELECT 1 AS x FROM `TxapelketaEmaitzaPorralariak` WHERE Txapelketa_ID = ? AND Ezizen_ID = ?', [$txap, $eid]);
+            if ($bada) {
+                db_exec('UPDATE `TxapelketaEmaitzaPorralariak` SET Posizioa = ?, Puntuak = ?, Puntuak_Generala = ?, Puntuak_Mendikoa = ? WHERE Txapelketa_ID = ? AND Ezizen_ID = ?',
+                    [$r['pos'], $r['total'], $r['generala'], $r['mendia'], $txap, $eid]);
+            } else {
+                db_exec('INSERT INTO `TxapelketaEmaitzaPorralariak` (Txapelketa_ID, Ezizen_ID, Posizioa, Puntuak, Puntuak_Generala, Puntuak_Mendikoa) VALUES (?, ?, ?, ?, ?, ?)',
+                    [$txap, $eid, $r['pos'], $r['total'], $r['generala'], $r['mendia']]);
+            }
+            $ins++;
+        }
+        if ($amaituta_bada) db_exec('UPDATE `Txapelketak` SET Amaituta = 1, Porra_Irekita = 0 WHERE Txapelketa_ID = ?', [$txap]);
+        else                db_exec('UPDATE `Txapelketak` SET Porra_Irekita = 0 WHERE Txapelketa_ID = ?', [$txap]);
+        db_commit();
+    } catch (Exception $e) { db_rollback(); return ['ok'=>false, 'reason'=>$e->getMessage()]; }
+    return ['ok'=>true, 'sartuta'=>$ins, 'amaituta'=>$amaituta_bada,
+            'ezizen_ezezagunak'=>$res['ezezagunak']];
+}
+
 // ── A · Karrerak (lasterketa-zerrenda) ──────────────────────────────────────
 // payload: { txapelketa_id, urtea, races: [ {izena, kategoria}, ... ] }
 function import_karrerak($payload) {

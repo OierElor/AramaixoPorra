@@ -138,8 +138,8 @@ try {
             case $path === 'import/etapak': json_out(import_etapak($body));
             case $path === 'import/sailkapenak': json_out(import_sailkapenak($body));
             case $path === 'import/sailkapenak-txirri': json_out(import_sailkapenak_txirri($body));
-            case $path === 'finalize/preview': json_out(finalize_porralariak_preview($body));
-            case $path === 'finalize/commit': json_out(finalize_porralariak_commit($body));
+            case $path === 'finalize/preview': json_out(finalize_txapelketa_preview($body));
+            case $path === 'finalize/commit': json_out(finalize_txapelketa_commit($body));
             case $path === 'import/karrerak': json_out(import_karrerak($body));
             case $path === 'proposals/clear': json_out(clear_proposals());
             case $path === 'proposals/delete': json_out(delete_proposal($body['idx'] ?? -1));

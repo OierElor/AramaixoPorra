@@ -521,11 +521,20 @@
           <div class="field" style="margin:0"><label>Txapelketa</label>
             <select id="finalak-txap" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:220px"><option value="">— Aukeratu —</option></select></div>
         </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5">Porralari bakoitzaren <code>Ezizena · Generala · Mendia</code> itsatsi (zutabeak; mendia hutsik → 0). Ezizenak lehendik egon behar dira (apustuetatik).<br>Tresnak <strong>totala</strong> kalkulatzen du: <code>etapetako puntuak + generala + mendia</code>, postuak esleitzen ditu, eta gordetzean <strong>txapelketa ITXITZEN</strong> du (<code>Amaituta = 1</code>, aurre-porrak itxita).</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5"><strong>Txirrindulariko</strong> puntuak itsatsi (dortsalez lotzen dira): sailkapen <strong>orokorreko</strong> eta <strong>mendiko</strong> bonusak. Formatua: <code>Dortsala · Izena · [Zenbatek] · Puntuak</code> (dortsala = 1. zenbakia, puntuak = azkena). Zerrendan ez dagoen txirrindulariak 0.<br>Tresnak <strong>bakoitzaren totala</strong> (etapak + orokorra + mendia) eta <strong>porralari bakoitzaren bonusa</strong> (bere txirrindularien baturak) kalkulatzen ditu. Gordetzean txirri- eta porralari-sailkapenak idazten ditu eta <strong>txapelketa ITXITZEN</strong> du (<code>Amaituta = 1</code>, aurre-porrak itxita).</div>
       </div></div>
       <div class="card"><div class="card-body">
-        <textarea id="finalak-paste" placeholder="Abeto power 2&#9;505&#9;80&#10;Ajax&#9;505&#9;95" style="width:100%;height:120px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="finalakPreview()">🔍 Aurreikusi</button><button class="btn btn-primary btn-sm" onclick="finalakCommit()">🥇 Gorde eta txapelketa itxi</button></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div style="flex:1;min-width:240px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:5px">🏆 Orokorra (generala)</div>
+            <textarea id="finalak-orokorra" placeholder="1&#9;POGACAR Tadej&#9;90&#9;100&#10;21&#9;EVENEPOEL Remco&#9;87&#9;75" style="width:100%;height:150px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
+          </div>
+          <div style="flex:1;min-width:240px">
+            <div style="font-size:12px;font-weight:600;margin-bottom:5px">⛰️ Mendia</div>
+            <textarea id="finalak-mendia" placeholder="41&#9;CARAPAZ Richard&#9;50&#9;50&#10;1&#9;POGACAR Tadej&#9;90&#9;30" style="width:100%;height:150px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="finalakPreview()">🔍 Aurreikusi</button><button class="btn btn-primary btn-sm" onclick="finalakCommit()">🥇 Gorde eta txapelketa itxi</button></div>
         <div id="finalak-result" style="margin-top:14px"></div>
       </div></div>
     </section>
@@ -2498,22 +2507,19 @@ async function impSailkapenak() {
   } catch(e) { showToast(e.message, "err"); }
 }
 
-// ── Puntu finalak (itzuli handiak): generala + mendia → totala + txapelketa itxi ──
+// ── Puntu finalak (itzuli handiak): txirri GC/mendia → porralari totalak + txapelketa itxi ──
 function finalakTxap() { return el("finalak-txap")?.value || ""; }
 
-// Testua → [{ezizena, generala, mendia}]. Zutabeka (tab/;/,): izena + bi zenbaki oso.
-// Ezizenak zenbakia izan dezakete (adib. «Abeto power 2»): zelula OSOA digitua bada bakarrik
-// hartzen da zenbakitzat, beraz izena ondo bereizten da.
+// Testua → [{dortsala, puntuak}]. Zutabeka (tab/;/,): «Dortsala · Izena · [Zenbatek] · Puntuak».
+// Zenbaki-zelulak: 1.a = dortsala, azkena = puntuak (tarteko «Zenbatek?» baztertzen da).
 function finalakParse(text) {
-  const grid = tourParseGrid(text);
   const out = [];
-  for (const row of grid) {
-    let name = null;
-    for (const c of row) { const v = (c||"").trim(); if (v && /[A-Za-zÀ-ÿ]/.test(v) && !/^\d+$/.test(v)) { name = v; break; } }
+  for (const row of tourParseGrid(text)) {
     const ints = [];
     for (const c of row) { const v = (c||"").trim(); if (/^\d+$/.test(v)) ints.push(parseInt(v,10)); }
-    if (!name || /ezizena|porrero|generala|mendia/i.test(name)) continue;
-    out.push({ ezizena: name, generala: ints[0] ?? 0, mendia: ints[1] ?? 0 });
+    const hasName = row.some(c => { const v = (c||"").trim(); return v && /[A-Za-zÀ-ÿ]/.test(v); });
+    if (ints.length < 2 || !hasName) continue;   // dortsala + puntuak behar dira
+    out.push({ dortsala: ints[0], puntuak: ints[ints.length - 1] });
   }
   return out;
 }
@@ -2534,53 +2540,62 @@ function renderFinalakSelectors() {
     Exekutatu <strong>db/amaituta.sql</strong> phpMyAdmin-en. Bien bitartean, gordetzeak aurre-porrak itxiko ditu baina ez du «Amaituta» markarik jarriko.</div>`;
 }
 
-function _finalakTaula(rows, ezezagunak) {
-  const unk = (ezezagunak||[]).length
-    ? `<div style="color:var(--accent);font-size:12px;margin-bottom:8px">⚠ ${ezezagunak.length} ezizen lotu gabe (idatz-akatsak?): ${ezezagunak.slice(0,15).map(esc).join(", ")}</div>` : "";
+function _finalakTaula(izenburua, rows, izenZut) {
+  const soilik = rows.filter(r => r.generala > 0 || r.mendia > 0 || r.etapak > 0);
   const taula = `<table style="margin-top:4px;font-size:12px;border-collapse:collapse">
     <thead><tr>
       <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Pos</th>
-      <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Ezizena</th>
+      <th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">${izenZut}</th>
       <th style="text-align:right;padding:2px 10px 2px 0;color:var(--muted)">Etapak</th>
       <th style="text-align:right;padding:2px 10px 2px 0;color:var(--muted)">Generala</th>
       <th style="text-align:right;padding:2px 10px 2px 0;color:var(--muted)">Mendia</th>
       <th style="text-align:right;padding:2px 0;color:var(--muted)">Totala</th>
     </tr></thead>
-    <tbody>${rows.map(r => `<tr>
+    <tbody>${soilik.map(r => `<tr>
       <td style="padding:2px 10px 2px 0">${r.pos}</td>
-      <td style="padding:2px 10px 2px 0">${esc(r.ezizena)}</td>
+      <td style="padding:2px 10px 2px 0">${esc(r.izena ?? r.ezizena)}</td>
       <td style="padding:2px 10px 2px 0;text-align:right;color:var(--muted)">${r.etapak}</td>
       <td style="padding:2px 10px 2px 0;text-align:right">${r.generala}</td>
       <td style="padding:2px 10px 2px 0;text-align:right">${r.mendia}</td>
       <td style="padding:2px 0;text-align:right"><strong>${r.total}</strong></td>
     </tr>`).join("")}</tbody></table>`;
-  return `${unk}<div style="font-size:13px;margin-bottom:4px"><strong>${rows.length}</strong> porralari</div>${taula}`;
+  return `<div style="font-size:13px;font-weight:600;margin:10px 0 2px">${izenburua} <span style="font-weight:400;color:var(--muted)">(${soilik.length})</span></div>${taula}`;
+}
+
+function _finalakPayload(txap) {
+  return {
+    txapelketa_id: Number(txap),
+    gc_rows: finalakParse(el("finalak-orokorra")?.value || ""),
+    men_rows: finalakParse(el("finalak-mendia")?.value || ""),
+  };
 }
 
 async function finalakPreview() {
   const txap = finalakTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
-  const rows = finalakParse(el("finalak-paste")?.value || "");
   try {
-    const r = await api("api/finalize/preview", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
-    if (!r.rows || !r.rows.length) { el("finalak-result").innerHTML = `<div style="color:var(--accent);font-size:12px">Txapelketa honek ez du apusturik (PorraApustuak).</div>`; return; }
-    el("finalak-result").innerHTML = _finalakTaula(r.rows, r.ezezagunak);
+    const r = await api("api/finalize/preview", { method:"POST", body: JSON.stringify(_finalakPayload(txap)) });
+    if (!r.porralari || !r.porralari.length) { el("finalak-result").innerHTML = `<div style="color:var(--accent);font-size:12px">Txapelketa honek ez du apusturik (PorraApustuak).</div>`; return; }
+    const unk = (r.dortsal_ezezagunak||[]).length
+      ? `<div style="color:var(--accent);font-size:12px;margin-bottom:6px">⚠ ${r.dortsal_ezezagunak.length} dortsal ezezagun (startlist-ean ez daude): ${r.dortsal_ezezagunak.slice(0,20).map(esc).join(", ")}</div>` : "";
+    el("finalak-result").innerHTML = unk +
+      _finalakTaula("Porralarien sailkapena", r.porralari, "Ezizena") +
+      _finalakTaula("Txirrindularien sailkapena (bonusa dutenak)", r.txirri, "Txirrindularia");
   } catch(e) { showToast(e.message, "err"); }
 }
 
 async function finalakCommit() {
   const txap = finalakTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
-  const rows = finalakParse(el("finalak-paste")?.value || "");
-  const ok = await confirmDialog("Puntu finalak gordeko dira eta txapelketa AMAITUTZAT markatuko da (aurre-porrak itxita). Berriz exekutatuz eguneratu daiteke. Jarraitu?");
+  const ok = await confirmDialog("Puntu finalak gordeko dira (txirrindulariak + porralariak) eta txapelketa AMAITUTZAT markatuko da (aurre-porrak itxita). Berriz exekutatuz eguneratu daiteke. Jarraitu?");
   if (!ok) return;
   showToast("⏳ Gordetzen...");
   try {
-    const r = await api("api/finalize/commit", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
+    const r = await api("api/finalize/commit", { method:"POST", body: JSON.stringify(_finalakPayload(txap)) });
     if (!r.ok) return showToast(r.reason || "Errorea", "err");
-    const unk = (r.ezizen_ezezagunak||[]).length
-      ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.ezizen_ezezagunak.length} ezizen lotu gabe: ${r.ezizen_ezezagunak.slice(0,15).map(esc).join(", ")}</div>` : "";
+    const unk = (r.dortsal_ezezagunak||[]).length
+      ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.dortsal_ezezagunak.length} dortsal ezezagun baztertuta: ${r.dortsal_ezezagunak.slice(0,20).map(esc).join(", ")}</div>` : "";
     const marka = r.amaituta ? "Txapelketa AMAITUTA ✓" : "aurre-porrak itxita (Amaituta zutabea falta)";
-    el("finalak-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.sartuta} porralari gordeta · ${marka}</div>${unk}`;
-    showToast(`✅ ${r.sartuta} porralari · itxita`);
+    el("finalak-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.porralariak} porralari · ${r.txirri} txirrindulari gordeta · ${marka}</div>${unk}`;
+    showToast(`✅ ${r.porralariak} porralari · itxita`);
     await reloadData();
   } catch(e) { showToast(e.message, "err"); }
 }

@@ -72,11 +72,13 @@ Txirrindulariak ∞──1 TxirrindulariakTxapleketanParteHartzea 1──∞ Txa
    (eboluzioa) berreraikitzen ditu apustuetatik eta karrera-emaitzetatik.
 4. `TxapelketaEmaitza*` = azken emaitza ofizialak (zuzenean inporta daitezke, edo
    kalkuluak betetzen ditu).
-5. **Itzuli handietan**, porralariaren azken puntuazioa = **etapetako puntuak +
-   generala + mendia** (`TxapelketaEmaitzaPorralariak.Puntuak = Puntuak_Generala +
-   Puntuak_Mendikoa + etapetakoak`). Admin paneleko **Puntu finalak** tresnak porralari
-   bakoitzaren generala/mendia hartu, etapetako puntuak batu (auto) eta **totala** idazten
-   du, postuekin batera; ondoren txapelketa **ixten** du (`Amaituta = 1`, `Porra_Irekita = 0`).
+5. **Itzuli handietan**, sailkapen **orokorreko** eta **mendiko** bonus-puntuak
+   **txirrindulariko** ematen dira (azken sailkapenaren arabera). Porralari batek
+   bere txirrindularien (apustuen) bonusak **metatzen** ditu:
+   `porralari.Generala = Σ bere txirri.orokorra`, `porralari.Mendikoa = Σ bere txirri.mendia`.
+   Azken puntuazioa (bai txirri, bai porralari) = **etapak + orokorra + mendia**. Admin paneleko
+   **Puntu finalak** tresnak dortsalez lotu, dena kalkulatu, `TxapelketaEmaitza*` bietan idatzi
+   (postuekin) eta txapelketa **ixten** du (`Amaituta = 1`, `Porra_Irekita = 0`).
 
 Webguneak lehenik `TxapelketaEmaitza*` erakusten du; hori ezean, azken
 `TxapelketaSailkapena*` (fallback-a `db-loader.js`-n).

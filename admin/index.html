@@ -25,9 +25,6 @@
     .nav-item:hover{color:var(--text);background:rgba(255,255,255,.04);}
     .nav-item.active{color:var(--text);border-left-color:var(--accent);background:rgba(230,57,70,.07);}
     .nav-item .icon{font-size:16px;width:18px;text-align:center;}
-    .nav-sub-list{max-height:260px;overflow-y:auto;padding-bottom:6px;}
-    .nav-sub-item{padding-left:28px;font-size:12.5px;}
-    .nav-sub-empty{padding:8px 20px;color:var(--muted);font-size:12px;}
     .main{flex:1;overflow-y:auto;padding:36px 40px;}
     .page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;}
     .page-title{font-family:var(--font-head);font-size:26px;font-weight:700;letter-spacing:-.5px;}
@@ -174,7 +171,6 @@
     <div class="nav-item" data-section="zuzenketak"><span class="icon">📮</span> Zuzenketak <span class="badge" id="nav-zuzenketak-badge" style="display:none;margin-left:auto"></span></div>
     <div class="nav-item" data-section="aurre-porrak"><span class="icon">📥</span> Aurre-porrak <span class="badge" id="nav-aurre-porrak-badge" style="display:none;margin-left:auto"></span></div>
     <div class="nav-item" data-section="taulak"><span class="icon">▦</span> Taula guztiak</div>
-    <div class="nav-sub-list" id="table-nav-list"></div>
     <div class="nav-section">Sartu</div>
     <div class="nav-item" data-section="add-manual"><span class="icon">✏️</span> Eskuz sartu</div>
     <div class="nav-item" data-section="import"><span class="icon">📥</span> Datuak inportatu</div>
@@ -378,7 +374,7 @@
     <section class="section" id="sec-taulak">
       <div class="page-header"><div><div class="page-title">▦ <span id="generic-table-title">Taula guztiak</span></div><div class="page-sub">Datu-baseko taula guztien ikuspegia</div></div></div>
       <div class="card">
-        <div class="toolbar"><input class="search-input" id="generic-table-search" placeholder="Bilatu taulan..."/><span style="color:var(--muted);font-size:12px" id="generic-table-count"></span></div>
+        <div class="toolbar"><select id="generic-table-sel" onchange="loadGenericTable(this.value)" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:240px"><option value="">— Taula aukeratu —</option></select><input class="search-input" id="generic-table-search" placeholder="Bilatu taulan..."/><span style="color:var(--muted);font-size:12px" id="generic-table-count"></span></div>
         <div class="tbl-wrap"><table><thead id="generic-table-thead"></thead><tbody id="generic-table-tbody"></tbody></table></div>
       </div>
     </section>
@@ -761,7 +757,7 @@ const state = {
   txirrindulariak: [], porralariak: [], txapelketak: [], karrerak: [],
   txirriEmaitzak: [], porraEmaitzak: [], karreraSailkapena: [],
   ezizenak: [],
-  currentTable: null, currentTableData: null,
+  currentTable: null, currentTableData: null, tableList: null,
   sailTab: "porralariak",
   fileDir: "",
 };
@@ -925,7 +921,7 @@ function renderCurrentSection() {
     case "motak":            loadMotak(); break;
     case "sailkapenak":      renderSailkapena(); break;
     case "karrera-emaitzak": renderRaceTxapSel(); renderKarreraList(); break;
-    case "taulak":           if (state.currentTable) loadGenericTable(state.currentTable); break;
+    case "taulak":           renderTaulakSection(); break;
     case "merge":            renderMergeSection(); break;
     case "kalkulatu":        renderKalkulatuTxapSel(); break;
     case "ezizenak":         loadEzizenak(); break;
@@ -944,7 +940,6 @@ function renderCurrentSection() {
 document.querySelectorAll(".nav-item[data-section]").forEach(item => {
   item.addEventListener("click", () => {
     const s = item.dataset.section;
-    if (s === "taulak") return;
     setSection(s);
   });
 });
@@ -1363,8 +1358,10 @@ function renderSailkapena() {
 async function loadGenericTable(tableName) {
   // EZ deitu setSection hemen: renderCurrentSection("taulak")-ek funtzio hau deitzen du,
   // eta setSection-ek berriz renderCurrentSection → begizta infinitua sortuko luke.
+  if (!tableName) { state.currentTable = null; return; }
   state.currentTable = tableName;
   el("generic-table-title").textContent = tableName;
+  const _sel = el("generic-table-sel"); if (_sel && _sel.value !== tableName) _sel.value = tableName;
   try {
     const data = await api("api/table/" + encodeURIComponent(tableName));
     state.currentTableData = data;
@@ -1432,25 +1429,26 @@ function renderGenericTable() {
   });
 }
 
-// ── Table nav ─────────────────────────────────────────────────────────────────
-async function buildTableNav() {
+// ── Taula-zerrenda (Taula guztiak ataleko dropdown-a) ───────────────────────────
+async function loadTableList() {
   try {
     const meta = await api("api/meta");
-    const list = el("table-nav-list");
-    list.innerHTML = meta.tables.map(t =>
-      `<div class="nav-item nav-sub-item" data-table="${esc(t)}">${esc(t)}</div>`
-    ).join("") || `<div class="nav-sub-empty">Taularik ez</div>`;
-    list.querySelectorAll(".nav-item[data-table]").forEach(item => {
-      item.addEventListener("click", () => {
-        document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-        item.classList.add("active");
-        // Atala eskuz aktibatu (setSection erabili gabe, sub-itemaren nabarmentzea galdu ez dadin)
-        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-        el("sec-taulak")?.classList.add("active");
-        loadGenericTable(item.dataset.table);
-      });
-    });
+    state.tableList = meta.tables;
+    const sel = el("generic-table-sel");
+    if (sel) {
+      const prev = sel.value;
+      sel.innerHTML = `<option value="">— Taula aukeratu —</option>` +
+        meta.tables.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
+      if (prev) sel.value = prev;
+    }
   } catch(e) { console.error(e); }
+}
+
+// Atalean sartzean: dropdown beteta ziurtatu eta uneko (edo lehen) taula kargatu.
+async function renderTaulakSection() {
+  if (!state.tableList) await loadTableList();
+  const t = state.currentTable || (state.tableList && state.tableList[0]) || null;
+  if (t) { const sel = el("generic-table-sel"); if (sel) sel.value = t; loadGenericTable(t); }
 }
 
 // ── Manual selects ────────────────────────────────────────────────────────────
@@ -3817,7 +3815,7 @@ async function init() {
     try{ const r=await api("api/redo",{method:"POST"}); showToast(r.ok?`↪ Berregin: ${r.label}`:r.reason,r.ok?"ok":"err"); await reloadData(); }catch(e){showToast(e.message,"err");}
   });
   bindMergeEvents();
-  await buildTableNav();
+  await loadTableList();
   await reloadData();
 }
 

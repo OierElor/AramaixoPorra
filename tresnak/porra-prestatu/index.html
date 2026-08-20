@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="eu">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aramaixo Porra - Porra prestatu</title>
+    <link rel="stylesheet" href="/css/styles.css?v=20260716">
+    <link rel="icon" type="image/png" href="/data/portadak/favicon.png">
+    <script>
+        if (window.location.pathname.endsWith('.html')) {
+            history.replaceState(null, '', window.location.pathname.slice(0, -5));
+        }
+    </script>
+    <script src="/js/db-loader.js?v=20260716"></script>
+    <script src="/js/tresna-komuna.js?v=20260716"></script>
+    <script src="/js/layout.js?v=20260716" defer></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <main>
+            <section>
+                <h2 class="grafikoak" style="text-align:center;">Porra prestatu</h2>
+                <p style="text-align:center; opacity:.7; margin-top:-6px; max-width:640px; margin-left:auto; margin-right:auto;">
+                    Sailkatu txirrindulariak zure listetan (Etapa, Mendikoa, Generala...) eta osatu
+                    hortik zure porra zirriborroak, alderatzeko.
+                </p>
+
+                <div class="ohar-nabarmena">
+                    <strong>💾 Nabigatzailean gordetzen da</strong> (gailu honetan bakarrik).
+                    Ez da behin betikoa: azkenean <strong>«Porra bidali»</strong> tresnara joan
+                    eta handik bidali behar da.
+                </div>
+
+                <div id="txap-hautatzailea" style="margin:16px auto; max-width:640px;" hidden>
+                    <label for="txapelketa" style="display:block; font-weight:600; margin-bottom:6px;">Txapelketa</label>
+                    <select id="txapelketa" style="width:100%; padding:9px 10px; border:1px solid #bbb; border-radius:6px; font-size:15px;"></select>
+                </div>
+
+                <div id="sarrera-oharra"></div>
+
+                <div id="edukia" hidden>
+
+                    <!-- A · NIRE LISTAK -->
+                    <div class="grafiko-oihala">
+                        <h3 class="grafikoak" style="margin-top:0;">📋 Nire listak</h3>
+
+                        <div class="pp-fitxak" id="listak-fitxak"></div>
+
+                        <div class="pp-tresnabarra" id="lista-tresnabarra" hidden>
+                            <button class="pp-btn-txiki" id="lista-berrizendatu-btn" title="Berrizendatu">✏️ Berrizendatu</button>
+                            <button class="pp-btn-txiki pp-btn-arriskutsua" id="lista-ezabatu-btn" title="Ezabatu">🗑️ Ezabatu</button>
+                        </div>
+
+                        <div id="listak-gorputza"></div>
+                    </div>
+
+                    <!-- B · NIRE PORRAK -->
+                    <div class="grafiko-oihala">
+                        <h3 class="grafikoak" style="margin-top:0;">🎯 Nire porrak</h3>
+
+                        <div class="pp-fitxak" id="porrak-fitxak"></div>
+
+                        <div class="pp-tresnabarra" id="porra-tresnabarra" hidden>
+                            <button class="pp-btn-txiki" id="porra-berrizendatu-btn" title="Berrizendatu">✏️ Berrizendatu</button>
+                            <button class="pp-btn-txiki" id="porra-bikoiztu-btn" title="Bikoiztu">⧉ Bikoiztu</button>
+                            <button class="pp-btn-txiki pp-btn-arriskutsua" id="porra-ezabatu-btn" title="Ezabatu">🗑️ Ezabatu</button>
+                        </div>
+
+                        <div id="porra-gorputza"></div>
+                    </div>
+
+                    <div style="text-align:center; margin:20px 0 10px;">
+                        <button id="txap-garbitu-btn" class="pp-btn-txiki pp-btn-arriskutsua">🗑️ Txapelketa honen datu guztiak garbitu</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/porra-prestatu.js?v=20260716"></script>
+</body>
+
+</html>

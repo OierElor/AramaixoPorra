@@ -1278,3 +1278,150 @@ h3.vuelta {
 }
 .ac-item:last-child { border-bottom: none; }
 .ac-item:hover, .ac-item:active { background: #f0f7f0; }
+
+/* ─── Porra prestatu (tresnak/porra-prestatu) ───────────────────── */
+
+/* Lista/porra fitxak: gehitu daitezkeen segmentu-botoiak (.grafiko-mota-ren antzeko
+   estiloa, baina kopuru dinamikoa eta "+ Berria" botoiarekin). */
+.pp-fitxak {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.pp-fitxa {
+    border: 1px solid var(--color-tresnak);
+    background: #fff;
+    color: var(--color-tresnak);
+    padding: 8px 14px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.pp-fitxa.active {
+    background: var(--color-tresnak);
+    color: #fff;
+}
+
+.pp-fitxa-berria {
+    border: 1px dashed #999;
+    background: #fff;
+    color: #666;
+    padding: 8px 14px;
+    border-radius: 16px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.pp-fitxa-berria:hover { border-color: var(--color-tresnak); color: var(--color-tresnak); }
+
+.pp-tresnabarra {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.pp-btn-txiki {
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.pp-btn-txiki:hover { background: #f5f5f5; }
+
+.pp-btn-arriskutsua { color: #c62828; border-color: #e0a0a0; }
+.pp-btn-arriskutsua:hover { background: #fdecea; }
+
+/* Startlist osoaren zerrenda (kaxatxoekin, "Nire listak" atalean). */
+.pp-zerrenda {
+    max-height: 420px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+.pp-lerroa {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    min-height: 44px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.pp-lerroa:last-child { border-bottom: none; }
+.pp-lerroa:hover, .pp-lerroa:active { background: #f0f7f0; }
+
+.pp-lerroa input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    cursor: pointer;
+}
+
+.pp-dortsala {
+    font-weight: 700;
+    color: var(--color-tresnak);
+    font-variant-numeric: tabular-nums;
+    min-width: 2.4em;
+    flex: none;
+}
+
+.pp-izena { flex: 1; }
+
+.pp-beste-listak {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    flex: none;
+}
+
+.pp-badge {
+    background: #eee;
+    color: #555;
+    font-size: 0.72em;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+/* "Nire porrak" ataleko lista-taldeak (tolesgarriak). */
+.pp-taldea {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.pp-taldea-burua {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #fafafa;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.pp-taldea-burua:hover { background: #f0f7f0; }
+
+.pp-taldea-gorputza.collapsed { display: none; }
+
+/* Ez dago dagoeneko startlistan (adib. adminak kendu du). */
+.pp-lerroa.pp-ez-dago { opacity: .55; }
+.pp-lerroa.pp-ez-dago .pp-izena::after {
+    content: " — startlistan ez dago";
+    font-size: 0.8em;
+    font-style: italic;
+}

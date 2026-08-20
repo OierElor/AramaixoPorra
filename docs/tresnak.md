@@ -15,6 +15,8 @@ Metodo/laguntzaile nagusiak:
 | `Tresna.porrak(tid)` | Txapelketako porra guztiak, puntu/postuekin |
 | `Tresna.taldea(tid, ezId)` | Porra baten txirrindulariak + puntuak |
 | `Tresna.eboluzioa(...)` | Puntu metatuak karreraz karrera |
+| `Tresna.txapelketaIrekiak()` | Porra IREKITA duten txapelketak, apustu-kopuruarekin |
+| `Tresna.startlista(tid)` | Txapelketa baten startlista (dortsala + izena) |
 | `Tresna.autocomplete(input, items, onSelect)` | Bilaketa-koadro pertsonalizatua (mugikorretan ere) |
 | `Tresna.lineChart(...)` | Chart.js lerro-grafikoen konfigurazio komuna |
 
@@ -34,7 +36,8 @@ Metodo/laguntzaile nagusiak:
 | **Porralariak konparatzailea** | `tresnak/porralariak-konparatzailea/` | 2-4 porralari alderatu txapelketa GUZTIETAN: posizioak, garaipenak, podioak, aurrez-aurreko (head-to-head). |
 | **Sarien banaketa** | `tresnak/sariak/` | Lasterketa bakoitzeko sariak eta irabazleak. **Oharra:** dagoeneko ez da tresnen menuan agertzen (sariak webgunetik kendu ziren), baina orria oraindik hor dago. |
 | **Zuzenketak proposatu** | `tresnak/zuzenketak/` | Porralarien akats-jakinarazpenen formularioa (ikus [apiak.md](apiak.md)). |
-| **Porra bidali** | `tresnak/porra-bidali/` | **Aurre-porrak**: adminak *irekitako* txapelketetan, porralariek beren 15 (edo 25) txirrindulari aukeratzen dituzte startlist-etik eta porra aurretik bidaltzen dute. `POST /api/porra.php` — **ez du datu-basea idazten**. Anboto tabernara joan behar da hala ere. |
+| **Porra prestatu** | `tresnak/porra-prestatu/` | Porra IREKITA dagoen txapelketetan, porralariak bere **listak** sortzen ditu (Etapa, Mendikoa, Generala...) eta startlista horietan banatzen du; gero listetatik hainbat **porra zirriborro** osatzen ditu, alderatzeko. Dena nabigatzailearen `localStorage`-n gordetzen da (gailu honetan bakarrik, DB-rik ez). Amaitutakoan **Porra bidali**-ra bidaltzen du (`?txap=ID&dortsalak=1,2,...`). |
+| **Porra bidali** | `tresnak/porra-bidali/` | **Aurre-porrak**: adminak *irekitako* txapelketetan, porralariek beren 15 (edo 25) txirrindulari aukeratzen dituzte startlist-etik eta porra aurretik bidaltzen dute. `POST /api/porra.php` — **ez du datu-basea idazten**. Anboto tabernara joan behar da hala ere. `?txap=ID[&dortsalak=1,2,...]` esteka zuzena onartzen du (**Porra prestatu**-k erabiltzen du). |
 
 ## Eboluzio-geruza BATERATUA (grafiko-tresnak)
 

@@ -5,7 +5,9 @@
  * txirrindulariak txapelketaren startlist-etik hautatzen dira. Bidalketa
  * `api/porra.php`-ra doa: EZ da datu-basean gordetzen.
  *
- * `Tresna.autocomplete()` (js/tresna-komuna.js) berrerabiltzen du.
+ * `Tresna.autocomplete()`/`.txapelketaIrekiak()`/`.startlista()` (js/tresna-komuna.js)
+ * berrerabiltzen ditu. `?txap=ID[&dortsalak=1,2,...]` onartzen du esteka zuzenetarako
+ * (adib. tresnak/porra-prestatu-tik).
  */
 (function () {
     'use strict';
@@ -32,9 +34,7 @@
     async function txapelketakKargatu() {
         let rows;
         try {
-            rows = await window.dbLoader.query(
-                'SELECT Txapelketa_ID AS id, Izena AS izena, Apustu_Kopurua AS kop ' +
-                'FROM "Txapelketak" WHERE Porra_Irekita = 1 ORDER BY Urtea DESC, Izena');
+            rows = await Tresna.txapelketaIrekiak();
         } catch (e) {
             oharraEl.innerHTML = '<p style="color:#c00;">Ezin izan dira txapelketak kargatu: ' +
                 esc(e.message) + '</p>';
@@ -51,11 +51,22 @@
         txapSel.innerHTML = '<option value="">— Aukeratu txapelketa —</option>' +
             rows.map(r => `<option value="${r.id}" data-kop="${Number(r.kop) || 15}">${esc(r.izena)}</option>`).join('');
 
-        // Esteka zuzena: /tresnak/porra-bidali/?txap=17
-        const nahiDen = new URLSearchParams(location.search).get('txap');
+        // Esteka zuzena: /tresnak/porra-bidali/?txap=17[&dortsalak=101,111,...]
+        const params = new URLSearchParams(location.search);
+        const nahiDen = params.get('txap');
         if (nahiDen && rows.some(r => String(r.id) === String(nahiDen))) {
             txapSel.value = nahiDen;
             await txapelketaAldatu();
+            aurreHautatu(params.get('dortsalak'));
+        }
+    }
+
+    // ── Aurrez hautatutako dortsalak gehitu (adib. tresnak/porra-prestatu-tik) ──
+    function aurreHautatu(zerrenda) {
+        if (!zerrenda) return;
+        const nahi = new Set(zerrenda.split(',').map(s => s.trim()).filter(Boolean));
+        for (const r of startlist) {
+            if (nahi.has(String(r.dortsala))) gehitu({ id: r.dortsala, izena: r.izena });
         }
     }
 
@@ -76,11 +87,7 @@
         bilaketa.disabled = true;
         bilaketa.placeholder = 'Txirrindulariak kargatzen...';
         try {
-            startlist = await window.dbLoader.query(
-                'SELECT h.Dortsala AS dortsala, t.Izena AS izena ' +
-                'FROM "TxirrindulariakTxapleketanParteHartzea" h ' +
-                'JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = h.TxirrindulariaID ' +
-                'WHERE h.TxapelketaID = ? ORDER BY h.Dortsala', [Number(id)]);
+            startlist = await Tresna.startlista(id);
         } catch (e) {
             bilaketa.placeholder = 'Errorea txirrindulariak kargatzen';
             return;

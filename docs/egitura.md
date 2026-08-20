@@ -18,6 +18,7 @@ AramaixoPorra/
 │   ├── tresna-komuna.js        # `Tresna` objektua: tresnek partekatzen duten logika
 │   ├── txapelketak.js          # Txapelketen konfigurazioa (id, PDFak, irudiak)
 │   ├── txapelketa-orria.js     # Urte-orria marrazten du (txantiloi partekatua)
+│   ├── porra-prestatu.js       # Listak + porra zirriborroak (localStorage)
 │   └── porra-bidali.js         # Aurre-porren formularioa (txirrindulari-hautatzailea)
 │
 ├── tour/  giro/  vuelta/       # Itzuli handiak, urteka (urte bakoitzeko index.html bat)
@@ -42,6 +43,7 @@ AramaixoPorra/
 │   ├── porralariak-konparatzailea/  # Porralarien konparaketa historikoa
 │   ├── sariak/                 # Sarien banaketa (dagoeneko ez da menuan agertzen)
 │   ├── zuzenketak/             # Zuzenketa-proposamenen formularioa (publikoa)
+│   ├── porra-prestatu/         # Listak + porra zirriborroak (localStorage, publikoa)
 │   └── porra-bidali/           # Aurre-porrak bidaltzeko formularioa (publikoa)
 │
 ├── api/                        # API publikoa (auth gabe)

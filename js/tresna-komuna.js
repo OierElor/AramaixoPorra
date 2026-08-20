@@ -26,6 +26,31 @@ const Tresna = {
     },
 
     /**
+     * Porra IREKITA duten txapelketak: [{id, izena, kop}].
+     * `kop` = apustu kopurua (itzuliak 15, klasikak 25); NULL bada, deitzaileak 15 hartu behar du.
+     * `Porra_Irekita` migrazio bidez gehitutako zutabea da (db/aurre-porrak.sql): exekutatu
+     * gabe egon daiteke eta orduan kontsultak errorea botako du — deitzaileak harrapatu behar du.
+     */
+    async txapelketaIrekiak() {
+        return this.q(
+            'SELECT Txapelketa_ID AS id, Izena AS izena, Apustu_Kopurua AS kop ' +
+            'FROM "Txapelketak" WHERE Porra_Irekita = 1 ORDER BY Urtea DESC, Izena');
+    },
+
+    /**
+     * Txapelketa baten startlista: [{dortsala, izena}], dortsalez ordenatuta.
+     * ⚠️ Taularen izena tipografia-akatsarekin dago ('Txaplek...'), eta bere zutabeek
+     * EZ dute azpimarrarik (TxapelketaID / TxirrindulariaID), gainerako taulek ez bezala.
+     */
+    async startlista(tid) {
+        return this.q(
+            'SELECT h.Dortsala AS dortsala, t.Izena AS izena ' +
+            'FROM "TxirrindulariakTxapleketanParteHartzea" h ' +
+            'JOIN "Txirrindulariak" t ON t.Txirrindularia_ID = h.TxirrindulariaID ' +
+            'WHERE h.TxapelketaID = ? ORDER BY h.Dortsala', [Number(tid)]);
+    },
+
+    /**
      * Txapelketako benetako karrerak ordenan (agregatu 'Azken Karrera' kanpo).
      * Kategoria beteta dutenak ETA emaitzak dituzten guztiak: karrera batek emaitzak
      * baditu, bere puntuak zenbatu behar dira, Kategoria falta bazaio ere.

@@ -101,8 +101,6 @@ try {
                 try { json_out(files_list($_GET['dir'] ?? '')); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'ezarpenak':
                 try { json_out(read_ezarpenak()); } catch (Exception $e) { json_error($e->getMessage()); }
-            case $path === 'motak':
-                try { json_out(karrera_motak()); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'migrations':
                 try { json_out(migration_status()); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'backup':
@@ -166,10 +164,6 @@ try {
                 try { json_out(files_mkdir($body['dir'] ?? '', $body['name'] ?? '')); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'ezarpenak':
                 try { json_out(save_ezarpenak($body)); } catch (Exception $e) { json_error($e->getMessage()); }
-            case $path === 'motak/save':
-                try { json_out(save_karrera_mota($body)); } catch (Exception $e) { json_error($e->getMessage()); }
-            case $path === 'motak/delete':
-                try { json_out(delete_karrera_mota($body['id'] ?? 0)); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'undo': json_out(do_undo());
             case $path === 'redo': json_out(do_redo());
             case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));

@@ -50,7 +50,7 @@ bere **profil/ibilbide irudia** (baldin badago) eta emaitza-taula erakusten dira
   admin paneleko **Karrerak** inportatzailearekin gehitu daiteke.
 - **`Emaitzarik_Ez = 1` markatutakoak EZ dira agertzen**: inoiz emaitzarik izango ez badute
   (adib. bertan behera utzitako etapa), panel huts iraunkorra litzateke. Admin panelean
-  markatzen da (*Karrera motak* atala). Grafikoetan ere ez dira zenbatzen.
+  markatzen da (*Txapelketak* atala). Grafikoetan ere ez dira zenbatzen.
 - **Emaitzak dituen karrera bat EZ da bestela inoiz ezkutatzen**: iragazkia «Kategoria beteta
   **EDO** emaitzak baditu» da. Segurtasun-sarea da, Kategoriarik gabeko karrera bat
   (eskuz sortua, adib.) isilean gal ez dadin. `js/tresna-komuna.js`-k iragazki bera

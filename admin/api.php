@@ -164,6 +164,8 @@ try {
                 try { json_out(files_mkdir($body['dir'] ?? '', $body['name'] ?? '')); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'ezarpenak':
                 try { json_out(save_ezarpenak($body)); } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'ezarpenak/tresnak':
+                try { json_out(save_tresna_ezarpenak($body)); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'undo': json_out(do_undo());
             case $path === 'redo': json_out(do_redo());
             case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));

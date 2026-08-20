@@ -26,66 +26,38 @@
                     Porrei eta txirrindulariei buruzko datuak aztertzeko tresnak.
                 </p>
 
-                <div class="tresna-sareta">
-                    <a class="tresna-txartela" href="/tresnak/grafikoak/">
-                        <div class="tresna-ikonoa">📈</div>
-                        <h3>Eboluzio grafikoak</h3>
-                        <p>Lasterketa batean zehar txirrindulari edo porralarien eboluzioa (puntuak edo postua).</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/porra-fitxa/">
-                        <div class="tresna-ikonoa">🔎</div>
-                        <h3>Porra fitxa</h3>
-                        <p>Porra bat bilatu eta bere talde osoa, puntuak, postua eta eboluzioa ikusi.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/konparatzailea/">
-                        <div class="tresna-ikonoa">⚔️</div>
-                        <h3>Porra konparatzailea</h3>
-                        <p>2-4 porra alderatu: aukera komun eta ezberdinak, puntuak eta eboluzioa.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/bero-mapa/">
-                        <div class="tresna-ikonoa">🟩</div>
-                        <h3>Aukeren bero-mapa</h3>
-                        <p>Porra bakoitzak zein txirrindulari aukeratu zituen, matrize bisual batean.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/porralari-fitxa/">
-                        <div class="tresna-ikonoa">👤</div>
-                        <h3>Porralari fitxa</h3>
-                        <p>Porralari batek bota dituen porrak eta ezaugarriak, batera botatakoak barne.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/txirrindulari-fitxa/">
-                        <div class="tresna-ikonoa">🚴</div>
-                        <h3>Txirrindulari fitxa</h3>
-                        <p>Txirrindulari baten partaidetzak: dortsala, postua, puntuak eta zenbat porrak aukeratu duten.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/porra-ideala/">
-                        <div class="tresna-ikonoa">🏆</div>
-                        <h3>Porra ideala</h3>
-                        <p>Posible zen porrarik onena vs benetan aukeratutakoa; zenbat puntu galdu ziren.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/porralariak-konparatzailea/">
-                        <div class="tresna-ikonoa">👥</div>
-                        <h3>Porralariak konparatzailea</h3>
-                        <p>2-4 porralari alderatu txapelketa guztietan: posizioak, garaipenak eta aurrez-aurrekoa.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/porra-prestatu/">
-                        <div class="tresna-ikonoa">📝</div>
-                        <h3>Porra prestatu</h3>
-                        <p>Sailkatu txirrindulariak zure listetan (Etapa, Mendikoa, Generala...) eta osatu hortik zure porra zirriborroak, alderatzeko.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/porra-bidali/">
-                        <div class="tresna-ikonoa">📥</div>
-                        <h3>Porra bidali</h3>
-                        <p>Porra irekita dagoen txapelketetan, aukeratu zure txirrindulariak eta bidali porra aurretik. Gero ere Anboto tabernara joan behar duzu.</p>
-                    </a>
-                    <a class="tresna-txartela" href="/tresnak/zuzenketak/">
-                        <div class="tresna-ikonoa">✍️</div>
-                        <h3>Zuzenketak proposatu</h3>
-                        <p>Akatsen bat ikusi duzu? Jakinarazi: apustu okerra, izen aldaketa, porra-lotura edo bi porralari bat direla.</p>
-                    </a>
-                </div>
+                <noscript>
+                    <p style="text-align:center; padding:24px;">Orri honek JavaScript behar du edukia erakusteko.</p>
+                </noscript>
+                <div class="tresna-sareta" id="tresna-sareta"></div>
             </section>
         </main>
     </div>
+
+    <script>
+        // Katalogoa (ikonoa/izena/azalpena/bidea) `api/tresna-katalogoa.php`-tik dator
+        // /api/ezarpenak.php bidez, zein tresna ikusgai dagoen adminetik (Webgunea)
+        // kudea daitekeen. Ez-ikusgai dagoen txartela GRID-etik desagertzen da, baina
+        // URL zuzenak funtzionatzen jarraitzen du (esteka bakarrik ezkutatzen da).
+        const esc = s => String(s ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+        (async function () {
+            const cont = document.getElementById('tresna-sareta');
+            try {
+                const r = await fetch('/api/ezarpenak.php', { cache: 'no-cache' });
+                const d = await r.json();
+                const tresnak = (d.tresnak || []).filter(t => t.ikusgai);
+                cont.innerHTML = tresnak.map(t => `<a class="tresna-txartela" href="${esc(t.bidea)}">
+                        <div class="tresna-ikonoa">${esc(t.ikonoa)}</div>
+                        <h3>${esc(t.izena)}</h3>
+                        <p>${esc(t.azalpena)}</p>
+                    </a>`).join('');
+            } catch (e) {
+                cont.innerHTML = '<p style="text-align:center; opacity:.7;">Ezin izan da tresnen zerrenda kargatu. Saiatu berriro geroago.</p>';
+            }
+        })();
+    </script>
 </body>
 
 </html>

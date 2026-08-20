@@ -3,6 +3,17 @@
 `tresnak/` ataleko tresna guztiek **`js/tresna-komuna.js`**-ko `Tresna` objektua
 partekatzen dute, eta datuak `/api/q.php` bidez irakurtzen dituzte (SELECT soilik).
 
+## Ikusgaitasuna (admin panela → Webgunea)
+
+`tresnak/index.html`-eko txartel-sareta **ez dago hardcodeatuta**: katalogoa
+(`api/tresna-katalogoa.php`, iturri bakarra) + ikusgaitasuna (`admin/ezarpenak.json`)
+`/api/ezarpenak.php`-tik marrazten da runtime-an. Adminak tresna bat ez-ikusgai jartzen
+badu, bere txartela desagertu egiten da eta gunean barrena dauden esteka guztiak
+(adib. urte-orriko «PORRA BIDALI» bannerra, `js/txapelketak.js`-eko
+`TXAPELKETAK.tresnaIkusgai(id)`) ere ezkutatzen dira. ⚠️ **Esteka bakarrik ezkutatzen
+da**: URL zuzena ezagutzen duenak sartzen jarraitzen du. `sariak` nahita dago katalogotik
+kanpo (ez da inoiz kudeagarria izango adminetik). Xehetasunak: [apiak.md](apiak.md).
+
 ## `Tresna` objektua (`js/tresna-komuna.js`)
 
 Metodo/laguntzaile nagusiak:

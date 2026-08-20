@@ -51,8 +51,9 @@ AramaixoPorra/
 │   ├── q.php                   # SELECT-soilik kontsulta-API segurua
 │   ├── proposal.php            # Zuzenketa-proposamenak (email + log)
 │   ├── porra.php               # Aurre-porrak (email + log; DBan ez du idazten)
-│   ├── ezarpenak.php           # Karpeta-mapa publikoa (fitxategi-mota → karpeta)
-│   └── .htaccess               # db-read.php-rako zuzeneko sarbidea blokeatu
+│   ├── ezarpenak.php           # Karpeta-mapa + tresna-ikusgaitasuna, publikoa
+│   ├── tresna-katalogoa.php    # Tresna publikoen katalogoa (iturri bakarra; ez da endpoint-a)
+│   └── .htaccess               # db-read.php/tresna-katalogoa.php-rako zuzeneko sarbidea blokeatu
 │
 ├── admin/                      # Kudeaketa-panela (HTTP Basic Auth)
 │   ├── index.html              # SPA interfazea (atal guztiak)

@@ -67,24 +67,50 @@ OHARRAK: ...              (aukerakoa)
 - Erantzunak **Anboto abisua** darama (`abisua`), formularioan erakusteko.
 - Admin panelak fitxategia irakurtzen du ("Aurre-porrak" atala) eta handik inporta daiteke.
 
-## `api/ezarpenak.php` — karpeta-mapa (publikoa, irakurketa soilik)
+## `api/ezarpenak.php` — karpeta-mapa + tresna publikoen ikusgaitasuna (publikoa, irakurketa soilik)
 
-Fitxategi-mota bakoitza **zein karpetatan** dagoen esaten dio webgune publikoari:
+Bi ezarpen mota itzultzen ditu:
 
 ```json
-{ "karpetak": { "arauak": "arauak", "dortsalak": "dortsalak",
-                "porrak": "porrak", "profilak": "profilak" } }
+{
+  "karpetak": { "arauak": "arauak", "dortsalak": "dortsalak",
+                "porrak": "porrak", "profilak": "profilak" },
+  "tresnak": [
+    { "id": "bero-mapa", "ikonoa": "🟩", "izena": "Aukeren bero-mapa",
+      "azalpena": "…", "bidea": "/tresnak/bero-mapa/", "ikusgai": true }
+  ]
+}
 ```
 
+**`karpetak`** — fitxategi-mota bakoitza zein karpetatan dagoen:
 - `js/txapelketak.js`-ek mapa hau erabiltzen du URLak eraikitzeko
   (`TXAPELKETAK.url(mota, …)` → `/data/<karpeta>/<fitxategia>`); `txapelketa-orria.js`-k
   **errendatu aurretik** kargatzen du (`karpetakKargatu()`).
 - Adminak karpeta bat aldatzen badu (panela → **Fitxategiak → Mota bakoitzaren karpeta**),
   gunea **berehala** moldatzen da; koderik ez da ukitu behar.
-- Iturria: `admin/ezarpenak.json` (zerbitzari-jabetzakoa, git-etik kanpo). Fitxategirik ez
-  badago edo hondatuta badago, **lehenetsiak** itzultzen dira → **gunea ez da inoiz hausten**.
 - Karpeta-izenak balidatuta itzultzen dira (letrak/zenbakiak/zuriuneak/`-`/`_`): bezeroak
   URL bat eraikitzen du haiekin, beraz `../` gisako bide-zeharkatzea ukatzen da.
+
+**`tresnak`** — tresna publikoen KATALOGO OSOA (`api/tresna-katalogoa.php`, iturri
+bakarra) + `ikusgai` ebatzita:
+- `tresnak/index.html`-ek hemendik marrazten du txartel-sareta (ez-ikusgai dagoena
+  desagertu egiten da). `js/txapelketak.js`-eko `karpetakKargatu()`-k ere kargatzen du
+  (`TXAPELKETAK.tresnaIkusgai(id)`), urte-orriko «PORRA BIDALI» bannerra bezalako
+  barne-estekak ezkutatzeko.
+- Adminak tresna bat itzaltzen badu (panela → **Webgunea**), gunea **berehala** moldatzen
+  da.
+- ⚠️ **Esteka bakarrik ezkutatzen da**: URL zuzenak funtzionatzen jarraitzen du. EZ da
+  benetako sarbide-blokeoa (webgune osoa fitxategi estatikoak dira, ikus
+  [egitura.md](egitura.md)); ez dago zerbitzari-mailako gaitasunik orri bat blokeatzeko.
+- Katalogoko `oharra` (adminak zergatik itzali zuen gogoratzeko nota) **EZ da inoiz
+  itzultzen hemendik** — endpoint hau auth GABEA da eta nota pribatua da. Adminak
+  `admin/api.php` → `ezarpenak` (GET, auth-ekin) bidez ikusten du.
+- ⚠️ `sariak` (`tresnak/sariak/`) NAHITA dago katalogotik KANPO: ez da adminetik
+  kudeagarria, ez eta pizteko aukera gisa agertzen.
+
+Bi ezarpen motek iturri komuna dute: `admin/ezarpenak.json` (zerbitzari-jabetzakoa,
+git-etik kanpo). Fitxategirik ez badago edo hondatuta badago, **lehenetsiak** itzultzen
+dira (karpeta lehenetsiak + tresna GUZTIAK ikusgai) → **gunea ez da inoiz hausten**.
 
 > **portadak** (azalak + favicon) **EZ da konfiguragarria**: `<head>`-etako esteka
 > estatikoak dira (35 orritan) eta ezin dira exekuzio-garaian ebatzi. Bide finkoa:
@@ -135,7 +161,8 @@ Route-ak (adibide adierazgarriak; ez dira denak):
 | GET | `files?dir=` | `data/` karpeta baten edukia (fitxategiak + azpikarpetak) |
 | POST | `files/upload?dir=` | Fitxategiak igo (multipart, `$_FILES`) |
 | POST | `files/delete`, `files/rename`, `files/mkdir` | Fitxategiak kudeatu |
-| GET/POST | `ezarpenak` | Karpeta-mapa irakurri / gorde (`admin/ezarpenak.json`) |
+| GET/POST | `ezarpenak` | Karpeta-mapa (+ tresna-ikusgaitasuna, `oharra` barne) irakurri / karpeta-mapa gorde (`admin/ezarpenak.json`) |
+| POST | `ezarpenak/tresnak` | Tresna publikoen ikusgaitasuna + oharra gorde |
 
 Logika guztia `admin/lib.php`-n dago; konexioa `admin/db.php`-n (mysqli).
 Xehetasunak: [admin-panela.md](admin-panela.md).

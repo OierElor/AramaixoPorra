@@ -1,6 +1,7 @@
 <?php
 // ─── Aramaixo Porra — logika (DB-rekiko independentea probatzeko) ──────────
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../api/tresna-katalogoa.php';
 
 // ─── CSV profilak eta aliasak ────────────────────────────────────────────────
 $CSV_PROFILES = [
@@ -2145,33 +2146,65 @@ function files_mkdir($dir, $name) {
     return ['ok' => true, 'name' => $name];
 }
 
-// ─── Ezarpenak: fitxategi-moten karpeta-mapa ────────────────────────────────
+// ─── Ezarpenak: fitxategi-moten karpeta-mapa + tresna publikoen ikusgaitasuna ──
 // admin/ezarpenak.json (git-etik kanpo). Webgune publikoak api/ezarpenak.php bidez
-// irakurtzen du: karpeta bat aldatzean, gunea berehala moldatzen da.
+// irakurtzen du: aldaketa bat gordetzean, gunea berehala moldatzen da.
 // LEHENETSIAK api/ezarpenak.php-koekin bat etorri behar dute.
+//
+// ⚠️ Fitxategi BAKARRA bi ezarpen-mota gordetzeko erabiltzen da (`karpetak` + `tresnak`).
+// Idazketa bakoitzak fitxategi OSOA berridazten du, beraz BIEK _ezarpenak_raw()-etik
+// abiatu eta beren zatia bakarrik aldatu behar dute — bestela batak bestearena ezabatuko
+// luke (adib. karpetak gordetzean tresnen ikusgaitasuna galtzea).
 
 const EZARPEN_MOTAK = ['arauak' => 'arauak', 'dortsalak' => 'dortsalak',
                        'porrak' => 'porrak', 'profilak' => 'profilak'];
 
 function _ezarpenak_file() { return __DIR__ . '/ezarpenak.json'; }
 
-function read_ezarpenak() {
-    $map = EZARPEN_MOTAK;
+/** Uneko ezarpenak.json OSOA, dekodifikatuta (edo array hutsa, ez badago/hondatuta badago). */
+function _ezarpenak_raw() {
     $f = _ezarpenak_file();
-    if (is_file($f)) {
-        $data = json_decode((string)@file_get_contents($f), true);
-        if (is_array($data)) {
-            foreach (EZARPEN_MOTAK as $mota => $lehenetsia) {
-                $v = $data['karpetak'][$mota] ?? null;
-                if (is_string($v) && preg_match('/^[\p{L}\p{N} _-]{1,80}$/u', $v)) $map[$mota] = $v;
-            }
-        }
+    if (!is_file($f)) return [];
+    $data = json_decode((string)@file_get_contents($f), true);
+    return is_array($data) ? $data : [];
+}
+
+function _ezarpenak_gorde($data) {
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if (@file_put_contents(_ezarpenak_file(), $json, LOCK_EX) === false) {
+        throw new Exception('Ezin gorde ezarpenak');
+    }
+}
+
+function read_ezarpenak() {
+    $data = _ezarpenak_raw();
+
+    $map = EZARPEN_MOTAK;
+    foreach (EZARPEN_MOTAK as $mota => $lehenetsia) {
+        $v = $data['karpetak'][$mota] ?? null;
+        if (is_string($v) && preg_match('/^[\p{L}\p{N} _-]{1,80}$/u', $v)) $map[$mota] = $v;
     }
     // Karpeta bakoitza existitzen den jakinarazi (adminari abisatzeko)
     $base = _data_base();
     $egoera = [];
     foreach ($map as $mota => $karpeta) $egoera[$mota] = is_dir($base . '/' . $karpeta);
-    return ['karpetak' => $map, 'lehenetsiak' => EZARPEN_MOTAK, 'badaude' => $egoera];
+
+    // Tresnak: katalogo osoa + ikusgaitasuna + oharra (adminak ikusten du, ez publikoak).
+    $tresnaEz = is_array($data['tresnak'] ?? null) ? $data['tresnak'] : [];
+    $tresnak = array_map(function ($t) use ($tresnaEz) {
+        $ez = is_array($tresnaEz[$t['id']] ?? null) ? $tresnaEz[$t['id']] : [];
+        return [
+            'id'       => $t['id'],
+            'ikonoa'   => $t['ikonoa'],
+            'izena'    => $t['izena'],
+            'azalpena' => $t['azalpena'],
+            'bidea'    => $t['bidea'],
+            'ikusgai'  => !array_key_exists('ikusgai', $ez) || $ez['ikusgai'] !== false,
+            'oharra'   => is_string($ez['oharra'] ?? null) ? $ez['oharra'] : '',
+        ];
+    }, TRESNA_KATALOGOA);
+
+    return ['karpetak' => $map, 'lehenetsiak' => EZARPEN_MOTAK, 'badaude' => $egoera, 'tresnak' => $tresnak];
 }
 
 function save_ezarpenak($payload) {
@@ -2183,9 +2216,28 @@ function save_ezarpenak($payload) {
         if ($v === '') $v = $lehenetsia;
         $map[$mota] = _sanitize_dirname($v);   // bide-zeharkatzea galarazi
     }
-    $json = json_encode(['karpetak' => $map], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-    if (@file_put_contents(_ezarpenak_file(), $json, LOCK_EX) === false) {
-        throw new Exception('Ezin gorde ezarpenak');
+    $data = _ezarpenak_raw();
+    $data['karpetak'] = $map;   // 'tresnak' badagoena ukitu gabe
+    _ezarpenak_gorde($data);
+    return read_ezarpenak();
+}
+
+/** Tresna publikoen ikusgaitasuna + oharra gorde. Katalogoko id-ak EZ direnak baztertu. */
+function save_tresna_ezarpenak($payload) {
+    $in = $payload['tresnak'] ?? [];
+    if (!is_array($in)) throw new Exception('Datu baliogabeak');
+    $baliozkoak = array_column(TRESNA_KATALOGOA, 'id');
+
+    $tresnak = [];
+    foreach ($in as $id => $ez) {
+        if (!in_array($id, $baliozkoak, true) || !is_array($ez)) continue;
+        $oharra = trim((string)($ez['oharra'] ?? ''));
+        if (mb_strlen($oharra) > 200) $oharra = mb_substr($oharra, 0, 200);
+        $tresnak[$id] = ['ikusgai' => ($ez['ikusgai'] ?? true) !== false, 'oharra' => $oharra];
     }
+
+    $data = _ezarpenak_raw();
+    $data['tresnak'] = $tresnak;   // 'karpetak' badagoena ukitu gabe
+    _ezarpenak_gorde($data);
     return read_ezarpenak();
 }

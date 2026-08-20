@@ -47,6 +47,20 @@
     let egoera = null;        // egoeraOsoa.txapelketak[tid] erreferentzia
     let tolestutakoTaldeak = new Set(); // lista-id-ak (bistaratze-egoera hutsa, ez da gordetzen)
 
+    // «Porra bidali» tresna ikusgai dagoen (admin panela → Webgunea). Lehenetsia `true`
+    // da (fail-open): fetch-a bukatu arte ez du inolako interakziorik blokeatzen.
+    let porraBidaliIkusgai = true;
+    (async function porraBidaliIkusgaiEgiaztatu() {
+        try {
+            const r = await fetch('/api/ezarpenak.php', { cache: 'no-cache' });
+            const d = await r.json();
+            const t = (d.tresnak || []).find(x => x.id === 'porra-bidali');
+            if (t) porraBidaliIkusgai = !!t.ikusgai;
+        } catch (e) { /* lehenetsiarekin jarraitu: ikusgai */ }
+        // Fetch-a errenderizatu ondoren bukatu bada (kasurik ohikoena), egoera eguneratu.
+        if (!porraBidaliIkusgai) marraztuPorraLaburpena();
+    })();
+
     // ── localStorage: kargatu / gorde ────────────────────────────────────────
     function egoeraOsoaKargatu() {
         try {
@@ -329,6 +343,7 @@
                     style="padding:10px 20px; border:none; border-radius:6px; background:#43a047; color:#fff; font-size:15px; font-weight:600; cursor:pointer;">
                     Porra hau bidali →
                 </button>
+                <span id="porra-bidali-ezkutatuta" style="font-size:13px; opacity:.7;" hidden>«Porra bidali» tresna aldi baterako ez dago eskuragarri.</span>
             </div>`;
         marraztuPorraTaldeak();
         marraztuPorraLaburpena();
@@ -390,7 +405,9 @@
         const osatuta = balid === beharDira;
         $('porra-kontagailua').textContent = balid;
         $('porra-kontagailua-wrap').classList.toggle('osatuta', osatuta);
-        $('porra-bidali-btn').disabled = !osatuta;
+        $('porra-bidali-btn').disabled = !osatuta || !porraBidaliIkusgai;
+        const ohEl = $('porra-bidali-ezkutatuta');
+        if (ohEl) ohEl.hidden = porraBidaliIkusgai;
     }
 
     function gehituPorra(dortsala) {

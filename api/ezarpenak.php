@@ -2,17 +2,26 @@
 /**
  * Aramaixo Porra — ezarpen publikoak (irakurketa soilik, auth gabe).
  *
- * Fitxategi-moten karpeta-mapa itzultzen du: webgune publikoak (js/txapelketak.js) hemendik
- * jakiten du PDFak eta profil-irudiak ZEIN karpetatan dauden. Adminak karpeta bat aldatzen
- * badu (admin panela → Fitxategiak → Karpetak), gunea berehala moldatzen da.
+ * Bi ezarpen mota itzultzen ditu:
+ *  1) `karpetak` — fitxategi-moten karpeta-mapa: webgune publikoak (js/txapelketak.js)
+ *     hemendik jakiten du PDFak eta profil-irudiak ZEIN karpetatan dauden.
+ *  2) `tresnak` — zein tresna publiko dagoen ikusgai (admin panela → Webgunea). Katalogo
+ *     osoa `api/tresna-katalogoa.php`-tik dator; hemen `ikusgai` bakarrik ebazten da.
+ *     ⚠️ `oharra` (adminaren nota pribatua, zergatik itzali zuen) EZ da INOIZ itzultzen
+ *     hemendik: endpoint hau auth GABEA da, edonork irakur dezake.
+ *
+ * Adminak zerbait aldatzen badu (Fitxategiak → Karpetak, edo Webgunea → tresnak), gunea
+ * berehala moldatzen da.
  *
  * Iturria: admin/ezarpenak.json (zerbitzari-jabetzakoa, git-etik kanpo).
- * Fitxategirik ez badago edo hondatuta badago, LEHENETSIAK itzultzen dira → gunea ez da
- * inoiz hausten.
+ * Fitxategirik ez badago edo hondatuta badago, LEHENETSIAK itzultzen dira (karpetak
+ * lehenetsiak + tresna GUZTIAK ikusgai) → gunea ez da inoiz hausten.
  *
  * SEGURTASUNA: irakurketa hutsa, DB gabe. Karpeta-izenak balidatuta itzultzen dira
  * (bide-zeharkatzea saihesteko, bezeroak URL bat eraikitzen baitu horiekin).
  */
+
+require_once __DIR__ . '/tresna-katalogoa.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache');
@@ -31,6 +40,7 @@ function ezarpen_karpeta_ok($v) {
 }
 
 $map = EZARPEN_LEHENETSIAK;
+$tresnaEzarpenak = [];
 
 $f = __DIR__ . '/../admin/ezarpenak.json';
 if (is_file($f)) {
@@ -43,7 +53,23 @@ if (is_file($f)) {
                 $map[$mota] = $karpetak[$mota];
             }
         }
+        if (is_array($data['tresnak'] ?? null)) $tresnaEzarpenak = $data['tresnak'];
     }
 }
 
-echo json_encode(['karpetak' => $map], JSON_UNESCAPED_UNICODE);
+// Katalogo osoa + ikusgaitasuna ebatzi. Ezarpenik ez badago tresna baterako, LEHENETSIA
+// ikusgai da (fail-open): tresna berri bat gehitzeak ez du webgunea hausten.
+$tresnak = array_map(function ($t) use ($tresnaEzarpenak) {
+    $ez = $tresnaEzarpenak[$t['id']] ?? [];
+    $ikusgai = !is_array($ez) || !array_key_exists('ikusgai', $ez) || $ez['ikusgai'] !== false;
+    return [
+        'id'       => $t['id'],
+        'ikonoa'   => $t['ikonoa'],
+        'izena'    => $t['izena'],
+        'azalpena' => $t['azalpena'],
+        'bidea'    => $t['bidea'],
+        'ikusgai'  => $ikusgai,
+    ];
+}, TRESNA_KATALOGOA);
+
+echo json_encode(['karpetak' => $map, 'tresnak' => $tresnak], JSON_UNESCAPED_UNICODE);

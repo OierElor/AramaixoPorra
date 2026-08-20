@@ -30,6 +30,11 @@
             profilak:  'profilak',
         },
 
+        // Tresna publikoen ikusgaitasuna (id → bool), karpetakKargatu()-k betetzen du.
+        // Hutsik dagoen bitartean (fetch-a egin aurretik) tresnaIkusgai()-k `true` itzultzen
+        // du beti (fail-open) — admin panela → Webgunea.
+        tresnak: {},
+
         kirolak: {
             tour:     { izena: 'Tour de France',  karrerakIzenburua: 'ETAPAZ ETAPA' },
             giro:     { izena: "Giro d'Italia",   karrerakIzenburua: 'ETAPAZ ETAPA' },
@@ -232,15 +237,26 @@
         };
     };
 
-    /** Karpeta-mapa freskatu `/api/ezarpenak.php`-tik. Huts eginez gero, lehenetsiak. */
+    /**
+     * Karpeta-mapa eta tresna-ikusgaitasuna freskatu `/api/ezarpenak.php`-tik.
+     * Huts eginez gero, lehenetsiak (karpetak) / dena ikusgai (tresnak).
+     */
     window.TXAPELKETAK.karpetakKargatu = async function () {
         try {
             const r = await fetch('/api/ezarpenak.php', { cache: 'no-cache' });
             if (!r.ok) return;
             const d = await r.json();
             if (d && d.karpetak) Object.assign(window.TXAPELKETAK.karpetak, d.karpetak);
+            if (d && Array.isArray(d.tresnak)) {
+                d.tresnak.forEach(t => { window.TXAPELKETAK.tresnak[t.id] = !!t.ikusgai; });
+            }
         } catch (e) {
             /* lehenetsiekin jarraitu */
         }
+    };
+
+    /** Tresna bat ikusgai dagoen. Fetch-a egin ez bada oraindik, `true` (fail-open). */
+    window.TXAPELKETAK.tresnaIkusgai = function (id) {
+        return window.TXAPELKETAK.tresnak[id] !== false;
     };
 })();

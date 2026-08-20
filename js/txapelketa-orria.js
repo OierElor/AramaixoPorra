@@ -120,6 +120,9 @@
      */
     async function bannerMarraztu() {
         if (!cfg.id) return;
+        // Bannerraren helburu bakarra "porra-bidali" tresnara bideratzea da: hura
+        // ez-ikusgai badago (admin panela → Webgunea), bannerrak ez du zentzurik.
+        if (!window.TXAPELKETAK.tresnaIkusgai('porra-bidali')) return;
         try {
             const rows = await window.dbLoader.query(
                 'SELECT Porra_Irekita AS irekita FROM "Txapelketak" WHERE Txapelketa_ID = ?',

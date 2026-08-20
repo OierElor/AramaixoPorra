@@ -175,6 +175,7 @@
     <div class="nav-item" data-section="import"><span class="icon">📥</span> Datuak inportatu</div>
     <div class="nav-item" data-section="finalak"><span class="icon">🥇</span> Puntu finalak</div>
     <div class="nav-item" data-section="fitxategiak"><span class="icon">📁</span> Fitxategiak</div>
+    <div class="nav-item" data-section="webgunea"><span class="icon">🌐</span> Webgunea</div>
     <div class="nav-item" data-section="porra-editatu"><span class="icon">📝</span> Porra editatu</div>
     <div class="nav-item" data-section="kalkulatu"><span class="icon">📊</span> Sailkapenak kalkulatu</div>
     <div class="nav-item" data-section="merge"><span class="icon">🔀</span> Fusionatu</div>
@@ -592,6 +593,27 @@
       <div id="fm-list"></div>
     </section>
 
+    <!-- WEBGUNEA -->
+    <section class="section" id="sec-webgunea">
+      <div class="page-header"><div><div class="page-title">🌐 Webgunea</div><div class="page-sub">Webgune publikoan zein tresna agertzen den kudeatu</div></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        Tresna bat <strong>ez-ikusgai</strong> jartzen baduzu, bere txartela <code>/tresnak/</code> orritik desagertuko da.
+        ⚠️ <strong>Esteka bakarrik ezkutatzen da</strong>: URLa ezagutzen duenak (adib. lagunei bidalitako esteka batetik) sartzen jarraituko du —
+        ez da benetako sarbide-blokeoa. <strong>Oharra</strong> zuretzat bakarrik da (zergatik itzali zenuen gogoratzeko); bisitariek ez dute inoiz ikusiko.
+      </div>
+      <div class="card"><div class="card-body">
+        <div class="tbl-wrap"><table>
+          <thead><tr><th></th><th>Tresna</th><th>Ikusgai</th><th>Oharra (zuretzat)</th></tr></thead>
+          <tbody id="webgunea-tbody"></tbody>
+        </table></div>
+        <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="saveWebgunea()">💾 Gorde</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetWebgunea()">↺ Denak ikusgai</button>
+          <span id="webgunea-msg" style="font-size:12px"></span>
+        </div>
+      </div></div>
+    </section>
+
     <!-- PORRA EDITATU -->
     <section class="section" id="sec-porra-editatu">
       <div class="page-header"><div><div class="page-title">📝 Porra editatu</div><div class="page-sub">Porralari baten apustuak (15 txirrindulariak) ikusi eta zuzendu</div></div></div>
@@ -897,6 +919,7 @@ function renderCurrentSection() {
     case "zuzenketak":       loadProposals(); break;
     case "aurre-porrak":     loadAurrePorrak(); break;
     case "fitxategiak":      loadKarpetak(); loadFiles(state.fileDir || ""); break;
+    case "webgunea":         loadWebgunea(); break;
     case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
 }
@@ -2959,6 +2982,45 @@ async function resetKarpetak() {
     if (inp) inp.value = lehenetsia;
   }
   showToast("Lehenetsiak jarrita (gorde behar duzu)");
+}
+
+// ── Webgunea: tresna publikoen ikusgaitasuna ─────────────────────────────────
+// api/ezarpenak.php-k itzultzen duen `tresnak` katalogo bera erabiltzen du (id/ikonoa/
+// izena/azalpena/bidea), `admin/lib.php`-ko TRESNA_KATALOGOA-tik dator (leku bakarra).
+async function loadWebgunea() {
+  const tbody = el("webgunea-tbody");
+  try {
+    const r = await api("api/ezarpenak");
+    tbody.innerHTML = (r.tresnak || []).map(t => `<tr>
+        <td style="font-size:16px">${esc(t.ikonoa)}</td>
+        <td><strong>${esc(t.izena)}</strong><br><span style="color:var(--muted);font-size:11px">${esc(t.bidea)}</span></td>
+        <td style="text-align:center"><input type="checkbox" id="webgunea-ikusgai-${esc(t.id)}" ${t.ikusgai ? "checked" : ""} style="accent-color:var(--accent)"></td>
+        <td><input class="cell-input" id="webgunea-oharra-${esc(t.id)}" value="${esc(t.oharra)}" maxlength="200" placeholder="Adib. Datuak eguneratzen ari gara" style="border-color:var(--border)"></td>
+      </tr>`).join("");
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="4" style="color:var(--accent);font-size:12px">${esc(e.message)}</td></tr>`; }
+}
+
+async function saveWebgunea() {
+  const msg = el("webgunea-msg");
+  const rows = document.querySelectorAll('#webgunea-tbody input[id^="webgunea-ikusgai-"]');
+  const tresnak = {};
+  rows.forEach(chk => {
+    const id = chk.id.replace("webgunea-ikusgai-", "");
+    const oharraInp = el("webgunea-oharra-" + id);
+    tresnak[id] = { ikusgai: chk.checked, oharra: oharraInp ? oharraInp.value.trim() : "" };
+  });
+  msg.style.color = "var(--muted)"; msg.textContent = "Gordetzen...";
+  try {
+    await api("api/ezarpenak/tresnak", { method:"POST", body: JSON.stringify({ tresnak }) });
+    msg.style.color = "#4ade80";
+    msg.textContent = "✅ Gordeta. Webgune publikoak berehala erabiliko du.";
+    await loadWebgunea();
+  } catch(e) { msg.style.color = "var(--accent)"; msg.textContent = "⚠ " + e.message; }
+}
+
+function resetWebgunea() {
+  document.querySelectorAll('#webgunea-tbody input[id^="webgunea-ikusgai-"]').forEach(chk => chk.checked = true);
+  showToast("Denak ikusgai jarrita (gorde behar duzu)");
 }
 
 // ── Porra editatu ────────────────────────────────────────────────────────────

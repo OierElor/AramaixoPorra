@@ -90,7 +90,7 @@ bat aldatzean:** editatu → `./bump-version.sh` → commit → push → Plesk p
 ## Git errepositorioa
 
 - **Remote:** `https://github.com/OierElor/AramaixoPorra.git`, `main` adarra.
-- **Baztertuta** (.gitignore): `admin/config.php`, `admin/*.log`, **`data/.htaccess`**.
+- **Baztertuta** (.gitignore): `admin/config.php`, `admin/*.log`, `admin/ezarpenak.json`, **`data/.htaccess`**.
 - **Commit-mezuak:** euskaraz, laburrak.
 
 ## `data/` — git-en trackeatuta (segurua git-pull-arekin)

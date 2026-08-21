@@ -461,7 +461,7 @@
                     style="padding:10px 20px; border:none; border-radius:6px; background:#43a047; color:#fff; font-size:15px; font-weight:600; cursor:pointer;">
                     Porra hau bidali →
                 </button>
-                <span id="porra-bidali-ezkutatuta" style="font-size:13px; opacity:.7;" hidden>«Porra bidali» tresna aldi baterako ez dago eskuragarri.</span>
+                <span id="porra-bidali-ezkutatuta" style="font-size:13px; opacity:.7;" hidden></span>
             </div>`;
         marraztuPorraTaldeak();
         marraztuPorraLaburpena();

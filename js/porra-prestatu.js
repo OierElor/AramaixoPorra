@@ -91,12 +91,27 @@
      * localStorage zaharrean ez daude → hemen sortzen dira lehen aldiz ukitzean.
      * `mailaKop`: maila kopurua (osokoa, >=1). `mailaEsleipena`: {dortsala(string) -> maila zenbakia}.
      * (Aurreko iterazio batek `lista.mailak` array bat erabiltzen zuen; hemen ez da irakurtzen.)
+     *
+     * Listan dagoen txirrindulari BAKOITZAK beti maila baliozko bat izan behar du («sailkatu
+     * gabe» egoerarik ez dago): falta bada edo `mailaKop`-etik kanpo badago (adib. `−`
+     * batekin murriztu ondoren), 1era jartzen da.
      */
     function listaNormalizatu(l) {
         const n = parseInt(l.mailaKop, 10);
         l.mailaKop = (Number.isInteger(n) && n >= 1) ? Math.min(n, MAILA_MAX) : 1;
         if (!l.mailaEsleipena || typeof l.mailaEsleipena !== 'object') l.mailaEsleipena = {};
+        l.dortsalak.forEach(d => {
+            const m = Number(l.mailaEsleipena[String(d)]);
+            if (!Number.isInteger(m) || m < 1 || m > l.mailaKop) l.mailaEsleipena[String(d)] = 1;
+        });
         return l;
+    }
+
+    /** n. maila (1..kop) kolore batera mapatu: berdea (1) → gorria (kop). kop<=1 → null. */
+    function mailaKolorea(n, kop) {
+        if (kop <= 1) return null;
+        const t = (n - 1) / (kop - 1);
+        return `hsl(${120 - 120 * t}, 65%, 45%)`;
     }
 
     /** Txapelketa honentzako egoera lortu, lehen aldia bada lehenetsiak sortuz. */
@@ -253,16 +268,16 @@
             .filter(l => l.id !== lista.id && l.dortsalak.some(d => String(d) === String(dortsala)))
             .map(l => `<span class="pp-badge">${esc(l.izena)}</span>`).join('');
 
-        // Maila-hautagailua: lista honek maila bat baino gehiago badu ETA txirrindularia listan badago.
-        const mailaSel = dortsala => {
+        // Maila-stepper txikia: lista honek maila bat baino gehiago badu ETA txirrindularia listan badago.
+        const mailaStepper = dortsala => {
             if (lista.mailaKop <= 1 || !hartuta.has(String(dortsala))) return '';
-            const unekoa = lista.mailaEsleipena[String(dortsala)] ?? '';
-            let aukerak = '';
-            for (let n = 1; n <= lista.mailaKop; n++) {
-                aukerak += `<option value="${n}"${String(unekoa) === String(n) ? ' selected' : ''}>${n}. maila</option>`;
-            }
-            return `<select class="pp-maila-select" data-maila-dortsala="${esc(dortsala)}">` +
-                `<option value="">— sailkatu gabe —</option>${aukerak}</select>`;
+            const n = Number(lista.mailaEsleipena[String(dortsala)]) || 1;
+            const kolorea = mailaKolorea(n, lista.mailaKop);
+            return `<span class="pp-maila-stepper-txikia" data-maila-dortsala="${esc(dortsala)}">
+                <button type="button" class="pp-maila-dortsala-gutxitu" ${n <= 1 ? 'disabled' : ''}>−</button>
+                <span class="pp-maila-adierazlea" style="background:${kolorea}">${n}</span>
+                <button type="button" class="pp-maila-dortsala-gehitu" ${n >= lista.mailaKop ? 'disabled' : ''}>+</button>
+            </span>`;
         };
 
         cont.innerHTML = rows.map(r => `
@@ -271,7 +286,7 @@
                 <span class="pp-dortsala">${esc(r.dortsala)}</span>
                 <span class="pp-izena">${esc(r.izena)}</span>
                 <span class="pp-beste-listak">${besteListak(r.dortsala)}</span>
-                ${mailaSel(r.dortsala)}
+                ${mailaStepper(r.dortsala)}
             </label>`).join('') || '<p style="padding:12px; opacity:.6;">Ez da inor aurkitu.</p>';
 
         // Startlistan dagoeneko ez dauden dortsalak (gordeta zeuden, adminak kendu ditu).
@@ -333,18 +348,6 @@
     });
 
     listakGorputza.addEventListener('change', e => {
-        const mailaSel = e.target.closest('select[data-maila-dortsala]');
-        if (mailaSel) {
-            const lista = unekoLista();
-            if (!lista) return;
-            const d = mailaSel.dataset.mailaDortsala;
-            if (mailaSel.value) lista.mailaEsleipena[String(d)] = mailaSel.value;
-            else delete lista.mailaEsleipena[String(d)];
-            gorde();
-            marraztuPorraTaldeak(); // azpitaldeak eguneratu
-            return;
-        }
-
         const chk = e.target.closest('input[type="checkbox"][data-dortsala]');
         if (!chk) return;
         const lista = unekoLista();
@@ -352,6 +355,7 @@
         const d = Number(chk.dataset.dortsala);
         if (chk.checked) {
             if (!lista.dortsalak.some(x => Number(x) === d)) lista.dortsalak.push(d);
+            lista.mailaEsleipena[String(d)] = 1; // listan sartutakoak beti 1. mailatik hasten dira
         } else {
             lista.dortsalak = lista.dortsalak.filter(x => Number(x) !== d);
             delete lista.mailaEsleipena[String(d)]; // listatik kanpo → maila-esleipena ere garbitu
@@ -374,7 +378,7 @@
             return;
         }
 
-        // ── Maila-kopuru stepper-a (− / +) ──
+        // ── Maila-kopuru stepper-a (− / +), lista osorako ──
         if (e.target.closest('#maila-gehitu-btn')) {
             const lista = unekoLista();
             if (!lista || lista.mailaKop >= MAILA_MAX) return;
@@ -388,13 +392,26 @@
         if (e.target.closest('#maila-gutxitu-btn')) {
             const lista = unekoLista();
             if (!lista || lista.mailaKop <= 1) return;
-            const kenduta = lista.mailaKop; // beti gorenengo maila kentzen da
             lista.mailaKop--;
-            Object.keys(lista.mailaEsleipena).forEach(d => {
-                if (Number(lista.mailaEsleipena[d]) === kenduta) delete lista.mailaEsleipena[d];
-            });
+            listaNormalizatu(lista); // goreneko mailan zeudenak baliozko goren mailara jaitsi
             gorde();
             marraztuMailaStepper();
+            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
+            marraztuPorraTaldeak();
+            return;
+        }
+
+        // ── Maila-stepper txikia, txirrindulari bakoitzeko (− / +) ──
+        const rowBtn = e.target.closest('.pp-maila-dortsala-gehitu, .pp-maila-dortsala-gutxitu');
+        if (rowBtn) {
+            const lista = unekoLista();
+            if (!lista) return;
+            const d = rowBtn.closest('[data-maila-dortsala]').dataset.mailaDortsala;
+            const n = Number(lista.mailaEsleipena[d]) || 1;
+            if (rowBtn.matches('.pp-maila-dortsala-gehitu') && n < lista.mailaKop) lista.mailaEsleipena[d] = n + 1;
+            else if (rowBtn.matches('.pp-maila-dortsala-gutxitu') && n > 1) lista.mailaEsleipena[d] = n - 1;
+            else return;
+            gorde();
             marraztuListaZerrenda($('listak-bilaketa')?.value || '');
             marraztuPorraTaldeak();
             return;
@@ -446,60 +463,43 @@
         const hartuta = new Set(porra.dortsalak.map(String));
         const inLista = new Set(); // dortsal bat gutxienez lista batean sartuta
 
-        const lerroaHTML = r => `
+        // Errenkada bakarra: `lista` badago (eta maila bat baino gehiago badu), maila-adierazlea gehitu.
+        const lerroaHTML = (r, lista) => {
+            const n = lista ? (Number(lista.mailaEsleipena[String(r.dortsala)]) || 1) : null;
+            const kolorea = (lista && lista.mailaKop > 1) ? mailaKolorea(n, lista.mailaKop) : null;
+            const badge = kolorea ? `<span class="pp-maila-adierazlea" style="background:${kolorea}">${n}</span>` : '';
+            return `
             <label class="pp-lerroa">
                 <input type="checkbox" data-dortsala="${esc(r.dortsala)}" ${hartuta.has(String(r.dortsala)) ? 'checked' : ''}>
                 <span class="pp-dortsala">${esc(r.dortsala)}</span>
                 <span class="pp-izena">${esc(r.izena)}</span>
+                ${badge}
             </label>`;
-
-        // Talde bat marraztu: mailarik badu, barnean AZPITALDE tolesgarriak (errekurtsiboa).
-        const taldeaHTML = (t, barnekoa) => {
-            const tolestuta = tolestutakoTaldeak.has(t.id);
-            const zenbat = t.rows.filter(r => hartuta.has(String(r.dortsala))).length;
-            const gorputza = t.azpitaldeak
-                ? t.azpitaldeak.map(st => taldeaHTML(st, true)).join('')
-                : (t.rows.map(lerroaHTML).join('') || '<p style="padding:10px 12px; opacity:.6; margin:0;">Hutsik.</p>');
-            return `
-            <div class="pp-taldea${barnekoa ? ' pp-taldea-barnekoa' : ''}">
-                <div class="pp-taldea-burua" data-talde-id="${esc(t.id)}">
-                    <span>${esc(t.izena)} (${zenbat}/${t.rows.length})</span>
-                    <span>${tolestuta ? '▸' : '▾'}</span>
-                </div>
-                <div class="pp-taldea-gorputza${tolestuta ? ' collapsed' : ''}">${gorputza}</div>
-            </div>`;
         };
 
         const taldeak = egoera.listak.map(lista => {
             const rows = startlist.filter(r => lista.dortsalak.some(d => String(d) === String(r.dortsala)));
             rows.forEach(r => inLista.add(String(r.dortsala)));
-
-            // Maila bat baino gehiago badu, txirrindulariak mailaka azpi-taldekatu (+ "Sailkatu gabe").
-            let azpitaldeak = null;
-            if (lista.mailaKop > 1) {
-                azpitaldeak = [];
-                for (let n = 1; n <= lista.mailaKop; n++) {
-                    azpitaldeak.push({
-                        id: `${lista.id}::${n}`,
-                        izena: `${n}. maila`,
-                        rows: rows.filter(r => String(lista.mailaEsleipena[String(r.dortsala)] ?? '') === String(n)),
-                    });
-                }
-                const esleituak = new Set(azpitaldeak.flatMap(st => st.rows.map(r => String(r.dortsala))));
-                azpitaldeak.push({
-                    id: `${lista.id}::__gabe__`,
-                    izena: 'Sailkatu gabe',
-                    rows: rows.filter(r => !esleituak.has(String(r.dortsala))),
-                });
-            }
-
-            return { id: lista.id, izena: lista.izena, rows, azpitaldeak };
+            return { id: lista.id, izena: lista.izena, rows, lista };
         });
 
         const gainerakoak = startlist.filter(r => !inLista.has(String(r.dortsala)));
-        taldeak.push({ id: '__gainerakoak__', izena: 'Listarik gabe', rows: gainerakoak, azpitaldeak: null });
+        taldeak.push({ id: '__gainerakoak__', izena: 'Listarik gabe', rows: gainerakoak, lista: null });
 
-        cont.innerHTML = taldeak.map(t => taldeaHTML(t, false)).join('');
+        cont.innerHTML = taldeak.map(t => {
+            const tolestuta = tolestutakoTaldeak.has(t.id);
+            const zenbat = t.rows.filter(r => hartuta.has(String(r.dortsala))).length;
+            return `
+            <div class="pp-taldea">
+                <div class="pp-taldea-burua" data-talde-id="${esc(t.id)}">
+                    <span>${esc(t.izena)} (${zenbat}/${t.rows.length})</span>
+                    <span>${tolestuta ? '▸' : '▾'}</span>
+                </div>
+                <div class="pp-taldea-gorputza${tolestuta ? ' collapsed' : ''}">
+                    ${t.rows.map(r => lerroaHTML(r, t.lista)).join('') || '<p style="padding:10px 12px; opacity:.6; margin:0;">Hutsik.</p>'}
+                </div>
+            </div>`;
+        }).join('');
     }
 
     function marraztuPorraLaburpena() {

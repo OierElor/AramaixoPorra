@@ -1426,7 +1426,7 @@ h3.vuelta {
     font-style: italic;
 }
 
-/* Mailak (lista baten barruko tier-ak): kopuru-stepper-a + errenkada bakoitzeko select. */
+/* Mailak (lista baten barruko tier-ak): kopuru-stepper-a + txirrindulari bakoitzeko stepper txikia. */
 .pp-maila-stepper {
     display: inline-flex;
     align-items: center;
@@ -1459,26 +1459,42 @@ h3.vuelta {
     font-variant-numeric: tabular-nums;
 }
 
-/* Errenkada bakoitzeko maila-hautagailua (.pp-lerroa barruan, checkbox-etik bereizita). */
-.pp-maila-select {
+/* Txirrindulari bakoitzaren maila-adierazlea: kolorezko txapa (berdetik gorira), zenbakiarekin. */
+.pp-maila-adierazlea {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 700;
     flex: none;
+}
+
+/* «Nire listak»-eko errenkada bakoitzeko −/+ stepper txikia (lista-mailakoaren txiki-bertsioa). */
+.pp-maila-stepper-txikia {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+}
+
+.pp-maila-stepper-txikia button {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 50%;
+    background: #eee;
+    color: #555;
     font-size: 0.85em;
-    padding: 4px 6px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: #fff;
-    color: #333;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0;
     cursor: pointer;
 }
 
-/* "Nire porrak" ataleko habiaratutako maila-azpitaldeak: koska + itxura arinagoa. */
-.pp-taldea-barnekoa {
-    margin: 8px 10px;
-    border-color: #f0f0f0;
-}
-
-.pp-taldea-barnekoa .pp-taldea-burua {
-    padding: 7px 10px;
-    font-size: 0.85em;
-    background: #fff;
-}
+.pp-maila-stepper-txikia button:hover { background: #ddd; }
+.pp-maila-stepper-txikia button:disabled { opacity: .3; cursor: default; }

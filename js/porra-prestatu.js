@@ -259,8 +259,21 @@
         const q = iragazkia.trim().toLowerCase();
         const hartuta = new Set(lista.dortsalak.map(String));
 
-        const rows = startlist.filter(r => !q ||
+        let rows = startlist.filter(r => !q ||
             String(r.dortsala).includes(q) || r.izena.toLowerCase().includes(q));
+
+        // Maila bat baino gehiago badago, maila-ordenan erakutsi (baxuena/berdea gorenean):
+        // listan sartutakoak beren mailaz ordenatuta lehenik, gero gainerako startlista
+        // dortsalaz. Mailarik ez dagoenean (kop<=1), jatorrizko ordena mantendu, aldatu gabe.
+        if (lista.mailaKop > 1) {
+            rows = rows.slice().sort((a, b) => {
+                const aIn = hartuta.has(String(a.dortsala));
+                const bIn = hartuta.has(String(b.dortsala));
+                const ma = aIn ? (Number(lista.mailaEsleipena[String(a.dortsala)]) || 1) : lista.mailaKop + 1;
+                const mb = bIn ? (Number(lista.mailaEsleipena[String(b.dortsala)]) || 1) : lista.mailaKop + 1;
+                return ma !== mb ? ma - mb : Number(a.dortsala) - Number(b.dortsala);
+            });
+        }
 
         $('listak-kontagailua').textContent = lista.dortsalak.length;
 
@@ -461,7 +474,6 @@
         const porra = unekoPorra();
         if (!porra) return;
         const hartuta = new Set(porra.dortsalak.map(String));
-        const inLista = new Set(); // dortsal bat gutxienez lista batean sartuta
 
         // Errenkada bakarra: `lista` badago (eta maila bat baino gehiago badu), maila-adierazlea gehitu.
         const lerroaHTML = (r, lista) => {
@@ -478,13 +490,17 @@
         };
 
         const taldeak = egoera.listak.map(lista => {
-            const rows = startlist.filter(r => lista.dortsalak.some(d => String(d) === String(r.dortsala)));
-            rows.forEach(r => inLista.add(String(r.dortsala)));
+            let rows = startlist.filter(r => lista.dortsalak.some(d => String(d) === String(r.dortsala)));
+            // Maila bat baino gehiago badago, maila-ordenan erakutsi (baxuena/berdea gorenean).
+            if (lista.mailaKop > 1) {
+                rows = rows.slice().sort((a, b) => {
+                    const ma = Number(lista.mailaEsleipena[String(a.dortsala)]) || 1;
+                    const mb = Number(lista.mailaEsleipena[String(b.dortsala)]) || 1;
+                    return ma !== mb ? ma - mb : Number(a.dortsala) - Number(b.dortsala);
+                });
+            }
             return { id: lista.id, izena: lista.izena, rows, lista };
         });
-
-        const gainerakoak = startlist.filter(r => !inLista.has(String(r.dortsala)));
-        taldeak.push({ id: '__gainerakoak__', izena: 'Listarik gabe', rows: gainerakoak, lista: null });
 
         cont.innerHTML = taldeak.map(t => {
             const tolestuta = tolestutakoTaldeak.has(t.id);

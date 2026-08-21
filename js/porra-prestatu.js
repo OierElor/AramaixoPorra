@@ -2,7 +2,7 @@
  * Porra prestatzeko laguntzailea (tresnak/porra-prestatu).
  *
  * Txapelketa IREKIAK bakarrik erakusten ditu (Txapelketak.Porra_Irekita = 1).
- * Erabiltzaileak bere LISTAK sortzen ditu (Etapa, Mendia, Generala...) eta
+ * Erabiltzaileak bere LISTAK sortzen ditu (Etapa, Mendikoa, Generala...) eta
  * startlista horietan banatzen du; gero lista horietatik hainbat PORRA
  * ZIRRIBORRO osatu ditzake, alderatzeko. Amaitutakoan `tresnak/porra-bidali`-ra
  * bidaltzen du, dortsalak aurrez hautatuta (`?txap=ID&dortsalak=1,2,...`).
@@ -87,7 +87,7 @@
     function txapelketaEgoeraLortu(txapId) {
         if (!egoeraOsoa.txapelketak[txapId]) {
             const l1 = { id: id(), izena: 'Etapa', dortsalak: [] };
-            const l2 = { id: id(), izena: 'Mendia', dortsalak: [] };
+            const l2 = { id: id(), izena: 'Mendikoa', dortsalak: [] };
             const l3 = { id: id(), izena: 'Generala', dortsalak: [] };
             const p1 = { id: id(), izena: 'Porra 1', dortsalak: [] };
             egoeraOsoa.txapelketak[txapId] = {
@@ -343,7 +343,7 @@
                     style="padding:10px 20px; border:none; border-radius:6px; background:#43a047; color:#fff; font-size:15px; font-weight:600; cursor:pointer;">
                     Porra hau bidali →
                 </button>
-                <span id="porra-bidali-ezkutatuta" style="font-size:13px; opacity:.7;" hidden></span>
+                <span id="porra-bidali-ezkutatuta" style="font-size:13px; opacity:.7;" hidden>«Porra bidali» tresna aldi baterako ez dago eskuragarri.</span>
             </div>`;
         marraztuPorraTaldeak();
         marraztuPorraLaburpena();

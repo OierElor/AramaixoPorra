@@ -259,21 +259,11 @@
         const q = iragazkia.trim().toLowerCase();
         const hartuta = new Set(lista.dortsalak.map(String));
 
-        let rows = startlist.filter(r => !q ||
+        // Ordena FINKOA mantentzen da beti (startlist-etik dator, dortsalaz): txirrindulari
+        // bat listan sartzeak edo maila aldatzeak EZ du bere posizioa aldatu behar —
+        // erabiltzailea zerrendan ari da lanean eta jauzirik gabe jarraitu behar du.
+        const rows = startlist.filter(r => !q ||
             String(r.dortsala).includes(q) || r.izena.toLowerCase().includes(q));
-
-        // Maila bat baino gehiago badago, maila-ordenan erakutsi (baxuena/berdea gorenean):
-        // listan sartutakoak beren mailaz ordenatuta lehenik, gero gainerako startlista
-        // dortsalaz. Mailarik ez dagoenean (kop<=1), jatorrizko ordena mantendu, aldatu gabe.
-        if (lista.mailaKop > 1) {
-            rows = rows.slice().sort((a, b) => {
-                const aIn = hartuta.has(String(a.dortsala));
-                const bIn = hartuta.has(String(b.dortsala));
-                const ma = aIn ? (Number(lista.mailaEsleipena[String(a.dortsala)]) || 1) : lista.mailaKop + 1;
-                const mb = bIn ? (Number(lista.mailaEsleipena[String(b.dortsala)]) || 1) : lista.mailaKop + 1;
-                return ma !== mb ? ma - mb : Number(a.dortsala) - Number(b.dortsala);
-            });
-        }
 
         $('listak-kontagailua').textContent = lista.dortsalak.length;
 

@@ -6,14 +6,14 @@
     <meta name="description" content="Aramaixo Porra - Tresnak: porrei buruzko datuak aztertzeko tresnak">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Tresnak</title>
-    <link rel="stylesheet" href="/css/styles.css?v=20260820">
+    <link rel="stylesheet" href="/css/styles.css?v=20260821">
     <link rel="icon" type="image/png" href="/data/portadak/favicon.png">
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
-    <script src="/js/layout.js?v=20260820" defer></script>
+    <script src="/js/layout.js?v=20260821" defer></script>
 </head>
 
 <body>
@@ -42,12 +42,33 @@
         const esc = s => String(s ?? '')
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+        // "Porra bidali" tresna porra irekita dagoen txapelketaren bat dagoenean BAKARRIK
+        // du zentzua. Ikusgaitasun-toggle eskuzkoaz gain (adminetik), baldintza AUTOMATIKO
+        // hau bezero aldean ebazten da: ezarpenak.php DB gabea baita (diseinuz).
+        // Ezin bada egiaztatu (API arazoa), ez erakutsi (desaktibatuta egotea da ohikoena).
+        async function porraIrekitaDago() {
+            try {
+                const r = await fetch('/api/q.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sql: 'SELECT COUNT(*) AS n FROM "Txapelketak" WHERE Porra_Irekita = 1' }),
+                });
+                if (!r.ok) return false;
+                const rows = await r.json();
+                return !!(rows && rows.length && Number(rows[0].n) > 0);
+            } catch (e) { return false; }
+        }
+
         (async function () {
             const cont = document.getElementById('tresna-sareta');
             try {
                 const r = await fetch('/api/ezarpenak.php', { cache: 'no-cache' });
                 const d = await r.json();
-                const tresnak = (d.tresnak || []).filter(t => t.ikusgai);
+                let tresnak = (d.tresnak || []).filter(t => t.ikusgai);
+                // Porra bidali: porra irekita dagoen txapelketarik ez badago, ezkutatu.
+                if (tresnak.some(t => t.id === 'porra-bidali') && !(await porraIrekitaDago())) {
+                    tresnak = tresnak.filter(t => t.id !== 'porra-bidali');
+                }
                 cont.innerHTML = tresnak.map(t => `<a class="tresna-txartela" href="${esc(t.bidea)}">
                         <div class="tresna-ikonoa">${esc(t.ikonoa)}</div>
                         <h3>${esc(t.izena)}</h3>

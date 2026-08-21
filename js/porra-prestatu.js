@@ -405,7 +405,10 @@
         const osatuta = balid === beharDira;
         $('porra-kontagailua').textContent = balid;
         $('porra-kontagailua-wrap').classList.toggle('osatuta', osatuta);
-        $('porra-bidali-btn').disabled = !osatuta || !porraBidaliIkusgai;
+        const bidaliBtn = $('porra-bidali-btn');
+        // Porra-bidali ez-ikusgai (admin → Webgunea): botoia KENDU, ez soilik desgaitu.
+        bidaliBtn.style.display = porraBidaliIkusgai ? '' : 'none';
+        bidaliBtn.disabled = !osatuta;
         const ohEl = $('porra-bidali-ezkutatuta');
         if (ohEl) ohEl.hidden = porraBidaliIkusgai;
     }

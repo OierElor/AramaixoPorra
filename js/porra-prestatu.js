@@ -83,13 +83,18 @@
         return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     }
 
+    /** Lista batek eduki dezakeen gehienezko maila kopurua (istripuzko klik-metaketa saihesteko). */
+    const MAILA_MAX = 10;
+
     /**
-     * `lista.mailak`/`lista.mailaEsleipena` bermatu (eremu BERRIAK, aukerakoak).
+     * `lista.mailaKop`/`lista.mailaEsleipena` bermatu (eremu BERRIAK).
      * localStorage zaharrean ez daude → hemen sortzen dira lehen aldiz ukitzean.
-     * `mailak`: [{id, izena}] ordenean. `mailaEsleipena`: {dortsala(string) -> mailaId}.
+     * `mailaKop`: maila kopurua (osokoa, >=1). `mailaEsleipena`: {dortsala(string) -> maila zenbakia}.
+     * (Aurreko iterazio batek `lista.mailak` array bat erabiltzen zuen; hemen ez da irakurtzen.)
      */
     function listaNormalizatu(l) {
-        if (!Array.isArray(l.mailak)) l.mailak = [];
+        const n = parseInt(l.mailaKop, 10);
+        l.mailaKop = (Number.isInteger(n) && n >= 1) ? Math.min(n, MAILA_MAX) : 1;
         if (!l.mailaEsleipena || typeof l.mailaEsleipena !== 'object') l.mailaEsleipena = {};
         return l;
     }
@@ -97,9 +102,9 @@
     /** Txapelketa honentzako egoera lortu, lehen aldia bada lehenetsiak sortuz. */
     function txapelketaEgoeraLortu(txapId) {
         if (!egoeraOsoa.txapelketak[txapId]) {
-            const l1 = { id: id(), izena: 'Etapa', dortsalak: [], mailak: [], mailaEsleipena: {} };
-            const l2 = { id: id(), izena: 'Mendia', dortsalak: [], mailak: [], mailaEsleipena: {} };
-            const l3 = { id: id(), izena: 'Generala', dortsalak: [], mailak: [], mailaEsleipena: {} };
+            const l1 = { id: id(), izena: 'Etapa', dortsalak: [], mailaKop: 1, mailaEsleipena: {} };
+            const l2 = { id: id(), izena: 'Mendia', dortsalak: [], mailaKop: 1, mailaEsleipena: {} };
+            const l3 = { id: id(), izena: 'Generala', dortsalak: [], mailaKop: 1, mailaEsleipena: {} };
             const p1 = { id: id(), izena: 'Porra 1', dortsalak: [] };
             egoeraOsoa.txapelketak[txapId] = {
                 listak: [l1, l2, l3],
@@ -206,35 +211,30 @@
             return;
         }
         listakGorputza.innerHTML = `
-            <div style="margin:12px 0 4px;">
-                <div style="font-size:12px; font-weight:600; opacity:.7; margin-bottom:6px;">Mailak (aukerakoa)</div>
-                <div class="pp-mailak-lerroa" id="listak-mailak"></div>
-            </div>
+            <div style="display:flex; align-items:center; gap:10px; margin:12px 0 4px; flex-wrap:wrap;" id="listak-mailak"></div>
             <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:12px 0;">
                 <input type="text" id="listak-bilaketa" autocomplete="off" placeholder="Iragazi izenez edo dortsalez..."
                     style="flex:1; min-width:200px; padding:9px 10px; border:1px solid #bbb; border-radius:6px; font-size:15px;">
                 <span style="font-size:13px; opacity:.7;"><span id="listak-kontagailua">0</span> aukeratuta</span>
             </div>
             <div class="pp-zerrenda" id="listak-startlista"></div>`;
-        marraztuMailakLerroa();
+        marraztuMailaStepper();
         marraztuListaZerrenda('');
         $('listak-bilaketa').addEventListener('input', e => marraztuListaZerrenda(e.target.value));
     }
 
-    /** Mailen kudeaketa-lerroa: chip bakoitza (izena + gora/behera/editatu/ezabatu) + "+ Maila". */
-    function marraztuMailakLerroa() {
+    /** Maila-kopurua aukeratzeko stepper-a («−» / kopurua / «+»). */
+    function marraztuMailaStepper() {
         const lista = unekoLista();
         const cont = $('listak-mailak');
         if (!lista || !cont) return;
-        cont.innerHTML = lista.mailak.map((m, i) => `
-            <span class="pp-maila-chip" data-maila-id="${esc(m.id)}">
-                <span class="pp-maila-izena">${esc(m.izena)}</span>
-                <button type="button" class="pp-maila-gora" title="Gora" ${i === 0 ? 'disabled' : ''}>▲</button>
-                <button type="button" class="pp-maila-behera" title="Behera" ${i === lista.mailak.length - 1 ? 'disabled' : ''}>▼</button>
-                <button type="button" class="pp-maila-editatu" title="Berrizendatu">✏️</button>
-                <button type="button" class="pp-maila-ezabatu" title="Ezabatu">🗑️</button>
-            </span>`).join('') +
-            '<button type="button" class="pp-fitxa-berria" id="maila-berria-btn">+ Maila</button>';
+        cont.innerHTML = `
+            <span style="font-size:12px; font-weight:600; opacity:.7;">Mailak:</span>
+            <div class="pp-maila-stepper">
+                <button type="button" id="maila-gutxitu-btn" ${lista.mailaKop <= 1 ? 'disabled' : ''}>−</button>
+                <span id="maila-kopurua">${lista.mailaKop}</span>
+                <button type="button" id="maila-gehitu-btn" ${lista.mailaKop >= MAILA_MAX ? 'disabled' : ''}>+</button>
+            </div>`;
     }
 
     function marraztuListaZerrenda(iragazkia) {
@@ -253,12 +253,14 @@
             .filter(l => l.id !== lista.id && l.dortsalak.some(d => String(d) === String(dortsala)))
             .map(l => `<span class="pp-badge">${esc(l.izena)}</span>`).join('');
 
-        // Maila-hautagailua: lista honek mailarik badu ETA txirrindularia listan badago.
+        // Maila-hautagailua: lista honek maila bat baino gehiago badu ETA txirrindularia listan badago.
         const mailaSel = dortsala => {
-            if (!lista.mailak.length || !hartuta.has(String(dortsala))) return '';
+            if (lista.mailaKop <= 1 || !hartuta.has(String(dortsala))) return '';
             const unekoa = lista.mailaEsleipena[String(dortsala)] ?? '';
-            const aukerak = lista.mailak.map(m =>
-                `<option value="${esc(m.id)}"${String(unekoa) === String(m.id) ? ' selected' : ''}>${esc(m.izena)}</option>`).join('');
+            let aukerak = '';
+            for (let n = 1; n <= lista.mailaKop; n++) {
+                aukerak += `<option value="${n}"${String(unekoa) === String(n) ? ' selected' : ''}>${n}. maila</option>`;
+            }
             return `<select class="pp-maila-select" data-maila-dortsala="${esc(dortsala)}">` +
                 `<option value="">— sailkatu gabe —</option>${aukerak}</select>`;
         };
@@ -289,7 +291,7 @@
         if (berria) {
             const izena = (prompt('Lista berriaren izena:', 'Lista berria') || '').trim();
             if (!izena) return;
-            const berri = { id: id(), izena, dortsalak: [], mailak: [], mailaEsleipena: {} };
+            const berri = { id: id(), izena, dortsalak: [], mailaKop: 1, mailaEsleipena: {} };
             egoera.listak.push(berri);
             egoera.unekoLista = berri.id;
             gorde();
@@ -372,57 +374,30 @@
             return;
         }
 
-        // ── Mailen kudeaketa (+ Berria / ✏️ / 🗑️ / ▲ / ▼) ──
-        if (e.target.closest('#maila-berria-btn')) {
+        // ── Maila-kopuru stepper-a (− / +) ──
+        if (e.target.closest('#maila-gehitu-btn')) {
             const lista = unekoLista();
-            if (!lista) return;
-            const izena = (prompt('Maila berriaren izena:', `${lista.mailak.length + 1}. maila`) || '').trim();
-            if (!izena) return;
-            lista.mailak.push({ id: id(), izena });
+            if (!lista || lista.mailaKop >= MAILA_MAX) return;
+            lista.mailaKop++;
             gorde();
-            marraztuMailakLerroa();
+            marraztuMailaStepper();
             marraztuListaZerrenda($('listak-bilaketa')?.value || '');
             marraztuPorraTaldeak();
             return;
         }
-        const chip = e.target.closest('.pp-maila-chip');
-        if (!chip) return;
-        const lista = unekoLista();
-        if (!lista) return;
-        const mailaId = chip.dataset.mailaId;
-        const i = lista.mailak.findIndex(m => m.id === mailaId);
-        if (i === -1) return;
-
-        if (e.target.closest('.pp-maila-editatu')) {
-            const berria = (prompt('Mailaren izen berria:', lista.mailak[i].izena) || '').trim();
-            if (!berria || berria === lista.mailak[i].izena) return;
-            lista.mailak[i].izena = berria;
-            gorde();
-            marraztuMailakLerroa();
-            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
-            marraztuPorraTaldeak();
-        } else if (e.target.closest('.pp-maila-ezabatu')) {
-            if (!confirm(`"${lista.mailak[i].izena}" maila ezabatu? Txirrindulariak listan geratuko dira, sailkatu gabe.`)) return;
-            lista.mailak.splice(i, 1);
+        if (e.target.closest('#maila-gutxitu-btn')) {
+            const lista = unekoLista();
+            if (!lista || lista.mailaKop <= 1) return;
+            const kenduta = lista.mailaKop; // beti gorenengo maila kentzen da
+            lista.mailaKop--;
             Object.keys(lista.mailaEsleipena).forEach(d => {
-                if (lista.mailaEsleipena[d] === mailaId) delete lista.mailaEsleipena[d];
+                if (Number(lista.mailaEsleipena[d]) === kenduta) delete lista.mailaEsleipena[d];
             });
             gorde();
-            marraztuMailakLerroa();
+            marraztuMailaStepper();
             marraztuListaZerrenda($('listak-bilaketa')?.value || '');
             marraztuPorraTaldeak();
-        } else if (e.target.closest('.pp-maila-gora') && i > 0) {
-            [lista.mailak[i - 1], lista.mailak[i]] = [lista.mailak[i], lista.mailak[i - 1]];
-            gorde();
-            marraztuMailakLerroa();
-            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
-            marraztuPorraTaldeak();
-        } else if (e.target.closest('.pp-maila-behera') && i < lista.mailak.length - 1) {
-            [lista.mailak[i], lista.mailak[i + 1]] = [lista.mailak[i + 1], lista.mailak[i]];
-            gorde();
-            marraztuMailakLerroa();
-            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
-            marraztuPorraTaldeak();
+            return;
         }
     });
 
@@ -499,14 +474,17 @@
             const rows = startlist.filter(r => lista.dortsalak.some(d => String(d) === String(r.dortsala)));
             rows.forEach(r => inLista.add(String(r.dortsala)));
 
-            // Mailarik badu, txirrindulariak mailaka azpi-taldekatu (+ "Sailkatu gabe" bilduma).
+            // Maila bat baino gehiago badu, txirrindulariak mailaka azpi-taldekatu (+ "Sailkatu gabe").
             let azpitaldeak = null;
-            if (lista.mailak.length) {
-                azpitaldeak = lista.mailak.map(m => ({
-                    id: `${lista.id}::${m.id}`,
-                    izena: m.izena,
-                    rows: rows.filter(r => String(lista.mailaEsleipena[String(r.dortsala)] ?? '') === String(m.id)),
-                }));
+            if (lista.mailaKop > 1) {
+                azpitaldeak = [];
+                for (let n = 1; n <= lista.mailaKop; n++) {
+                    azpitaldeak.push({
+                        id: `${lista.id}::${n}`,
+                        izena: `${n}. maila`,
+                        rows: rows.filter(r => String(lista.mailaEsleipena[String(r.dortsala)] ?? '') === String(n)),
+                    });
+                }
                 const esleituak = new Set(azpitaldeak.flatMap(st => st.rows.map(r => String(r.dortsala))));
                 azpitaldeak.push({
                     id: `${lista.id}::__gabe__`,

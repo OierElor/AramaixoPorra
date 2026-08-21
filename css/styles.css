@@ -1426,40 +1426,38 @@ h3.vuelta {
     font-style: italic;
 }
 
-/* Mailak (lista baten barruko tier-ak): kudeaketa-lerroa + errenkada bakoitzeko select. */
-.pp-mailak-lerroa {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-}
-
-.pp-maila-chip {
+/* Mailak (lista baten barruko tier-ak): kopuru-stepper-a + errenkada bakoitzeko select. */
+.pp-maila-stepper {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 10px;
     background: #eee;
-    color: #444;
-    padding: 4px 4px 4px 10px;
-    border-radius: 14px;
-    font-size: 0.85em;
+    border-radius: 16px;
+    padding: 4px 6px;
 }
 
-.pp-maila-izena { margin-right: 2px; }
-
-.pp-maila-chip button {
+.pp-maila-stepper button {
+    width: 26px;
+    height: 26px;
     border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 0.9em;
-    line-height: 1;
-    padding: 4px;
     border-radius: 50%;
+    background: #fff;
+    color: var(--color-tresnak);
+    font-size: 1em;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
 }
 
-.pp-maila-chip button:hover { background: rgba(0, 0, 0, .08); }
-.pp-maila-chip button:disabled { opacity: .3; cursor: default; }
-.pp-maila-chip button:disabled:hover { background: none; }
+.pp-maila-stepper button:hover { background: var(--color-tresnak); color: #fff; }
+.pp-maila-stepper button:disabled { opacity: .35; cursor: default; background: #fff; color: var(--color-tresnak); }
+
+#maila-kopurua {
+    min-width: 1.2em;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
 
 /* Errenkada bakoitzeko maila-hautagailua (.pp-lerroa barruan, checkbox-etik bereizita). */
 .pp-maila-select {

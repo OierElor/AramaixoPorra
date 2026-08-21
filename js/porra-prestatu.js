@@ -2,7 +2,7 @@
  * Porra prestatzeko laguntzailea (tresnak/porra-prestatu).
  *
  * Txapelketa IREKIAK bakarrik erakusten ditu (Txapelketak.Porra_Irekita = 1).
- * Erabiltzaileak bere LISTAK sortzen ditu (Etapa, Mendikoa, Generala...) eta
+ * Erabiltzaileak bere LISTAK sortzen ditu (Etapa, Mendia, Generala...) eta
  * startlista horietan banatzen du; gero lista horietatik hainbat PORRA
  * ZIRRIBORRO osatu ditzake, alderatzeko. Amaitutakoan `tresnak/porra-bidali`-ra
  * bidaltzen du, dortsalak aurrez hautatuta (`?txap=ID&dortsalak=1,2,...`).
@@ -83,12 +83,23 @@
         return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     }
 
+    /**
+     * `lista.mailak`/`lista.mailaEsleipena` bermatu (eremu BERRIAK, aukerakoak).
+     * localStorage zaharrean ez daude → hemen sortzen dira lehen aldiz ukitzean.
+     * `mailak`: [{id, izena}] ordenean. `mailaEsleipena`: {dortsala(string) -> mailaId}.
+     */
+    function listaNormalizatu(l) {
+        if (!Array.isArray(l.mailak)) l.mailak = [];
+        if (!l.mailaEsleipena || typeof l.mailaEsleipena !== 'object') l.mailaEsleipena = {};
+        return l;
+    }
+
     /** Txapelketa honentzako egoera lortu, lehen aldia bada lehenetsiak sortuz. */
     function txapelketaEgoeraLortu(txapId) {
         if (!egoeraOsoa.txapelketak[txapId]) {
-            const l1 = { id: id(), izena: 'Etapa', dortsalak: [] };
-            const l2 = { id: id(), izena: 'Mendikoa', dortsalak: [] };
-            const l3 = { id: id(), izena: 'Generala', dortsalak: [] };
+            const l1 = { id: id(), izena: 'Etapa', dortsalak: [], mailak: [], mailaEsleipena: {} };
+            const l2 = { id: id(), izena: 'Mendia', dortsalak: [], mailak: [], mailaEsleipena: {} };
+            const l3 = { id: id(), izena: 'Generala', dortsalak: [], mailak: [], mailaEsleipena: {} };
             const p1 = { id: id(), izena: 'Porra 1', dortsalak: [] };
             egoeraOsoa.txapelketak[txapId] = {
                 listak: [l1, l2, l3],
@@ -98,6 +109,7 @@
             };
             gorde();
         }
+        egoeraOsoa.txapelketak[txapId].listak.forEach(listaNormalizatu);
         return egoeraOsoa.txapelketak[txapId];
     }
 
@@ -194,14 +206,35 @@
             return;
         }
         listakGorputza.innerHTML = `
+            <div style="margin:12px 0 4px;">
+                <div style="font-size:12px; font-weight:600; opacity:.7; margin-bottom:6px;">Mailak (aukerakoa)</div>
+                <div class="pp-mailak-lerroa" id="listak-mailak"></div>
+            </div>
             <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:12px 0;">
                 <input type="text" id="listak-bilaketa" autocomplete="off" placeholder="Iragazi izenez edo dortsalez..."
                     style="flex:1; min-width:200px; padding:9px 10px; border:1px solid #bbb; border-radius:6px; font-size:15px;">
                 <span style="font-size:13px; opacity:.7;"><span id="listak-kontagailua">0</span> aukeratuta</span>
             </div>
             <div class="pp-zerrenda" id="listak-startlista"></div>`;
+        marraztuMailakLerroa();
         marraztuListaZerrenda('');
         $('listak-bilaketa').addEventListener('input', e => marraztuListaZerrenda(e.target.value));
+    }
+
+    /** Mailen kudeaketa-lerroa: chip bakoitza (izena + gora/behera/editatu/ezabatu) + "+ Maila". */
+    function marraztuMailakLerroa() {
+        const lista = unekoLista();
+        const cont = $('listak-mailak');
+        if (!lista || !cont) return;
+        cont.innerHTML = lista.mailak.map((m, i) => `
+            <span class="pp-maila-chip" data-maila-id="${esc(m.id)}">
+                <span class="pp-maila-izena">${esc(m.izena)}</span>
+                <button type="button" class="pp-maila-gora" title="Gora" ${i === 0 ? 'disabled' : ''}>▲</button>
+                <button type="button" class="pp-maila-behera" title="Behera" ${i === lista.mailak.length - 1 ? 'disabled' : ''}>▼</button>
+                <button type="button" class="pp-maila-editatu" title="Berrizendatu">✏️</button>
+                <button type="button" class="pp-maila-ezabatu" title="Ezabatu">🗑️</button>
+            </span>`).join('') +
+            '<button type="button" class="pp-fitxa-berria" id="maila-berria-btn">+ Maila</button>';
     }
 
     function marraztuListaZerrenda(iragazkia) {
@@ -220,12 +253,23 @@
             .filter(l => l.id !== lista.id && l.dortsalak.some(d => String(d) === String(dortsala)))
             .map(l => `<span class="pp-badge">${esc(l.izena)}</span>`).join('');
 
+        // Maila-hautagailua: lista honek mailarik badu ETA txirrindularia listan badago.
+        const mailaSel = dortsala => {
+            if (!lista.mailak.length || !hartuta.has(String(dortsala))) return '';
+            const unekoa = lista.mailaEsleipena[String(dortsala)] ?? '';
+            const aukerak = lista.mailak.map(m =>
+                `<option value="${esc(m.id)}"${String(unekoa) === String(m.id) ? ' selected' : ''}>${esc(m.izena)}</option>`).join('');
+            return `<select class="pp-maila-select" data-maila-dortsala="${esc(dortsala)}">` +
+                `<option value="">— sailkatu gabe —</option>${aukerak}</select>`;
+        };
+
         cont.innerHTML = rows.map(r => `
             <label class="pp-lerroa">
                 <input type="checkbox" data-dortsala="${esc(r.dortsala)}" ${hartuta.has(String(r.dortsala)) ? 'checked' : ''}>
                 <span class="pp-dortsala">${esc(r.dortsala)}</span>
                 <span class="pp-izena">${esc(r.izena)}</span>
                 <span class="pp-beste-listak">${besteListak(r.dortsala)}</span>
+                ${mailaSel(r.dortsala)}
             </label>`).join('') || '<p style="padding:12px; opacity:.6;">Ez da inor aurkitu.</p>';
 
         // Startlistan dagoeneko ez dauden dortsalak (gordeta zeuden, adminak kendu ditu).
@@ -245,7 +289,7 @@
         if (berria) {
             const izena = (prompt('Lista berriaren izena:', 'Lista berria') || '').trim();
             if (!izena) return;
-            const berri = { id: id(), izena, dortsalak: [] };
+            const berri = { id: id(), izena, dortsalak: [], mailak: [], mailaEsleipena: {} };
             egoera.listak.push(berri);
             egoera.unekoLista = berri.id;
             gorde();
@@ -287,6 +331,18 @@
     });
 
     listakGorputza.addEventListener('change', e => {
+        const mailaSel = e.target.closest('select[data-maila-dortsala]');
+        if (mailaSel) {
+            const lista = unekoLista();
+            if (!lista) return;
+            const d = mailaSel.dataset.mailaDortsala;
+            if (mailaSel.value) lista.mailaEsleipena[String(d)] = mailaSel.value;
+            else delete lista.mailaEsleipena[String(d)];
+            gorde();
+            marraztuPorraTaldeak(); // azpitaldeak eguneratu
+            return;
+        }
+
         const chk = e.target.closest('input[type="checkbox"][data-dortsala]');
         if (!chk) return;
         const lista = unekoLista();
@@ -296,6 +352,7 @@
             if (!lista.dortsalak.some(x => Number(x) === d)) lista.dortsalak.push(d);
         } else {
             lista.dortsalak = lista.dortsalak.filter(x => Number(x) !== d);
+            delete lista.mailaEsleipena[String(d)]; // listatik kanpo → maila-esleipena ere garbitu
         }
         gorde();
         marraztuListaZerrenda($('listak-bilaketa')?.value || '');
@@ -303,14 +360,70 @@
     });
 
     listakGorputza.addEventListener('click', e => {
-        const btn = e.target.closest('[data-kendu-galdua]');
-        if (!btn) return;
+        const kenduBtn = e.target.closest('[data-kendu-galdua]');
+        if (kenduBtn) {
+            const lista = unekoLista();
+            if (!lista) return;
+            const d = kenduBtn.dataset.kenduGaldua;
+            lista.dortsalak = lista.dortsalak.filter(x => String(x) !== String(d));
+            delete lista.mailaEsleipena[String(d)];
+            gorde();
+            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
+            return;
+        }
+
+        // ── Mailen kudeaketa (+ Berria / ✏️ / 🗑️ / ▲ / ▼) ──
+        if (e.target.closest('#maila-berria-btn')) {
+            const lista = unekoLista();
+            if (!lista) return;
+            const izena = (prompt('Maila berriaren izena:', `${lista.mailak.length + 1}. maila`) || '').trim();
+            if (!izena) return;
+            lista.mailak.push({ id: id(), izena });
+            gorde();
+            marraztuMailakLerroa();
+            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
+            marraztuPorraTaldeak();
+            return;
+        }
+        const chip = e.target.closest('.pp-maila-chip');
+        if (!chip) return;
         const lista = unekoLista();
         if (!lista) return;
-        const d = btn.dataset.kenduGaldua;
-        lista.dortsalak = lista.dortsalak.filter(x => String(x) !== String(d));
-        gorde();
-        marraztuListaZerrenda($('listak-bilaketa')?.value || '');
+        const mailaId = chip.dataset.mailaId;
+        const i = lista.mailak.findIndex(m => m.id === mailaId);
+        if (i === -1) return;
+
+        if (e.target.closest('.pp-maila-editatu')) {
+            const berria = (prompt('Mailaren izen berria:', lista.mailak[i].izena) || '').trim();
+            if (!berria || berria === lista.mailak[i].izena) return;
+            lista.mailak[i].izena = berria;
+            gorde();
+            marraztuMailakLerroa();
+            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
+            marraztuPorraTaldeak();
+        } else if (e.target.closest('.pp-maila-ezabatu')) {
+            if (!confirm(`"${lista.mailak[i].izena}" maila ezabatu? Txirrindulariak listan geratuko dira, sailkatu gabe.`)) return;
+            lista.mailak.splice(i, 1);
+            Object.keys(lista.mailaEsleipena).forEach(d => {
+                if (lista.mailaEsleipena[d] === mailaId) delete lista.mailaEsleipena[d];
+            });
+            gorde();
+            marraztuMailakLerroa();
+            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
+            marraztuPorraTaldeak();
+        } else if (e.target.closest('.pp-maila-gora') && i > 0) {
+            [lista.mailak[i - 1], lista.mailak[i]] = [lista.mailak[i], lista.mailak[i - 1]];
+            gorde();
+            marraztuMailakLerroa();
+            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
+            marraztuPorraTaldeak();
+        } else if (e.target.closest('.pp-maila-behera') && i < lista.mailak.length - 1) {
+            [lista.mailak[i], lista.mailak[i + 1]] = [lista.mailak[i + 1], lista.mailak[i]];
+            gorde();
+            marraztuMailakLerroa();
+            marraztuListaZerrenda($('listak-bilaketa')?.value || '');
+            marraztuPorraTaldeak();
+        }
     });
 
     // ═══ B · NIRE PORRAK ═════════════════════════════════════════════════════
@@ -358,34 +471,57 @@
         const hartuta = new Set(porra.dortsalak.map(String));
         const inLista = new Set(); // dortsal bat gutxienez lista batean sartuta
 
-        const taldeak = egoera.listak.map(lista => {
-            const rows = startlist.filter(r => lista.dortsalak.some(d => String(d) === String(r.dortsala)));
-            rows.forEach(r => inLista.add(String(r.dortsala)));
-            return { id: lista.id, izena: lista.izena, rows };
-        });
+        const lerroaHTML = r => `
+            <label class="pp-lerroa">
+                <input type="checkbox" data-dortsala="${esc(r.dortsala)}" ${hartuta.has(String(r.dortsala)) ? 'checked' : ''}>
+                <span class="pp-dortsala">${esc(r.dortsala)}</span>
+                <span class="pp-izena">${esc(r.izena)}</span>
+            </label>`;
 
-        const gainerakoak = startlist.filter(r => !inLista.has(String(r.dortsala)));
-        taldeak.push({ id: '__gainerakoak__', izena: 'Listarik gabe', rows: gainerakoak });
-
-        cont.innerHTML = taldeak.map(t => {
+        // Talde bat marraztu: mailarik badu, barnean AZPITALDE tolesgarriak (errekurtsiboa).
+        const taldeaHTML = (t, barnekoa) => {
             const tolestuta = tolestutakoTaldeak.has(t.id);
             const zenbat = t.rows.filter(r => hartuta.has(String(r.dortsala))).length;
+            const gorputza = t.azpitaldeak
+                ? t.azpitaldeak.map(st => taldeaHTML(st, true)).join('')
+                : (t.rows.map(lerroaHTML).join('') || '<p style="padding:10px 12px; opacity:.6; margin:0;">Hutsik.</p>');
             return `
-            <div class="pp-taldea">
+            <div class="pp-taldea${barnekoa ? ' pp-taldea-barnekoa' : ''}">
                 <div class="pp-taldea-burua" data-talde-id="${esc(t.id)}">
                     <span>${esc(t.izena)} (${zenbat}/${t.rows.length})</span>
                     <span>${tolestuta ? '▸' : '▾'}</span>
                 </div>
-                <div class="pp-taldea-gorputza${tolestuta ? ' collapsed' : ''}">
-                    ${t.rows.map(r => `
-                        <label class="pp-lerroa">
-                            <input type="checkbox" data-dortsala="${esc(r.dortsala)}" ${hartuta.has(String(r.dortsala)) ? 'checked' : ''}>
-                            <span class="pp-dortsala">${esc(r.dortsala)}</span>
-                            <span class="pp-izena">${esc(r.izena)}</span>
-                        </label>`).join('') || '<p style="padding:10px 12px; opacity:.6; margin:0;">Hutsik.</p>'}
-                </div>
+                <div class="pp-taldea-gorputza${tolestuta ? ' collapsed' : ''}">${gorputza}</div>
             </div>`;
-        }).join('');
+        };
+
+        const taldeak = egoera.listak.map(lista => {
+            const rows = startlist.filter(r => lista.dortsalak.some(d => String(d) === String(r.dortsala)));
+            rows.forEach(r => inLista.add(String(r.dortsala)));
+
+            // Mailarik badu, txirrindulariak mailaka azpi-taldekatu (+ "Sailkatu gabe" bilduma).
+            let azpitaldeak = null;
+            if (lista.mailak.length) {
+                azpitaldeak = lista.mailak.map(m => ({
+                    id: `${lista.id}::${m.id}`,
+                    izena: m.izena,
+                    rows: rows.filter(r => String(lista.mailaEsleipena[String(r.dortsala)] ?? '') === String(m.id)),
+                }));
+                const esleituak = new Set(azpitaldeak.flatMap(st => st.rows.map(r => String(r.dortsala))));
+                azpitaldeak.push({
+                    id: `${lista.id}::__gabe__`,
+                    izena: 'Sailkatu gabe',
+                    rows: rows.filter(r => !esleituak.has(String(r.dortsala))),
+                });
+            }
+
+            return { id: lista.id, izena: lista.izena, rows, azpitaldeak };
+        });
+
+        const gainerakoak = startlist.filter(r => !inLista.has(String(r.dortsala)));
+        taldeak.push({ id: '__gainerakoak__', izena: 'Listarik gabe', rows: gainerakoak, azpitaldeak: null });
+
+        cont.innerHTML = taldeak.map(t => taldeaHTML(t, false)).join('');
     }
 
     function marraztuPorraLaburpena() {

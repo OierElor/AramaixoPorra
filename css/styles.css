@@ -1425,3 +1425,62 @@ h3.vuelta {
     font-size: 0.8em;
     font-style: italic;
 }
+
+/* Mailak (lista baten barruko tier-ak): kudeaketa-lerroa + errenkada bakoitzeko select. */
+.pp-mailak-lerroa {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.pp-maila-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #eee;
+    color: #444;
+    padding: 4px 4px 4px 10px;
+    border-radius: 14px;
+    font-size: 0.85em;
+}
+
+.pp-maila-izena { margin-right: 2px; }
+
+.pp-maila-chip button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9em;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 50%;
+}
+
+.pp-maila-chip button:hover { background: rgba(0, 0, 0, .08); }
+.pp-maila-chip button:disabled { opacity: .3; cursor: default; }
+.pp-maila-chip button:disabled:hover { background: none; }
+
+/* Errenkada bakoitzeko maila-hautagailua (.pp-lerroa barruan, checkbox-etik bereizita). */
+.pp-maila-select {
+    flex: none;
+    font-size: 0.85em;
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+}
+
+/* "Nire porrak" ataleko habiaratutako maila-azpitaldeak: koska + itxura arinagoa. */
+.pp-taldea-barnekoa {
+    margin: 8px 10px;
+    border-color: #f0f0f0;
+}
+
+.pp-taldea-barnekoa .pp-taldea-burua {
+    padding: 7px 10px;
+    font-size: 0.85em;
+    background: #fff;
+}

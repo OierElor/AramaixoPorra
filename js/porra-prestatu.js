@@ -479,6 +479,19 @@
             </label>`;
         };
 
+        // Talde-goiburuko laburpena: porrarako HAUTATUTAKOEN kopurua mailaka (berdetik gorira).
+        // Taldea tolestuta egon arren ikusgai da (goiburuaren parte baita).
+        const laburpenaHTML = t => {
+            if (!t.lista || t.lista.mailaKop <= 1) return '';
+            let items = '';
+            for (let n = 1; n <= t.lista.mailaKop; n++) {
+                const kop = t.rows.filter(r =>
+                    hartuta.has(String(r.dortsala)) && Number(t.lista.mailaEsleipena[String(r.dortsala)]) === n).length;
+                items += `<span class="pp-maila-laburpena-item"><i style="background:${mailaKolorea(n, t.lista.mailaKop)}"></i>${kop}</span>`;
+            }
+            return `<div class="pp-maila-taldeko-laburpena">${items}</div>`;
+        };
+
         const taldeak = egoera.listak.map(lista => {
             let rows = startlist.filter(r => lista.dortsalak.some(d => String(d) === String(r.dortsala)));
             // Maila bat baino gehiago badago, maila-ordenan erakutsi (baxuena/berdea gorenean).
@@ -498,8 +511,11 @@
             return `
             <div class="pp-taldea">
                 <div class="pp-taldea-burua" data-talde-id="${esc(t.id)}">
-                    <span>${esc(t.izena)} (${zenbat}/${t.rows.length})</span>
-                    <span>${tolestuta ? '▸' : '▾'}</span>
+                    <div class="pp-taldea-burua-ezkerra">
+                        <span>${esc(t.izena)} (${zenbat}/${t.rows.length})</span>
+                        ${laburpenaHTML(t)}
+                    </div>
+                    <span class="pp-taldea-toggle">${tolestuta ? '▸' : '▾'}</span>
                 </div>
                 <div class="pp-taldea-gorputza${tolestuta ? ' collapsed' : ''}">
                     ${t.rows.map(r => lerroaHTML(r, t.lista)).join('') || '<p style="padding:10px 12px; opacity:.6; margin:0;">Hutsik.</p>'}
@@ -615,7 +631,7 @@
             if (tolestutakoTaldeak.has(tid2)) tolestutakoTaldeak.delete(tid2);
             else tolestutakoTaldeak.add(tid2);
             burua.nextElementSibling.classList.toggle('collapsed');
-            burua.querySelector('span:last-child').textContent = tolestutakoTaldeak.has(tid2) ? '▸' : '▾';
+            burua.querySelector('.pp-taldea-toggle').textContent = tolestutakoTaldeak.has(tid2) ? '▸' : '▾';
             return;
         }
         const chip = e.target.closest('.porra-hautatuak .grafiko-chip');

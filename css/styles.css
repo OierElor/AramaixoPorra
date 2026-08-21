@@ -1416,6 +1416,13 @@ h3.vuelta {
 
 .pp-taldea-burua:hover { background: #f0f7f0; }
 
+.pp-taldea-burua-ezkerra {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
 .pp-taldea-gorputza.collapsed { display: none; }
 
 /* Ez dago dagoeneko startlistan (adib. adminak kendu du). */
@@ -1472,6 +1479,25 @@ h3.vuelta {
     font-size: 0.75em;
     font-weight: 700;
     flex: none;
+}
+
+/* Talde-goiburuko laburpena: porrarako hautatutakoak mailaka (puntu kolorea + kopurua). */
+.pp-maila-taldeko-laburpena {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 0.8em;
+    font-weight: 400;
+    opacity: .75;
+}
+
+.pp-maila-laburpena-item i {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 3px;
+    vertical-align: middle;
 }
 
 /* «Nire listak»-eko errenkada bakoitzeko −/+ stepper txikia (lista-mailakoaren txiki-bertsioa). */

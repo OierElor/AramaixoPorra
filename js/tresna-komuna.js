@@ -65,6 +65,26 @@ const Tresna = {
             "ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID", [tid]);
     },
 
+    /**
+     * Txapelketako etapa KONTAGARRIAK: `karrerak()`-en iragazki bera (Kategoria beteta EDO
+     * emaitzak dituenak), gehi `Emaitzarik_Ez = 1` markatutakoak baztertuta — etapa horiek
+     * ez dute inoiz porrarako zenbatuko. Ez dira dagoeneko emaitzak eduki behar (alderantziz
+     * `karrerakEmaitzekin()`: hori jokatu ONDORENGO etapei da; hau jokatu AURRETIKO
+     * sailkapenerako). Zutabea migrazioa exekutatu arte ez dago → gabe berriz saiatu.
+     */
+    async karrerakKontagarriak(tid) {
+        const sql = ezMarka =>
+            "SELECT k.Karrerak_ID AS kid, k.Izena AS izena, k.Ordena AS ordena FROM Karrerak k " +
+            "WHERE k.Txapelketa_ID = ? " +
+            (ezMarka ? "  AND COALESCE(k.Emaitzarik_Ez, 0) = 0 " : "") +
+            "  AND ( (k.Kategoria IS NOT NULL AND k.Kategoria <> '') " +
+            "        OR EXISTS (SELECT 1 FROM KarreraSailkapena ks " +
+            "                   WHERE ks.Karrera_ID = k.Karrerak_ID) ) " +
+            "ORDER BY (k.Ordena IS NULL), k.Ordena, k.Karrerak_ID";
+        try { return await this.q(sql(true), [tid]); }
+        catch (e) { return this.q(sql(false), [tid]); }
+    },
+
     /** "{Txapelketa} - {N}. etapa ({Helmuga})" → "{N}. etapa ({Helmuga})".
      *  Aurrizkia etapa-zenbaki batek jarraitzen dionean BAKARRIK kentzen da:
      *  klasikoen izenek ' - ' izan dezakete ("Milano - Torino") eta oso-osorik

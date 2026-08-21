@@ -2,7 +2,7 @@
  * Porra prestatzeko laguntzailea (tresnak/porra-prestatu).
  *
  * Txapelketa IREKIAK bakarrik erakusten ditu (Txapelketak.Porra_Irekita = 1).
- * Erabiltzaileak bere LISTAK sortzen ditu (Etapa, Mendia, Generala...) eta
+ * Erabiltzaileak bere LISTAK sortzen ditu (Etapa, Mendia, Orokorra...) eta
  * startlista horietan banatzen du; gero lista horietatik hainbat PORRA
  * ZIRRIBORRO osatu ditzake, alderatzeko. Amaitutakoan `tresnak/porra-bidali`-ra
  * bidaltzen du, dortsalak aurrez hautatuta (`?txap=ID&dortsalak=1,2,...`).
@@ -38,6 +38,10 @@
     const porrakFitxak = $('porrak-fitxak');
     const porraTresnabarra = $('porra-tresnabarra');
     const porraGorputza = $('porra-gorputza');
+
+    const etapakFitxak = $('etapak-fitxak');
+    const etapaMotaTresnabarra = $('etapa-mota-tresnabarra');
+    const etapakGorputza = $('etapak-gorputza');
     const txapGarbituBtn = $('txap-garbitu-btn');
 
     let startlist = [];       // [{ dortsala, izena }] uneko txapelketarena
@@ -46,6 +50,8 @@
     let tid = null;           // uneko Txapelketa_ID (string)
     let egoera = null;        // egoeraOsoa.txapelketak[tid] erreferentzia
     let tolestutakoTaldeak = new Set(); // lista-id-ak (bistaratze-egoera hutsa, ez da gordetzen)
+    let karrerakGuztiak = []; // [{ kid, izena, ordena }] uneko txapelketaren etapa kontagarriak (Emaitzarik_Ez=1 kanpo)
+    let etapakErrorea = null; // null = ondo; string = etapak kargatzean errorea (atal HORI bakarrik blokeatzen du)
 
     // «Porra bidali» tresna ikusgai dagoen (admin panela → Webgunea). Lehenetsia `true`
     // da (fail-open): fetch-a bukatu arte ez du inolako interakziorik blokeatzen.
@@ -119,22 +125,35 @@
         if (!egoeraOsoa.txapelketak[txapId]) {
             const l1 = { id: id(), izena: 'Etapa', dortsalak: [], mailaKop: 1, mailaEsleipena: {} };
             const l2 = { id: id(), izena: 'Mendia', dortsalak: [], mailaKop: 1, mailaEsleipena: {} };
-            const l3 = { id: id(), izena: 'Generala', dortsalak: [], mailaKop: 1, mailaEsleipena: {} };
+            const l3 = { id: id(), izena: 'Orokorra', dortsalak: [], mailaKop: 1, mailaEsleipena: {} };
             const p1 = { id: id(), izena: 'Porra 1', dortsalak: [] };
+            const em1 = { id: id(), izena: 'Sprint' };
+            const em2 = { id: id(), izena: 'Ihesaldia' };
+            const em3 = { id: id(), izena: 'Orokorra' };
             egoeraOsoa.txapelketak[txapId] = {
                 listak: [l1, l2, l3],
                 porrak: [p1],
                 unekoLista: l1.id,
                 unekoPorra: p1.id,
+                etapaMotak: [em1, em2, em3],
+                etapaEsleipena: {},
+                unekoEtapaMota: em1.id,
             };
             gorde();
         }
-        egoeraOsoa.txapelketak[txapId].listak.forEach(listaNormalizatu);
-        return egoeraOsoa.txapelketak[txapId];
+        const egoera = egoeraOsoa.txapelketak[txapId];
+        egoera.listak.forEach(listaNormalizatu);
+        // Atzerako-bateragarritasuna: aurreko saioetako egoerek ez dute «Etapa motak»
+        // eremurik izango (ezaugarri berria da) → hemen sortzen dira lehen aldiz ukitzean.
+        if (!Array.isArray(egoera.etapaMotak)) egoera.etapaMotak = [];
+        if (!egoera.etapaEsleipena || typeof egoera.etapaEsleipena !== 'object') egoera.etapaEsleipena = {};
+        if (!egoera.unekoEtapaMota && egoera.etapaMotak.length) egoera.unekoEtapaMota = egoera.etapaMotak[0].id;
+        return egoera;
     }
 
     function unekoLista() { return egoera.listak.find(l => l.id === egoera.unekoLista) || null; }
     function unekoPorra() { return egoera.porrak.find(p => p.id === egoera.unekoPorra) || null; }
+    function unekoEtapaMota() { return egoera.etapaMotak.find(m => m.id === egoera.unekoEtapaMota) || null; }
 
     /** Dortsal-zerrenda batetik, uneko startlist-ean DAUDENAK bakarrik. */
     function baliozkoak(dortsalak) { return dortsalak.filter(d => izenMapa.has(String(d))); }
@@ -199,6 +218,17 @@
         oharraEl.innerHTML = '';
         izenMapa = new Map(startlist.map(r => [String(r.dortsala), r.izena]));
 
+        // Etapa kontagarriak: atal INDEPENDENTEA da («Etapa motak»), huts eginez gero
+        // ez du gainerako atalak blokeatu behar — errorea bere gorputzean bakarrik erakusten da.
+        karrerakGuztiak = [];
+        etapakErrorea = null;
+        try {
+            karrerakGuztiak = await Tresna.karrerakKontagarriak(tid);
+        } catch (e) {
+            etapakErrorea = e.message;
+        }
+        if (txapSel.value !== eskatua) return; // artean beste txapelketa bat hautatu da
+
         egoera = txapelketaEgoeraLortu(tid);
         tolestutakoTaldeak = new Set();
 
@@ -206,6 +236,8 @@
         marraztuListaGorputza();
         marraztuPorraFitxak();
         marraztuPorraGorputza();
+        marraztuEtapaFitxak();
+        marraztuEtapaGorputza();
         edukia.hidden = false;
     }
 
@@ -623,6 +655,116 @@
         marraztuPorraGorputza();
     });
 
+    // ═══ C · ETAPA MOTAK ═════════════════════════════════════════════════════
+    // «Nire listak»-en CRUD-eredu berbera, baina ESKLUSIBOA: etapa bakoitzak mota
+    // BAKARRA du (ez txirrindulari-listen bezala, non hainbat listatan egon daitekeen).
+    // Horregatik gako-mapa BAKAR bat erabiltzen da (`etapaEsleipena`), maila-esleipenaren
+    // eredu berean, izendun kategoria-CRUD osoarekin gainean.
+
+    function marraztuEtapaFitxak() {
+        etapakFitxak.innerHTML = egoera.etapaMotak.map(m =>
+            `<button type="button" class="pp-fitxa${m.id === egoera.unekoEtapaMota ? ' active' : ''}" data-id="${esc(m.id)}">${esc(m.izena)}</button>`
+        ).join('') + '<button type="button" class="pp-fitxa-berria" id="etapa-mota-berria-btn">+ Berria</button>';
+
+        etapaMotaTresnabarra.hidden = !unekoEtapaMota();
+    }
+
+    function marraztuEtapaGorputza() {
+        if (etapakErrorea) {
+            etapakGorputza.innerHTML = `<p style="color:#c00; padding:12px;">Ezin izan dira etapak kargatu: ${esc(etapakErrorea)}</p>`;
+            return;
+        }
+        const mota = unekoEtapaMota();
+        if (!mota) {
+            etapakGorputza.innerHTML = '<p style="text-align:center; opacity:.6;">Sortu mota bat gorago hasteko.</p>';
+            return;
+        }
+        if (!karrerakGuztiak.length) {
+            etapakGorputza.innerHTML = '<p style="text-align:center; opacity:.75;">Txapelketa honek ez du etapa kontagarririk oraindik.</p>';
+            return;
+        }
+
+        const beteak = karrerakGuztiak.filter(k => String(egoera.etapaEsleipena[String(k.kid)]) === String(mota.id)).length;
+
+        // Beste mota batean badago, badge bat erakutsi (besteListak-en eredu berean).
+        const besteMota = kid => {
+            const m = egoera.etapaEsleipena[String(kid)];
+            if (!m || String(m) === String(mota.id)) return '';
+            const etapaMota = egoera.etapaMotak.find(x => x.id === m);
+            return etapaMota ? `<span class="pp-badge">${esc(etapaMota.izena)}</span>` : '';
+        };
+
+        etapakGorputza.innerHTML = `
+            <div style="margin:0 0 8px; font-size:13px; opacity:.7;">${beteak}/${karrerakGuztiak.length} «${esc(mota.izena)}» motakoak</div>
+            <div class="pp-zerrenda">${karrerakGuztiak.map(k => `
+                <label class="pp-lerroa">
+                    <input type="checkbox" data-karrera-id="${esc(k.kid)}" ${String(egoera.etapaEsleipena[String(k.kid)]) === String(mota.id) ? 'checked' : ''}>
+                    <span class="pp-dortsala">${esc(k.ordena ?? '')}</span>
+                    <span class="pp-izena">${esc(k.izena)}</span>
+                    <span class="pp-beste-listak">${besteMota(k.kid)}</span>
+                </label>`).join('')}</div>`;
+    }
+
+    etapakFitxak.addEventListener('click', e => {
+        const berria = e.target.closest('#etapa-mota-berria-btn');
+        if (berria) {
+            const izena = (prompt('Mota berriaren izena:', 'Mota berria') || '').trim();
+            if (!izena) return;
+            const berri = { id: id(), izena };
+            egoera.etapaMotak.push(berri);
+            egoera.unekoEtapaMota = berri.id;
+            gorde();
+            marraztuEtapaFitxak();
+            marraztuEtapaGorputza();
+            return;
+        }
+        const btn = e.target.closest('.pp-fitxa');
+        if (btn) {
+            egoera.unekoEtapaMota = btn.dataset.id;
+            gorde();
+            marraztuEtapaFitxak();
+            marraztuEtapaGorputza();
+        }
+    });
+
+    $('etapa-mota-berrizendatu-btn').addEventListener('click', () => {
+        const mota = unekoEtapaMota();
+        if (!mota) return;
+        const berria = (prompt('Motaren izen berria:', mota.izena) || '').trim();
+        if (!berria || berria === mota.izena) return;
+        mota.izena = berria;
+        gorde();
+        marraztuEtapaFitxak();
+        marraztuEtapaGorputza();
+    });
+
+    $('etapa-mota-ezabatu-btn').addEventListener('click', () => {
+        const mota = unekoEtapaMota();
+        if (!mota) return;
+        if (!confirm(`"${mota.izena}" mota ezabatu? Etapak «mota gabe» geratuko dira.`)) return;
+        egoera.etapaMotak = egoera.etapaMotak.filter(m => m.id !== mota.id);
+        Object.keys(egoera.etapaEsleipena).forEach(kid => {
+            if (String(egoera.etapaEsleipena[kid]) === String(mota.id)) delete egoera.etapaEsleipena[kid];
+        });
+        egoera.unekoEtapaMota = egoera.etapaMotak.length ? egoera.etapaMotak[0].id : null;
+        gorde();
+        marraztuEtapaFitxak();
+        marraztuEtapaGorputza();
+    });
+
+    etapakGorputza.addEventListener('change', e => {
+        const chk = e.target.closest('input[type="checkbox"][data-karrera-id]');
+        if (!chk) return;
+        const mota = unekoEtapaMota();
+        if (!mota) return;
+        const kid = chk.dataset.karreraId;
+        // Esklusiboa: markatzean aurreko esleipena (edozein motatakoa) gainidazten da automatikoki.
+        if (chk.checked) egoera.etapaEsleipena[kid] = mota.id;
+        else delete egoera.etapaEsleipena[kid];
+        gorde();
+        marraztuEtapaGorputza();
+    });
+
     // Taldeen tolestea + kaxatxoak, delegazioz (gorputza dinamikoki berridazten baita).
     edukia.addEventListener('click', e => {
         const burua = e.target.closest('.pp-taldea-burua');
@@ -668,6 +810,8 @@
         marraztuListaGorputza();
         marraztuPorraFitxak();
         marraztuPorraGorputza();
+        marraztuEtapaFitxak();
+        marraztuEtapaGorputza();
     });
 
     // ── Abiarazi ───────────────────────────────────────────────────────────

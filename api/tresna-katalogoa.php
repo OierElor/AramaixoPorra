@@ -79,7 +79,7 @@ const TRESNA_KATALOGOA = [
         'id'       => 'porra-prestatu',
         'ikonoa'   => '📝',
         'izena'    => 'Porra prestatu',
-        'azalpena' => 'Sailkatu txirrindulariak zure listetan (Etapa, Mendikoa, Generala...) eta osatu hortik zure porra zirriborroak, alderatzeko.',
+        'azalpena' => 'Sailkatu txirrindulariak zure listetan (Etapa, Mendia, Orokorra...) eta osatu hortik zure porra zirriborroak, alderatzeko.',
         'bidea'    => '/tresnak/porra-prestatu/',
     ],
     [

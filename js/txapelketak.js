@@ -128,6 +128,7 @@
             'vuelta/2026': {
                 id: null,               // oraindik ez da sortu; sortzean, ID-a jarri
                 arauak: 'Arauak vuelta 26.pdf',
+                dortsalak: 'Txirrindulari Zerrenda Vuelta 2026.pdf',
                 profilaDir: 'vuelta26',
                 profilaIrudia: 'IbilbideOsoa.jpg',
             },

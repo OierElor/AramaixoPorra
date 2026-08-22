@@ -520,6 +520,11 @@
           </div>
           <div id="dups-result" style="margin-top:12px"></div>
         </div>
+        <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px">📄 PDF-en egoera (irekitako txapelketak)</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadPdfOsasuna()">🔄 Egiaztatu</button>
+          <div id="pdf-osasuna-result" style="margin-top:12px"></div>
+        </div>
       </div></div>
     </section>
 
@@ -739,6 +744,7 @@
   </div>
 </div>
 <div id="toast"><span class="toast-dot">●</span><span id="toast-msg"></span></div>
+<script src="/js/txapelketak.js"></script>
 <script>
 const state = {
   txirrindulariak: [], porralariak: [], txapelketak: [], karrerak: [],
@@ -2480,6 +2486,56 @@ async function loadDups(kind) {
       r.groups.slice(0,50).map(g =>
         `<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">${g.map(x => `<span>${esc(x.Izena)} <span style="color:var(--muted)">#${x.id}</span></span>`).join(" · ")}</div>`
       ).join("");
+  } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
+}
+
+// PDF-en egoera (irekitako txapelketak): js/txapelketak.js-eko konfigurazioa (kliente-JS
+// soila, admin-etik `<script src>` bidez kargatua) + api/files bidezko fitxategi-zerrenda
+// gurutzatzen ditu. Backend-berririk ez da behar: dagoeneko dagoen bi iturri hauek nahikoa.
+async function loadPdfOsasuna() {
+  const res = el("pdf-osasuna-result");
+  res.innerHTML = `<div style="color:var(--muted);font-size:13px">Egiaztatzen...</div>`;
+  try {
+    const badaPorraZut = state.txapelketak.some(t => "Porra_Irekita" in t);
+    if (!badaPorraZut) {
+      res.innerHTML = `<div style="color:var(--muted);font-size:12px">— migrazioa falta da (db/aurre-porrak.sql) —</div>`;
+      return;
+    }
+    const irekiak = state.txapelketak.filter(t => Number(t.Porra_Irekita) === 1);
+    if (!irekiak.length) {
+      res.innerHTML = `<div style="color:var(--muted);font-size:12px">Ez dago txapelketa irekirik.</div>`;
+      return;
+    }
+
+    const MOTAK = [["arauak", "Arauak"], ["dortsalak", "Dortsalak"], ["porrak", "Porrak"]];
+    const zerrendak = {};
+    for (const [mota] of MOTAK) {
+      const karpeta = fmKarpetaMap[mota] || mota;
+      try {
+        const r = await api("api/files?dir=" + encodeURIComponent(karpeta));
+        zerrendak[mota] = new Map((r.files || []).map(f => [f.name, f.mtime]));
+      } catch (e) { zerrendak[mota] = new Map(); }
+    }
+
+    const urteak = (window.TXAPELKETAK && window.TXAPELKETAK.urteak) || {};
+    const dataStr = mtime => new Date(mtime * 1000).toISOString().slice(0, 10);
+
+    const errenkadak = irekiak.map(t => {
+      const sarrera = Object.values(urteak).find(cfg => Number(cfg.id) === Number(t.Txapelketa_ID));
+      const zutabeak = MOTAK.map(([mota]) => {
+        const izena = sarrera && sarrera[mota];
+        const mtime = izena ? zerrendak[mota].get(izena) : undefined;
+        return mtime === undefined
+          ? `<td style="color:var(--accent)">⚠ ez dago</td>`
+          : `<td style="color:#4ade80">✓ ${dataStr(mtime)}</td>`;
+      }).join("");
+      return `<tr><td>${esc(t.Izena)} ${esc(t.Urtea)}</td>${zutabeak}</tr>`;
+    }).join("");
+
+    res.innerHTML = `<div class="tbl-wrap"><table>
+      <thead><tr><th>Txapelketa</th>${MOTAK.map(([, izena]) => `<th>${izena}</th>`).join("")}</tr></thead>
+      <tbody>${errenkadak}</tbody>
+    </table></div>`;
   } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
 }
 

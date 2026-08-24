@@ -1764,9 +1764,15 @@ function renderImportKarreraSel() {
   const sel = el("imp-emaitza-karrera"); if (!sel) return;
   const tid = Number(impTxap());
   const prev = sel.value;
-  const races = tid ? state.karrerak.filter(k => Number(k.Txapelketa_ID) === tid) : [];
+  // Etapa-ordenan ordenatu (Ordena; nuluak azken), eta etapa-zenbakia aurretik jarri.
+  const _ord = k => (k.Ordena == null ? 1e9 : Number(k.Ordena));
+  const races = (tid ? state.karrerak.filter(k => Number(k.Txapelketa_ID) === tid) : [])
+    .sort((a, b) => _ord(a) - _ord(b) || a.Karrerak_ID - b.Karrerak_ID);
   sel.innerHTML = `<option value="">— Aukeratu —</option>` +
-    races.map(k => `<option value="${k.Karrerak_ID}">${esc(k.Izena)} ${esc(k.Urtea)}</option>`).join("");
+    races.map(k => {
+      const zbk = k.Ordena == null ? "" : `${k.Ordena}. `;
+      return `<option value="${k.Karrerak_ID}">${zbk}${esc(k.Izena)} ${esc(k.Urtea)}</option>`;
+    }).join("");
   if (prev) sel.value = prev;
 }
 
@@ -3530,9 +3536,12 @@ function renderRaceTxapSel() {
 
 function renderKarreraList() {
   const txapId = el('race-txap-sel')?.value ? Number(el('race-txap-sel').value) : null;
-  const list = txapId
+  // Etapa-ordenan (Ordena; nuluak azken). Txapelketa guztiak → lehenik txapelketaz.
+  const _ord = k => (k.Ordena == null ? 1e9 : Number(k.Ordena));
+  const list = (txapId
     ? state.karrerak.filter(k => k.Txapelketa_ID === txapId)
-    : state.karrerak;
+    : state.karrerak.slice())
+    .sort((a, b) => (a.Txapelketa_ID - b.Txapelketa_ID) || (_ord(a) - _ord(b)) || (a.Karrerak_ID - b.Karrerak_ID));
   const listEl = el('karrera-list');
   if (!listEl) return;
   if (!list.length) {
@@ -3544,8 +3553,9 @@ function renderKarreraList() {
     const katHtml = kat ? `<span class="kat-badge ${katClass(kat)}">${esc(KAT_LABELS[kat] || kat)}</span>` : '';
     const txap = state.txapelketak.find(t => t.Txapelketa_ID === k.Txapelketa_ID);
     const txapLabel = txapId ? '' : `<span style="opacity:.6">${esc(txap?.Izena || '')}</span>`;
+    const zbk = k.Ordena == null ? '' : `<span style="color:var(--muted)">${k.Ordena}.</span> `;
     return `<div class="karrera-item" data-id="${k.Karrerak_ID}" onclick="loadKarreraEmaitza(${k.Karrerak_ID}, this)">
-      <div class="karrera-item-name">${esc(k.Izena)}</div>
+      <div class="karrera-item-name">${zbk}${esc(k.Izena)}</div>
       <div class="karrera-item-meta">${esc(k.Urtea)} ${katHtml} ${txapLabel}</div>
     </div>`;
   }).join('');

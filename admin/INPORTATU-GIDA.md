@@ -22,9 +22,9 @@ Datuek elkarren mendekotasuna dute. Ordena hau jarraitu:
 | 1 | **Karrerak** | Lasterketak/etapak sortu (DB-n egon behar dute emaitzak sartzeko) |
 | 2 | **Startlist** | Dortsala→txirrindularia mapa (apustuek behar dute) |
 | 3 | **Apustuak** | Porra bakoitzaren txirrindulariak (dortsalez) |
-| 4 | **Karrera emaitzak** | Lasterketaz lasterketa, txirrindularien puntuak |
+| 4 | **Karrera emaitzak** | Lasterketaz lasterketa, txirrindularien puntuak (eskala kategoriaka) |
 | — | *Sailkapenak kalkulatu* | (beste atal bat) porralarien puntuak kalkulatu |
-| 5 | **Sailkapen finalak** | (aukerakoa) porralarien azken sailkapena |
+| — | *🥇 Puntu finalak* | (beste atal bat) sailkapen finalak: orokorra + mendia → dena kalkulatu + itxi |
 
 ---
 
@@ -86,8 +86,11 @@ Lasterketa baten txirrindularien emaitzak sartzen ditu (`KarreraSailkapena`), do
 131                   GIRMAY Biniam
 ```
 
-Postua **lerroaren ordenatik** dator, eta puntuak blokearen azpiko **puntu-eskalatik**
-(lehenetsia `31 · 23 · 17 · 13 · 9 · 7`, editagarria). 6. postutik aurrera, 0 puntu.
+Postua **lerroaren ordenatik** dator, eta puntuak **puntu-eskalatik**. Eskala
+**hautatutako karreraren KATEGORIAren araberakoa da** (automatikoki): Etapa (itzuliak,
+`31·23·17·13·9·7`), Monumentua, Proseries, 4, 5, Berezia (klasikoak). Eskala bakoitza
+**inportazio-atalaren goialdean** definitzen da (🔢 Puntu-eskalak, behin ezarri), luzera librea.
+Eskalak zenbat posizio, hortik aurrera 0 puntu. Inportatu aurretik editagarria da lerroan bertan.
 
 **B) Excel-eko bloke osoa:** `Posizioa · Dortsala · [Izena] · [Zenbatek] · Puntuak`.
 Zutabeak badaude horiek erabiltzen dira, eta **itsatsitako puntuek eskala gainidazten dute**.
@@ -110,39 +113,17 @@ inportatu aurretik egiaztatzeko. **⬆ Inportatu** (lasterketa honen emaitzak bi
 
 Emaitzak sartu ondoren, joan **Sailkapenak kalkulatu** atalera eta kalkulatu porralarien puntuak.
 
-## 5 · Sailkapen finalak — porralariak (aukerakoa)
+## 5 · Sailkapen finalak → **🥇 Puntu finalak** atala
 
-Porralarien azken sailkapena (`TxapelketaEmaitzaPorralariak`). Ezizenak lehendik egon behar dira (apustuetatik).
+Sailkapen finalak (porralariak eta txirrindulariak) ez daude inportazioan; **Puntu finalak**
+atalak kudeatzen ditu. Txirrindulariko **sailkapen orokorreko** eta **mendiko** puntuak sartu,
+eta tresnak automatikoki kalkulatzen ditu:
+- **txirrindulariaren** totala = etapak + orokorra + mendia (`TxapelketaEmaitzaTxirrindulariak`);
+- **porralariaren** totala = bere txirrindularien baturak (`TxapelketaEmaitzaPorralariak`);
+- eta txapelketa **ixten** du (`Amaituta = 1`).
 
-Itsatsi **bloke garbia**: `Posizioa · Porreroa · Puntuak`.
-```
-1	Keops	21209
-2	La Diva	20457
-```
-
-> ⚠️ **`Puntuak` = TOTAL FINALA**, hau da, etapetako puntuak **+ sailkapen orokorra + mendia**.
-> Grafikoetako **amaiera-puntua** hortik ateratzen da: `bonusa = totala − etapetan metatua`.
-> Etapetako batura hutsa sartuz gero, **ez da amaiera-punturik agertuko** (bonusa 0 baita).
-
-Inportazioa **ez da suntsitzailea**: errenkada existitzen bada, `Posizioa` eta `Puntuak`
-eguneratzen dira; beste zutabeak (`Puntuak_Generala`, `Puntuak_Mendikoa`) ez dira ukitzen.
-
-## 5b · Sailkapen finalak — txirrindulariak (aukerakoa)
-
-Txirrindularien azken sailkapena (`TxapelketaEmaitzaTxirrindulariak`). **Grafikoetan
-"Txirrindulariak" moduko amaiera-puntuak hau behar du.**
-
-Itsatsi: `Posizioa · [Dortsala] · Txirrindularia · Puntuak`. Dortsalez lotzen da
-(izena ordezko gisa).
-```
-1	1	Jonas Vingegaard	219
-2	21	Felix Gall	183
-3	131	Jhonatan Narváez	111
-```
-
-> ⚠️ **`Puntuak` = TOTAL FINALA** (etapetakoak + orokorra + mendia), 5. blokean bezala.
-
-**🔍 Aurreikusi** → parseatutako lerroak. **⬆ Inportatu** (ez-suntsitzailea).
+Klasikoetan (orokorra/mendia gabe), bi koadroak hutsik utzi → totala = karrera-puntuen batura.
+Xehetasunak: ikus admin paneleko **Puntu finalak** atala.
 
 ---
 

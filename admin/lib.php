@@ -847,70 +847,9 @@ function import_etapak($payload) {
     return ['egindakoak'=>$done, 'karrerak_sortuta'=>$karrerak_sortuta, 'lotu_gabe'=>$unmatched, 'dortsal_ezezagunak'=>array_keys($unknown_all)];
 }
 
-// ── E · Sailkapen finalak (porralari emaitzak) ──────────────────────────────
-// payload: { txapelketa_id, rows: [ {pos, porrero, puntuak}, ... ] }
-function import_sailkapenak($payload) {
-    $txap = _imp_txap_id($payload);
-    $rows = $payload['rows'] ?? [];
-    $ins = 0; $errors = []; $unknown = [];
-    foreach ($rows as $r) {
-        $pos = to_int($r['pos'] ?? null);
-        $pts = to_int($r['puntuak'] ?? null);
-        $ez = trim((string)($r['porrero'] ?? ''));
-        if ($pos === null || $ez === '' || $pts === null) continue;
-        $eid = find_ezizen_id($txap, $ez);
-        if ($eid === null) { $unknown[] = $ez; continue; }
-        try {
-            // EZ-SUNTSITZAILEA: existitzen bada eguneratu (Puntuak_Generala/Mendikoa gorde).
-            $bada = db_one('SELECT 1 AS x FROM `TxapelketaEmaitzaPorralariak` WHERE Txapelketa_ID = ? AND Ezizen_ID = ?', [$txap, $eid]);
-            if ($bada) {
-                db_exec('UPDATE `TxapelketaEmaitzaPorralariak` SET Posizioa = ?, Puntuak = ? WHERE Txapelketa_ID = ? AND Ezizen_ID = ?', [$pos, $pts, $txap, $eid]);
-            } else {
-                db_exec('INSERT INTO `TxapelketaEmaitzaPorralariak` (Txapelketa_ID, Ezizen_ID, Posizioa, Puntuak) VALUES (?, ?, ?, ?)', [$txap, $eid, $pos, $pts]);
-            }
-            $ins++;
-        } catch (Exception $e) { $errors[] = $e->getMessage(); }
-    }
-    return ['sartuta'=>$ins, 'ezizen_ezezagunak'=>$unknown, 'errors'=>$errors];
-}
-
-// ── E2 · Sailkapen finalak (TXIRRINDULARIAK) ────────────────────────────────
-// payload: { txapelketa_id, rows: [ {pos, dortsala?, izena, puntuak}, ... ] }
-//
-// `puntuak` = TOTAL FINALA (etapetako puntuak + sailkapen orokorra + mendia).
-// Grafikoek bonusa hortik eratortzen dute: `bonusa = total − etapetan metatua`
-// (ikus js/tresna-komuna.js `eboluzioaKargatu`). Horregatik amaiera-puntua agertzeko
-// TOTALA sartu behar da, ez etapetako batura hutsa.
-function import_sailkapenak_txirri($payload) {
-    $txap = _imp_txap_id($payload);
-    $rows = $payload['rows'] ?? [];
-    $ins = 0; $errors = []; $unknown = [];
-    foreach ($rows as $r) {
-        $pos = to_int($r['pos'] ?? null);
-        $pts = to_int($r['puntuak'] ?? null);
-        if ($pos === null || $pts === null) continue;
-
-        // Dortsalez lehenik (fidagarriagoa), gero izenez.
-        $rid = null;
-        $di = to_int($r['dortsala'] ?? null);
-        if ($di !== null) $rid = find_txirri_by_dortsala($txap, $di);
-        $nm = trim((string)($r['izena'] ?? ''));
-        if ($rid === null && $nm !== '') $rid = find_txirrindularia_id($nm);
-        if ($rid === null) { $unknown[] = ($nm !== '' ? $nm : (string)($r['dortsala'] ?? '?')); continue; }
-
-        try {
-            // EZ-SUNTSITZAILEA: Puntuak_Sailkapen_Nag / Puntuak_Mendian ez dira ukitzen.
-            $bada = db_one('SELECT 1 AS x FROM `TxapelketaEmaitzaTxirrindulariak` WHERE Txapelketa_ID = ? AND Txirrindularia_ID = ?', [$txap, $rid]);
-            if ($bada) {
-                db_exec('UPDATE `TxapelketaEmaitzaTxirrindulariak` SET Posizioa = ?, Puntuak = ? WHERE Txapelketa_ID = ? AND Txirrindularia_ID = ?', [$pos, $pts, $txap, $rid]);
-            } else {
-                db_exec('INSERT INTO `TxapelketaEmaitzaTxirrindulariak` (Txapelketa_ID, Txirrindularia_ID, Posizioa, Puntuak) VALUES (?, ?, ?, ?)', [$txap, $rid, $pos, $pts]);
-            }
-            $ins++;
-        } catch (Exception $e) { $errors[] = $e->getMessage(); }
-    }
-    return ['sartuta'=>$ins, 'ezezagunak'=>$unknown, 'errors'=>$errors];
-}
+// ── Sailkapen finalak → «Puntu finalak» (finalize_txapelketa_*) atalak ordezkatzen ditu.
+// Lehen block 5 (import_sailkapenak) eta 5b (import_sailkapenak_txirri) zeuden hemen; kenduta,
+// «Puntu finalak»-ek porralari eta txirri sailkapen finalak kalkulatzen/idazten baititu.
 
 // ── Puntu finalak: itzuli handien sailkapen finala + txapelketa itxi ─────────
 // TXIRRINDULARIKO sartzen dira sailkapen OROKORREKO (generala) eta MENDIKO bonus-puntuak
@@ -2207,6 +2146,11 @@ function files_mkdir($dir, $name) {
 const EZARPEN_MOTAK = ['arauak' => 'arauak', 'dortsalak' => 'dortsalak',
                        'porrak' => 'porrak', 'profilak' => 'profilak'];
 
+// Puntu-eskalak kategoriaka (admin → inportazioa). KAT_AUKERAK-ekin bat (hutsa kenduta).
+// Etapa-k lehenetsi bat du (itzuli-etapak); besteak admin-etik bete behar dira.
+const KATEGORIA_ZERRENDA = ['Etapa', 'Monumentua', 'Proseries', '4', '5', 'Berezia'];
+const ESKALA_LEHENETSIA_ETAPA = [31, 23, 17, 13, 9, 7];
+
 function _ezarpenak_file() { return __DIR__ . '/ezarpenak.json'; }
 
 /** Uneko ezarpenak.json OSOA, dekodifikatuta (edo array hutsa, ez badago/hondatuta badago). */
@@ -2252,7 +2196,41 @@ function read_ezarpenak() {
         ];
     }, TRESNA_KATALOGOA);
 
-    return ['karpetak' => $map, 'lehenetsiak' => EZARPEN_MOTAK, 'badaude' => $egoera, 'tresnak' => $tresnak];
+    // Kategoriako puntu-eskalak (kategoria → int array). JSON-etik; Etapa lehenetsiarekin.
+    $eskalaRaw = is_array($data['kategoria_eskalak'] ?? null) ? $data['kategoria_eskalak'] : [];
+    $eskalak = [];
+    foreach (KATEGORIA_ZERRENDA as $kat) {
+        $s = $eskalaRaw[$kat] ?? null;
+        if (is_string($s) && trim($s) !== '') {
+            $eskalak[$kat] = array_map('intval', array_filter(array_map('trim', explode(',', $s)), fn($x) => $x !== ''));
+        } else {
+            $eskalak[$kat] = ($kat === 'Etapa') ? ESKALA_LEHENETSIA_ETAPA : [];
+        }
+    }
+
+    return ['karpetak' => $map, 'lehenetsiak' => EZARPEN_MOTAK, 'badaude' => $egoera,
+            'tresnak' => $tresnak, 'eskalak' => $eskalak];
+}
+
+/** Kategoriako puntu-eskalak gorde (kategoria → "31,23,17,…"). Zenbakiak/komak soilik. */
+function save_eskala_ezarpenak($payload) {
+    $in = $payload['eskalak'] ?? [];
+    if (!is_array($in)) throw new Exception('Datu baliogabeak');
+    $map = [];
+    foreach (KATEGORIA_ZERRENDA as $kat) {
+        $v = $in[$kat] ?? null;
+        if (is_array($v)) $v = implode(',', array_map('intval', $v));
+        $v = trim((string)$v);
+        if ($v !== '') {
+            $nums = array_filter(array_map('trim', explode(',', $v)), fn($x) => $x !== '' && is_numeric($x));
+            $v = implode(',', array_map('intval', $nums));
+        }
+        if ($v !== '') $map[$kat] = $v;
+    }
+    $data = _ezarpenak_raw();
+    $data['kategoria_eskalak'] = $map;
+    _ezarpenak_gorde($data);
+    return read_ezarpenak();
 }
 
 function save_ezarpenak($payload) {

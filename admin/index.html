@@ -202,7 +202,7 @@
           <li><strong>Apustuak sartu</strong> — <em>Datuak inportatu</em> → 3. blokea (Itzulia: "Porra denak"; Klasikoak: "Porrak sartzea").</li>
           <li><strong>Emaitzak sartu</strong> — <em>Datuak inportatu</em> → 4. blokea (lasterketaz lasterketa).</li>
           <li><strong>Sailkapenak kalkulatu</strong> — <em>Sailkapenak kalkulatu</em> atalean, txapelketa hautatu eta kalkulatu.</li>
-          <li><strong>Bukaeran</strong> — nahi izanez gero, sailkapen finalak <em>Datuak inportatu</em> → 5. blokea.</li>
+          <li><strong>Bukaeran</strong> — sailkapen finalak (itzuli handiak): <em>🥇 Puntu finalak</em> atalean (sailkapen orokorra + mendia sartu → dena kalkulatu eta itxi).</li>
         </ol>
         <div style="margin-top:10px;font-size:12.5px;color:var(--muted)">📄 Inportatzeko xehetasun osoak: <code>admin/INPORTATU-GIDA.md</code></div>
       </div></div>
@@ -222,7 +222,7 @@
       <div class="card" style="margin-bottom:18px"><div class="card-head"><div class="card-title">⬆️ SARTU — datu berriak eta kalkuluak</div></div><div class="card-body" style="font-size:13px;line-height:1.6">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
           <div><strong>✏️ Eskuz sartu</strong><br><span style="color:var(--muted)">Erregistro bakarrak eskuz gehitu: porralaria, txirrindularia, txapelketa, karrera, emaitzak.</span></div>
-          <div><strong>📥 Datuak inportatu</strong><br><span style="color:var(--muted)">Sistema bateratua (Itzuliak + Klasikoak). 5 bloke: karrerak, startlist (dortsalak), apustuak, emaitzak eta sailkapen finalak. Apustuak dortsalez lotzen dira. Berriz inportatzea segurua.</span></div>
+          <div><strong>📥 Datuak inportatu</strong><br><span style="color:var(--muted)">Sistema bateratua (Itzuliak + Klasikoak): karrerak, startlist (dortsalak), apustuak eta emaitzak. Emaitzetan, <strong>puntu-eskala kategoriaka</strong> (behin ezarri, auto-aplikatzen da). Sailkapen finalak → <strong>Puntu finalak</strong> atalean. Apustuak dortsalez lotzen dira. Berriz inportatzea segurua.</span></div>
           <div><strong>📋 Baliabideak</strong><br><span style="color:var(--muted)">Txapelketa baten fitxategiak osatu: arauak/startlist/porrak PDFak eta karreren profil-irudiak. Zer dagoen jarrita ikusi (✓/⚠/✗) eta falta dena aukeratu edo igo — dena admin-etik.</span></div>
           <div><strong>📊 Sailkapenak kalkulatu</strong><br><span style="color:var(--muted)">Apustuetatik eta karrera-emaitzetatik porralarien eta txirrindularien puntuak kalkulatu. <strong>Emaitzak sartu ondoren exekutatu.</strong></span></div>
           <div><strong>🔀 Fusionatu</strong><br><span style="color:var(--muted)">Bikoiztutako txirrindulariak edo porralariak batu (bat mantendu, bestea desagertu, loturak berbideratuz).</span></div>
@@ -383,7 +383,19 @@
               <option value="klasikoak">Klasikoak</option>
             </select></div>
         </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5">Ordena: <strong>1</strong> Karrerak → <strong>2</strong> Startlist (dortsalak) → <strong>3</strong> Apustuak → <strong>4</strong> Emaitzak → <em>Sailkapenak kalkulatu</em> → <strong>5</strong> Sailkapen finalak. Apustuak <strong>dortsalez</strong> lotzen dira: startlist-a aurretik inportatu behar da.</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5">Ordena: <strong>1</strong> Karrerak → <strong>2</strong> Startlist (dortsalak) → <strong>3</strong> Apustuak → <strong>4</strong> Emaitzak → <em>Sailkapenak kalkulatu</em>. Sailkapen finalak (itzuli handiak): <strong>🥇 Puntu finalak</strong> atalean. Apustuak <strong>dortsalez</strong> lotzen dira: startlist-a aurretik inportatu behar da.</div>
+      </div></div>
+
+      <!-- PUNTU-ESKALAK (kategoriaka, globala) -->
+      <div class="card" style="margin-bottom:16px"><div class="card-body">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:600">🔢 Puntu-eskalak (kategoriaka)</div>
+          <span style="font-size:11px;color:var(--muted)">behin ezarri — emaitzak inportatzean auto-aplikatzen dira</span>
+          <button class="btn btn-primary btn-sm" onclick="saveEskalak()" style="margin-left:auto">💾 Gorde</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Postuen araberako puntuak, komaz bereizita (adib. <code>31,23,17,13,9,7</code>). Luzera librea. Klasikoen kategoria bakoitzak bere eskala. <strong>4 · Karrera emaitzak</strong>-en, hautatutako karreraren kategoriaren eskala automatikoki aplikatzen da.</div>
+        <div id="eskalak-editorea" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px"></div>
+        <div id="eskalak-msg" style="font-size:12px;margin-top:8px"></div>
       </div></div>
 
       <!-- A · KARRERAK -->
@@ -422,23 +434,16 @@
       </div></div>
 
       <!-- D · EMAITZAK -->
-      <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">4 · Karrera emaitzak</div></div><div class="card-body">
-        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Lasterketa bat hautatu eta emaitzak itsatsi, <strong>helmugako ordenan</strong>. Nahikoa da <strong>zutabe bakarra</strong>: dortsalak (<code>91</code>) <strong>edo</strong> izenak (<code>MERLIER Tim</code>) — <strong>ez biak</strong>. Postua lerroaren ordenatik dator eta <strong>puntuak beheko eskalatik</strong>.<br><strong>🔍 Aurreikusi</strong> sakatzean, dortsala jarrita <strong>izena</strong> osatzen da (eta alderantziz), startlist-etik. Egiaztatu inportatu aurretik.<br>Excel-etik zutabe gehiago badatoz (<code>Posizioa · Dortsala · Izena · Puntuak</code>) horiek erabiliko dira; itsatsitako puntuek eskala gainidazten dute.</div>
+      <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">4 · Karrera emaitzak (bakarra — edozein mota)</div></div><div class="card-body">
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Lasterketa bat hautatu eta emaitzak itsatsi, <strong>helmugako ordenan</strong>. Nahikoa da <strong>zutabe bakarra</strong>: dortsalak (<code>91</code>) <strong>edo</strong> izenak (<code>MERLIER Tim</code>) — <strong>ez biak</strong>. Postua lerroaren ordenatik dator eta <strong>puntuak eskalatik</strong> (karreraren <strong>kategoriaren</strong> arabera, automatikoki).<br><strong>🔍 Aurreikusi</strong> sakatzean, dortsala jarrita <strong>izena</strong> osatzen da (eta alderantziz), startlist-etik.<br>Excel-etik zutabe gehiago badatoz (<code>Posizioa · Dortsala · Izena · Puntuak</code>) horiek erabiliko dira; itsatsitako puntuek eskala gainidazten dute.</div>
         <div class="field" style="margin-bottom:10px"><label>Karrera (lasterketa)</label>
-          <select id="imp-emaitza-karrera" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:260px"><option value="">— Aukeratu —</option></select></div>
+          <select id="imp-emaitza-karrera" onchange="applyKarreraEskala()" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:260px"><option value="">— Aukeratu —</option></select></div>
         <textarea id="imp-emaitzak-paste" placeholder="MERLIER Tim&#10;WAERENSKJOLD Soren&#10;GIRMAY Biniam&#10;&#10;...edo dortsalak: 91 / 128 / 131&#10;...edo osoa: 1&#9;0102&#9;PHILIPSEN Jasper&#9;400" style="width:100%;height:110px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
         <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="impEmaitzakPreview()">🔍 Aurreikusi</button>
           <button class="btn btn-primary btn-sm" onclick="impEmaitzak()">⬆ Inportatu</button>
-          <label style="font-size:12px;color:var(--muted)">Puntuak (1.–6.):
-            <span style="display:inline-flex;gap:3px">
-              <input class="emaitza-pt" value="31" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
-              <input class="emaitza-pt" value="23" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
-              <input class="emaitza-pt" value="17" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
-              <input class="emaitza-pt" value="13" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
-              <input class="emaitza-pt" value="9" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
-              <input class="emaitza-pt" value="7" style="width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center">
-            </span>
+          <label style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><span id="emaitza-kat-label" style="color:var(--muted)">Eskala (Etapa):</span>
+            <span id="emaitza-eskala-inputak" style="display:inline-flex;gap:3px"></span>
           </label>
         </div>
         <div id="imp-emaitzak-result" style="margin-top:10px"></div>
@@ -466,20 +471,10 @@
         <div id="imp-etapak-result" style="margin-top:10px"></div>
       </div></div>
 
-      <!-- E · SAILKAPEN FINALAK -->
-      <div class="card"><div class="card-head"><div class="card-title">5 · Sailkapen finalak (porralariak)</div></div><div class="card-body">
-        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Porralari sailkapena: <code>Posizioa · Porreroa · Puntuak</code>. Ezizenak lehendik egon behar dira (apustuetatik).<br>⚠️ <strong>Puntuak = TOTAL FINALA</strong> (etapetakoak + sailkapen orokorra + mendia). Grafikoetako <strong>amaiera-puntua</strong> hortik ateratzen da (<code>totala − etapetan metatua</code>); etapetako batura hutsa sartuz gero, ez da amaiera-punturik agertuko.</div>
-        <textarea id="imp-sailkapenak-paste" placeholder="1&#9;Keops&#9;21209&#10;2&#9;La Diva&#9;20457" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-primary btn-sm" onclick="impSailkapenak()">⬆ Inportatu</button></div>
-        <div id="imp-sailkapenak-result" style="margin-top:10px"></div>
-      </div></div>
-
-      <!-- E2 · SAILKAPEN FINALAK (TXIRRINDULARIAK) -->
-      <div class="card" style="margin-bottom:14px"><div class="card-head"><div class="card-title">5b · Sailkapen finalak (txirrindulariak)</div></div><div class="card-body">
-        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Txirrindularien sailkapen finala: <code>Posizioa · [Dortsala] · Txirrindularia · Puntuak</code>. Dortsalez lotzen da (izena ordezko gisa).<br>⚠️ <strong>Puntuak = TOTAL FINALA</strong> (etapetakoak + sailkapen orokorra + mendia). Grafikoetako <strong>amaiera-puntua</strong> hortik dator.</div>
-        <textarea id="imp-sailk-txirri-paste" placeholder="1&#9;1&#9;Jonas Vingegaard&#9;219&#10;2&#9;21&#9;Felix Gall&#9;183" style="width:100%;height:100px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);font-size:12px;font-family:monospace;outline:none;resize:vertical"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="impSailkTxirriPreview()">🔍 Aurreikusi</button><button class="btn btn-primary btn-sm" onclick="impSailkTxirri()">⬆ Inportatu</button></div>
-        <div id="imp-sailk-txirri-result" style="margin-top:10px"></div>
+      <!-- SAILKAPEN FINALAK → PUNTU FINALAK -->
+      <div class="card"><div class="card-body" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:13px"><strong>Sailkapen finalak</strong> (porralariak eta txirrindulariak) orain <strong>🥇 Puntu finalak</strong> atalean daude: sailkapen orokorreko eta mendiko puntuak sartu, eta tresnak dena kalkulatu eta txapelketa itxiko du.</div>
+        <button class="btn btn-primary btn-sm" onclick="setSection('finalak')" style="margin-left:auto">🥇 Puntu finalak-era joan</button>
       </div></div>
     </section>
 
@@ -776,7 +771,7 @@ const state = {
   txirrindulariak: [], porralariak: [], txapelketak: [], karrerak: [],
   txirriEmaitzak: [], porraEmaitzak: [], karreraSailkapena: [],
   ezizenak: [],
-  currentTable: null, currentTableData: null, tableList: null,
+  currentTable: null, currentTableData: null, tableList: null, eskalak: {},
   sailTab: "porralariak",
   fileDir: "",
 };
@@ -944,7 +939,7 @@ function renderCurrentSection() {
     case "kalkulatu":        renderKalkulatuTxapSel(); break;
     case "ezizenak":         loadEzizenak(); break;
     case "banatu":           renderBanatuSection(); break;
-    case "import":           renderImportSelectors(); break;
+    case "import":           renderImportSelectors(); loadEskalak(); break;
     case "finalak":          renderFinalakSelectors(); break;
     case "osasuna":          renderOsasunaSelectors(); break;
     case "datu-basea":       loadDBEgoera(); break;
@@ -1825,6 +1820,7 @@ function renderImportKarreraSel() {
       return `<option value="${k.Karrerak_ID}">${zbk}${esc(k.Izena)} ${esc(k.Urtea)}</option>`;
     }).join("");
   if (prev) sel.value = prev;
+  applyKarreraEskala();   // eskala kategoriaren arabera eguneratu
 }
 
 // Testu itsatsia 2D sareta bihurtu (tab/;/, mugatzaileak auto-detektatu).
@@ -1933,6 +1929,61 @@ function emaitzaEskala() {
   return inputs.map(i => Number(i.value) || 0);
 }
 
+// ── Puntu-eskalak kategoriaka (admin → inportazioa) ──────────────────────────
+const ESKALA_KATEGORIAK = ["Etapa", "Monumentua", "Proseries", "4", "5", "Berezia"];
+const ESKALA_ETAPA_LEHENETSIA = [31, 23, 17, 13, 9, 7];
+const EMAITZA_PT_ESTILOA = "width:38px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center";
+
+/** 4. blokeko eskala-inputak dinamikoki marraztu (luzera aldakorra). */
+function renderEmaitzaEskalaInputak(eskala) {
+  const cont = el("emaitza-eskala-inputak"); if (!cont) return;
+  const vals = (eskala && eskala.length) ? eskala : ESKALA_ETAPA_LEHENETSIA;
+  cont.innerHTML = vals.map(v => `<input class="emaitza-pt" value="${Number(v) || 0}" style="${EMAITZA_PT_ESTILOA}">`).join("");
+}
+
+/** Hautatutako karreraren KATEGORIAren eskala 4. blokeko inputetan aplikatu. */
+function applyKarreraEskala() {
+  const kid = Number(el("imp-emaitza-karrera")?.value || 0);
+  const k = kid ? state.karrerak.find(x => Number(x.Karrerak_ID) === kid) : null;
+  const kat = (k && k.Kategoria) ? String(k.Kategoria) : "Etapa";
+  const definitua = state.eskalak && state.eskalak[kat] && state.eskalak[kat].length;
+  const eskala = definitua ? state.eskalak[kat] : ESKALA_ETAPA_LEHENETSIA;
+  const label = el("emaitza-kat-label");
+  if (label) label.textContent = `Eskala (${kat}${definitua ? "" : " — definitu gabe"}):`;
+  renderEmaitzaEskalaInputak(eskala);
+}
+
+/** Eskala-editorea (kategoriaka) marraztu state.eskalak-etik. */
+function renderEskalakEditorea() {
+  const cont = el("eskalak-editorea"); if (!cont) return;
+  cont.innerHTML = ESKALA_KATEGORIAK.map(kat => {
+    const v = (state.eskalak && state.eskalak[kat]) ? state.eskalak[kat].join(",") : "";
+    return `<label style="font-size:12px;color:var(--muted)">${esc(kat)}
+      <input class="eskala-kat-input" data-kat="${esc(kat)}" value="${esc(v)}" placeholder="adib. 31,23,17,13,9,7" style="display:block;width:100%;margin-top:3px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:monospace;outline:none"></label>`;
+  }).join("");
+}
+
+async function loadEskalak() {
+  try { const r = await api("api/ezarpenak"); state.eskalak = r.eskalak || {}; }
+  catch (e) { state.eskalak = state.eskalak || {}; }
+  renderEskalakEditorea();
+  applyKarreraEskala();
+}
+
+async function saveEskalak() {
+  const eskalak = {};
+  document.querySelectorAll(".eskala-kat-input").forEach(inp => { eskalak[inp.dataset.kat] = inp.value; });
+  const msg = el("eskalak-msg");
+  if (msg) { msg.style.color = "var(--muted)"; msg.textContent = "Gordetzen..."; }
+  try {
+    const r = await api("api/ezarpenak/eskalak", { method:"POST", body: JSON.stringify({ eskalak }) });
+    state.eskalak = r.eskalak || {};
+    renderEskalakEditorea();
+    applyKarreraEskala();
+    if (msg) { msg.style.color = "#4ade80"; msg.textContent = "✅ Gordeta. Emaitzak inportatzean auto-aplikatuko dira."; }
+  } catch(e) { if (msg) { msg.style.color = "var(--accent)"; msg.textContent = "⚠ " + e.message; } }
+}
+
 /**
  * Karrera baten emaitzak parseatu. Onartutako formatuak:
  *   - Zutabe bakarra, helmugako ordenan: izenak edo dortsalak → postua = lerro-ordena.
@@ -1986,20 +2037,6 @@ function parseResults(text, eskala) {
 }
 
 // ── Sailkapen finalak (Posizioa · Porreroa · Puntuak) ────────────────────────
-function parseStandings(text) {
-  const grid = tourParseGrid(text);
-  const out = [];
-  for (const row of grid) {
-    const ints = [];
-    for (let i = 0; i < row.length; i++) { const v = (row[i]||"").trim(); if (/^\d+$/.test(v)) ints.push(parseInt(v,10)); }
-    let name = null;
-    for (let i = 0; i < row.length; i++) { const v = (row[i]||"").trim(); if (v && /[A-Za-zÀ-ÿ]/.test(v) && !/^\d/.test(v)) { name = v; break; } }
-    if (!name || !ints.length || /posizioa|porrero|puntuak/i.test(name)) continue;
-    out.push({ pos: ints[0], porrero: name, puntuak: ints[ints.length-1] });
-  }
-  return out;
-}
-
 // Dortsalak paste → [{dortsala, izena}]. Onena: "Dorsalak" eta "Izena" zutabeak
 // bakarrik kopiatzea. Talde-lerroak (dortsala=0), etiketak eta Excel erroreak baztertzen dira.
 const _TOUR_DORS_SKIP = new Set(["izena","guztira","dorsalak","erretiratua","partaideak","porrero","porreroa","txirrindularia"]);
@@ -2335,65 +2372,7 @@ async function impEtapak() {
   } catch(e) { showToast(e.message, "err"); }
 }
 
-// ── E · Sailkapen finalak ────────────────────────────────────────────────────
-/** Txirrindularien sailkapen finala: Posizioa · [Dortsala] · Izena · Puntuak(TOTALA). */
-function parseTxirriStandings(text) {
-  const out = [];
-  for (const row of tourParseGrid(text)) {
-    const cells = row.map(c => (c || "").trim());
-    const ints = cells.filter(c => /^\d+$/.test(c));
-    const name = cells.find(c => c && /[A-Za-zÀ-ÿ]/.test(c) && !/^\d/.test(c)) || null;
-    if (!name || ints.length < 2) continue;
-    if (/posizioa|txirrindularia|puntuak|dortsala/i.test(name)) continue;
-    // ints: [pos, (dortsala), ..., puntuak]. Hiru edo gehiago → bigarrena dortsala.
-    out.push({
-      pos: parseInt(ints[0], 10),
-      dortsala: ints.length >= 3 ? ints[1] : null,
-      izena: name,
-      puntuak: parseInt(ints[ints.length - 1], 10),
-    });
-  }
-  return out;
-}
-
-function impSailkTxirriPreview() {
-  const rows = parseTxirriStandings(el("imp-sailk-txirri-paste")?.value || "");
-  const res = el("imp-sailk-txirri-result");
-  if (!rows.length) { res.innerHTML = `<div style="color:var(--accent);font-size:12px">Ez da sailkapenik antzeman.</div>`; return; }
-  const taula = `<table style="margin-top:8px;font-size:12px;border-collapse:collapse">
-    <thead><tr><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Pos</th><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Dortsala</th><th style="text-align:left;padding:2px 10px 2px 0;color:var(--muted)">Txirrindularia</th><th style="text-align:left;padding:2px 0;color:var(--muted)">Puntuak (totala)</th></tr></thead>
-    <tbody>${rows.map(r => `<tr><td style="padding:2px 10px 2px 0">${r.pos}</td><td style="padding:2px 10px 2px 0">${r.dortsala ?? "—"}</td><td style="padding:2px 10px 2px 0">${esc(r.izena)}</td><td style="padding:2px 0"><strong>${r.puntuak}</strong></td></tr>`).join("")}</tbody></table>`;
-  res.innerHTML = `<div style="font-size:13px"><strong>${rows.length}</strong> txirrindulari</div>${taula}`;
-}
-
-async function impSailkTxirri() {
-  const txap = impTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
-  const rows = parseTxirriStandings(el("imp-sailk-txirri-paste")?.value || "");
-  if (!rows.length) return showToast("Ez da sailkapenik antzeman", "err");
-  showToast("⏳ Inportatzen...");
-  try {
-    const r = await api("api/import/sailkapenak-txirri", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
-    const unk = (r.ezezagunak||[]).length
-      ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.ezezagunak.length} ezezagun baztertuta: ${r.ezezagunak.slice(0,15).map(esc).join(", ")}</div>` : "";
-    el("imp-sailk-txirri-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.sartuta} txirrindulari sartuta</div>${unk}`;
-    showToast(`✅ ${r.sartuta} sailkapen`);
-    await reloadData();
-  } catch(e) { showToast(e.message, "err"); }
-}
-
-async function impSailkapenak() {
-  const txap = impTxap(); if (!txap) return showToast("Txapelketa bat hautatu", "err");
-  const rows = parseStandings(el("imp-sailkapenak-paste")?.value || "");
-  if (!rows.length) return showToast("Ez da sailkapenik antzeman", "err");
-  showToast("⏳ Inportatzen...");
-  try {
-    const r = await api("api/import/sailkapenak", { method:"POST", body: JSON.stringify({ txapelketa_id: Number(txap), rows }) });
-    const unk = (r.ezizen_ezezagunak||[]).length ? `<div style="color:var(--accent);font-size:12px">⚠ ${r.ezizen_ezezagunak.length} ezizen ezezagun baztertuta: ${r.ezizen_ezezagunak.slice(0,15).map(esc).join(", ")}</div>` : "";
-    el("imp-sailkapenak-result").innerHTML = `<div style="color:#4ade80;font-size:13px">✅ ${r.sartuta} sailkapen sartuta</div>${unk}`;
-    showToast(`✅ ${r.sartuta} sailkapen`);
-    await reloadData();
-  } catch(e) { showToast(e.message, "err"); }
-}
+// (5/5b «Sailkapen finalak» kenduta — «Puntu finalak» tresnak ordezkatzen ditu.)
 
 // ── Puntu finalak (itzuli handiak): txirri GC/mendia → porralari totalak + txapelketa itxi ──
 function finalakTxap() { return el("finalak-txap")?.value || ""; }

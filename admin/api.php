@@ -149,8 +149,6 @@ try {
             case $path === 'import/emaitzak': json_out(import_emaitzak($body));
             case $path === 'import/etapak-preview': json_out(import_etapak_preview($body));
             case $path === 'import/etapak': json_out(import_etapak($body));
-            case $path === 'import/sailkapenak': json_out(import_sailkapenak($body));
-            case $path === 'import/sailkapenak-txirri': json_out(import_sailkapenak_txirri($body));
             case $path === 'finalize/preview': json_out(finalize_txapelketa_preview($body));
             case $path === 'finalize/commit': json_out(finalize_txapelketa_commit($body));
             case $path === 'import/karrerak': json_out(import_karrerak($body));
@@ -170,6 +168,8 @@ try {
                 try { json_out(save_ezarpenak($body)); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'ezarpenak/tresnak':
                 try { json_out(save_tresna_ezarpenak($body)); } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'ezarpenak/eskalak':
+                try { json_out(save_eskala_ezarpenak($body)); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'undo': json_out(do_undo());
             case $path === 'redo': json_out(do_redo());
             case $path === 'ezizen-lotu': json_out(ezizen_lotu($body));

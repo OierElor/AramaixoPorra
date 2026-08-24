@@ -31,7 +31,7 @@ Nabigazio-menuak bi multzo ditu: **Ikus** (begiratu/editatu) eta **Sartu** (datu
 | Atala | Zer egiten du |
 |---|---|
 | **Dashboard** | Laburpen-estatistikak, txapelketa baten porra-sailkapena, datu-kalitate txartela |
-| **Porralariak** | Jokalarien zerrenda (bilaketa, izena inline editatu, porra-kop. kalkulatu) |
+| **Porralariak** | Jokalarien zerrenda (bilaketa, izena inline editatu, porra-kop. kalkulatu). **Interesa** marka (checkbox) porralari bakoitzeko + **Interesa iragazkia** (guztiak/bai/ez): webguneko datuetan interesa duten porralariak sailkatzeko (**admin-en soilik**). Migrazioa: `db/interesa-ez-lotu.sql` |
 | **Txirrindulariak** | Txirrindulariak: izena, `Izen_Formatua` (I·A editorea), izen-ordena aldatu (⇒ I·A / ⇒ A·I), tokiz aldatu |
 | **Txapelketak** | Txapelketak + karrerak (etapak). Txapelketa bakoitzean **Porra irekita** (aurre-porrak onartu), **Apustu kop.** (15/25) eta **Amaituta** (itxita/bukatuta marka) ezarri; karrerei **Kategoria** (derrigorrezkoa), **Ordena** eta **«Emaitzarik ez»** marka ezarri, ezabatu, txapelketa esportatu. ⚠️ Kategoriarik gabeko karrera bat urte-orriko akordeoian eta tresnetan ezkuta daiteke. **«Emaitzarik ez»** = karrera horrek ez du **inoiz** emaitzarik izango (bertan behera utzia): urte-orriko **akordeoian ez da agertzen**, **grafikoetan ez da zenbatzen**, eta **Datu-osasunak ez du salatzen**. Migrazioak: `db/amaituta.sql`, `db/emaitzarik-ez.sql` |
 | **Sailkapenak** | Txapelketa baten porralari emaitza ofizialak |
@@ -55,7 +55,7 @@ Nabigazio-menuak bi multzo ditu: **Ikus** (begiratu/editatu) eta **Sartu** (datu
 | **Sariak** | Txapelketa bakoitzeko sariak (posizioa → saria) |
 | **Sailkapenak kalkulatu** | Apustuetatik + karrera-emaitzetatik porralarien/txirrindularien puntuak kalkulatu |
 | **Fusionatu** | Bikoiztutako txirrindulari edo porralariak batu (bat mantendu, bestea desagertu) |
-| **Ezizenak lotu** | Porra-ezizena bat porralari batekin lotu |
+| **Ezizenak lotu** | Porra-ezizena bat porralari batekin lotu. **🚫 Ez lotu** botoia: ezizen bat **nahita lotu gabe** utzi (jabeak interesik ez) → Datu-osasunatik eta pendiente-zerrendatik kanpo; **↩ Berreskuratu**-rekin desmarkatu. «Ez lotu (nahita)» iragazkia haiek ikusteko |
 | **Banatu porralaria** | Porralari batean nahastutako bi pertsona bereizi |
 | **Nola erabili** | Laguntza-atala: lan-fluxua eta atalen azalpena |
 

@@ -1262,7 +1262,7 @@ function merge_preview($kind, $keep_id, $drop_id) {
 // ─── Ezizenak lotu / split / recompute ───────────────────────────────────────
 function api_ezizenak() {
     $ez_rows = db_rows(
-        'SELECT ez.Ezizen_ID, ez.Ezizena, ez.Txapelketa_ID, t.Izena AS Txapelketa, t.Urtea AS Urtea ' .
+        'SELECT ez.*, t.Izena AS Txapelketa, t.Urtea AS Urtea ' .
         'FROM `PorraEzizenak` ez LEFT JOIN `Txapelketak` t ON ez.Txapelketa_ID = t.Txapelketa_ID ' .
         'ORDER BY t.Urtea DESC, ez.Ezizena');
     $link_rows = db_rows(
@@ -1613,10 +1613,13 @@ function data_health($txap_id) {
            AND NOT EXISTS (SELECT 1 FROM `TxirrindulariakTxapleketanParteHartzea` h
                            WHERE h.TxapelketaID = pa.Txapelketa_ID AND h.TxirrindulariaID = pa.Txirrindularia_ID)
          ORDER BY t.Izena", [$txap_id]);
+    // Nahita lotu gabe utzitakoak (Ez_Lotu=1) EZ dira salatzen (migrazioa eginda badago).
+    $ez_lotu_baldintza = db_column_exists('PorraEzizenak', 'Ez_Lotu') ? " AND COALESCE(ez.Ez_Lotu,0) = 0" : "";
     $unlinked_ezizenak = db_rows(
         "SELECT ez.Ezizen_ID AS id, ez.Ezizena FROM `PorraEzizenak` ez
          WHERE ez.Txapelketa_ID = ?
            AND NOT EXISTS (SELECT 1 FROM `PorralariTaldeenEzizenak` l WHERE l.Ezizen_ID = ez.Ezizen_ID)
+           $ez_lotu_baldintza
          ORDER BY ez.Ezizena", [$txap_id]);
     $has_results = ((int)db_scalar(
         "SELECT COUNT(*) FROM `KarreraSailkapena` ks JOIN `Karrerak` k ON k.Karrerak_ID = ks.Karrera_ID

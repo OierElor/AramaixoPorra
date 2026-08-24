@@ -23,7 +23,7 @@ erreferentzia gisa dago (git-en). Kredentzialak EZ daude dokumentu honetan (ikus
 | **Txapelketak** | `Txapelketa_ID` (PK), `Izena`, `Urtea`, `Porra_Irekita`, `Apustu_Kopurua`, `Amaituta` | Txapelketak (adib. "Tour de France", 2026). `Porra_Irekita` = 1 bada, **aurre-porrak** onartzen dira (`api/porra.php`). `Apustu_Kopurua` = porra bakoitzeko txirrindulari kopurua (itzuliak **15**, klasikak **25**; NULL → 15). `Amaituta` = 1 bada, txapelketa **itxita/bukatuta** (admin-en marka; *Puntu finalak* tresnak jartzen du, `Porra_Irekita`-rekin batera). Migrazioak: `db/aurre-porrak.sql`, `db/amaituta.sql` |
 | **Karrerak** | `Karrerak_ID` (PK), `Txapelketa_ID`→, `Izena`, `Urtea`, `Kategoria`, `Ordena`, `Profil_Irudia`, `Emaitzarik_Ez` | Etapak/lasterketak. `Kategoria` = 'Etapa' (itzuliak) edo UCI kodea (klasikoak). Hutsik = akordeoian/tresnetan ezkuta daiteke. `Ordena` = etapa-zenbakia (profil-irudia ere hortik: `Etapa{Ordena}.jpg`). `Profil_Irudia` = profil-lotura esplizitua (bidea `profilak`-etik; NULL bada konbentzioa). `Emaitzarik_Ez` = 1 bada, karrera horrek ez du inoiz emaitzarik izango (akordeoian ez da agertzen). Migrazioak: `db/ordena.sql`, `db/profil-irudia.sql`, `db/emaitzarik-ez.sql` |
 | **Txirrindulariak** | `Txirrindularia_ID` (PK), `Izena`, `Izen_Formatua` | Txirrindulariak. `Izen_Formatua` = "Izena"/"Abizena" tokenak (izen-ordena kudeatzeko) |
-| **Porralariak** | `Porralaria_ID` (PK), `Izena`, `Zenbat_Porra` | Jokalariak. `Zenbat_Porra` = zenbat porra jokatu dituen (kalkulatua) |
+| **Porralariak** | `Porralaria_ID` (PK), `Izena`, `Zenbat_Porra`, `Interesa` | Jokalariak. `Zenbat_Porra` = zenbat porra jokatu dituen (kalkulatua). `Interesa` = 1 bada, webguneko datuetan interesa duen porralaria (**admin-en soilik**: sailkapena/iragazkia Porralariak atalean; webgune publikoak ez du ezer aldatzen). Migrazioa: `db/interesa-ez-lotu.sql` |
 
 ### Lotura-tau, apustu eta emaitzak
 
@@ -31,7 +31,7 @@ erreferentzia gisa dago (git-en). Kredentzialak EZ daude dokumentu honetan (ikus
 |---|---|---|
 | **TxirrindulariakTxapleketanParteHartzea** | `TxapelketaID`→, `TxirrindulariaID`→, `Dortsala` | Txirrindulari batek txapelketa batean duen **dortsala** (startlist). Apustuak dortsalez lotzeko funtsezkoa |
 | **KarreraSailkapena** | `Karrera_ID`→, `Txirrindularia_ID`→, `Sailkapena`, `Puntuak` | Karrera baten **emaitza**: txirrindulari bakoitzaren postua eta puntuak |
-| **PorraEzizenak** | `Ezizen_ID` (PK), `Txapelketa_ID`→, `Ezizena` | Porralari baten **ezizena/taldea** txapelketa batean (adib. "Keops") |
+| **PorraEzizenak** | `Ezizen_ID` (PK), `Txapelketa_ID`→, `Ezizena`, `Ez_Lotu` | Porralari baten **ezizena/taldea** txapelketa batean (adib. "Keops"). `Ez_Lotu` = 1 bada, **nahita lotu gabe utzita** (jabeak interesik ez): Datu-osasunak eta Dashboard-eko kontaketak **ez dute salatzen**, eta «Ezizenak lotu» pendiente-zerrendatik kanpo. Migrazioa: `db/interesa-ez-lotu.sql` |
 | **PorralariTaldeenEzizenak** | `Ezizen_ID`→, `Porralaria_ID`→ | Ezizena ↔ porralaria lotura (nor dagoen ezizen baten atzean) |
 | **PorraApustuak** | `Txapelketa_ID`→, `Ezizen_ID`→, `Txirrindularia_ID`→ | **Apustuak**: ezizen batek aukeratutako txirrindulariak (15 itzulietan, 25 klasikoetan) |
 

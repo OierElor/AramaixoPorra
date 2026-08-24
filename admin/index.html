@@ -264,8 +264,14 @@
         <button class="btn btn-ghost" onclick="recalculateZenbatPorra()">🔢 Porra kopurua kalkulatu</button>
       </div>
       <div class="card">
-        <div class="toolbar"><input class="search-input" id="porra-search" placeholder="Bilatu izena..."/><span style="color:var(--muted);font-size:12px" id="porra-count"></span></div>
-        <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Porra kop.</th></tr></thead><tbody id="porra-tbody"></tbody></table></div>
+        <div class="toolbar"><input class="search-input" id="porra-search" placeholder="Bilatu izena..."/>
+          <select id="porra-interesa-filter" onchange="renderPorralariak()" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-size:13px;outline:none">
+            <option value="">Interesa: guztiak</option>
+            <option value="1">Interesa: bai</option>
+            <option value="0">Interesa: ez</option>
+          </select>
+          <span style="color:var(--muted);font-size:12px" id="porra-count"></span></div>
+        <div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Izena</th><th>Porra kop.</th><th title="Webguneko datuetan interesa (admin sailkapena)">Interesa</th></tr></thead><tbody id="porra-tbody"></tbody></table></div>
       </div>
     </section>
 
@@ -676,9 +682,10 @@
           <input class="search-input" id="ezizen-search" placeholder="Bilatu ezizena edo txapelketa..."/>
           <select class="filter-sel" id="ezizen-filter" style="min-width:160px">
             <option value="">Guztiak</option>
-            <option value="lotu-gabe">Lotu gabekoak</option>
+            <option value="lotu-gabe">Lotu gabekoak (pendiente)</option>
             <option value="lotuta">Lotutakoak</option>
             <option value="taldea">Talde-porrak (2+)</option>
+            <option value="ez-lotu">🚫 Ez lotu (nahita)</option>
           </select>
           <span style="color:var(--muted);font-size:12px" id="ezizen-count"></span>
         </div>
@@ -976,11 +983,32 @@ function renderStats() {
 // ── Porralariak ───────────────────────────────────────────────────────────────
 function renderPorralariak() {
   const q = (el("porra-search")?.value || "").toLowerCase();
-  const filtered = state.porralariak.filter(p => p.Izena?.toLowerCase().includes(q));
+  // Interesa zutabea db/interesa-ez-lotu.sql exekutatuta badago bakarrik (state-tik atzeman).
+  const bada = state.porralariak.length > 0 && ("Interesa" in state.porralariak[0]);
+  const intF = el("porra-interesa-filter")?.value || "";
+  const filtered = state.porralariak.filter(p => {
+    if (q && !p.Izena?.toLowerCase().includes(q)) return false;
+    if (bada && intF !== "" && String(Number(p.Interesa) === 1 ? 1 : 0) !== intF) return false;
+    return true;
+  });
   el("porra-count").textContent = filtered.length + " erregistro";
-  el("porra-tbody").innerHTML = filtered.map(p =>
-    `<tr><td class="pk-cell">${esc(p.Porralaria_ID)}</td><td><span class="name-text">${esc(p.Izena)}</span><button class="btn-inline-edit" title="Izena editatu" onclick="startInlineEdit(this,'Porralariak','Porralaria_ID',${p.Porralaria_ID},'Izena')">✎</button></td><td><span class="badge">${esc(p["Zenbat Porra"] ?? "—")}</span></td></tr>`
-  ).join("") || `<tr><td colspan="3" style="color:var(--muted);padding:24px;text-align:center">Ez dago datürik</td></tr>`;
+  el("porra-tbody").innerHTML = filtered.map(p => {
+    const interesaZ = bada
+      ? `<td style="text-align:center"><input type="checkbox" ${Number(p.Interesa) === 1 ? "checked" : ""} onchange="saveInteresa(this, ${p.Porralaria_ID})" title="Webguneko datuetan interesa"></td>`
+      : `<td style="color:var(--muted);font-size:12px" title="db/interesa-ez-lotu.sql exekutatu phpMyAdmin-en">—</td>`;
+    return `<tr><td class="pk-cell">${esc(p.Porralaria_ID)}</td><td><span class="name-text">${esc(p.Izena)}</span><button class="btn-inline-edit" title="Izena editatu" onclick="startInlineEdit(this,'Porralariak','Porralaria_ID',${p.Porralaria_ID},'Izena')">✎</button></td><td><span class="badge">${esc(p["Zenbat Porra"] ?? "—")}</span></td>${interesaZ}</tr>`;
+  }).join("") || `<tr><td colspan="4" style="color:var(--muted);padding:24px;text-align:center">Ez dago daturik</td></tr>`;
+}
+
+/** Porralari baten Interesa marka (admin sailkapena) gorde. */
+async function saveInteresa(chk, pid) {
+  const v = chk.checked ? 1 : 0;
+  try {
+    await api("api/table-update", { method: "POST", body: JSON.stringify({ table: "Porralariak", pk: { Porralaria_ID: pid }, values: { Interesa: v } }) });
+    const p = state.porralariak.find(x => x.Porralaria_ID === pid);
+    if (p) p.Interesa = v;
+    showToast(v ? "Interesa ✓" : "Interesa kendua ✓");
+  } catch(e) { showToast(e.message, "err"); chk.checked = !chk.checked; }
 }
 
 // ── Txirrindulariak ───────────────────────────────────────────────────────────
@@ -3188,35 +3216,61 @@ function renderEzizenak() {
   const data = state.ezizenak || [];
   const q      = (el("ezizen-search")?.value || "").toLowerCase();
   const filter = el("ezizen-filter")?.value || "";
+  // Ez_Lotu zutabea db/interesa-ez-lotu.sql exekutatuta badago bakarrik.
+  const badaEzLotu = data.length > 0 && ("Ez_Lotu" in data[0]);
   let filtered = data.filter(r => {
     const lotuta = (r.Porralariak||[]).length > 0;
+    const ezLotu = Number(r.Ez_Lotu) === 1;
     if (q && !(r.Ezizena||"").toLowerCase().includes(q) && !(r.Txapelketa||"").toLowerCase().includes(q)) return false;
-    if (filter === "lotu-gabe" && lotuta) return false;
+    // «Lotu gabekoak (pendiente)»: lotuta EDO nahita ez-lotu → kanpo (benetan pendienteak soilik).
+    if (filter === "lotu-gabe" && (lotuta || ezLotu)) return false;
     if (filter === "lotuta"    && !lotuta) return false;
     if (filter === "taldea"    && (r.Porralariak||[]).length < 2) return false;
+    if (filter === "ez-lotu"   && !ezLotu) return false;
     return true;
   });
   el("ezizen-count").textContent = filtered.length + " ezizen";
   el("ezizen-tbody").innerHTML = filtered.map(r => {
     const pls = r.Porralariak || [];
-    const chips = pls.length
-      ? pls.map(p => `<span class="ezizen-chip">${esc(p.Izena)}<span class="chip-x" title="Kendu" onclick="ezizenKendu(${r.Ezizen_ID},${p.Porralaria_ID})">✕</span></span>`).join("")
-        + (pls.length>1 ? `<span class="badge" style="background:#7c3aed;color:#fff" title="Talde-porra">👥 taldea</span>` : "")
-      : `<span style="color:var(--muted);font-size:12px">Lotu gabe</span>`;
-    return `<tr>
-      <td style="font-weight:600">${esc(r.Ezizena)}</td>
-      <td style="color:var(--muted);font-size:12px">${esc(r.Txapelketa||"")}</td>
-      <td><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">${chips}</div></td>
-      <td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <input type="text" class="search-input" placeholder="Bilatu..." style="width:100px;flex:0 0 auto;padding:4px 8px;font-size:12px" oninput="filterPorraSel('porra-sel-${r.Ezizen_ID}',this.value)"/>
+    const ezLotu = Number(r.Ez_Lotu) === 1;
+    const chips = ezLotu
+      ? `<span class="badge" style="background:#6b7280;color:#fff" title="Nahita lotu gabe utzita">🚫 ez lotu</span>`
+      : (pls.length
+          ? pls.map(p => `<span class="ezizen-chip">${esc(p.Izena)}<span class="chip-x" title="Kendu" onclick="ezizenKendu(${r.Ezizen_ID},${p.Porralaria_ID})">✕</span></span>`).join("")
+            + (pls.length>1 ? `<span class="badge" style="background:#7c3aed;color:#fff" title="Talde-porra">👥 taldea</span>` : "")
+          : `<span style="color:var(--muted);font-size:12px">Lotu gabe</span>`);
+    let esleitu;
+    if (ezLotu) {
+      esleitu = `<button class="btn btn-sm btn-ghost" title="Berriz lotzeko zerrendara ekarri" onclick="ezizenEzLotu(${r.Ezizen_ID}, 0)">↩ Berreskuratu</button>`;
+    } else {
+      const ezLotuBtn = (badaEzLotu && pls.length === 0)
+        ? `<button class="btn btn-sm btn-ghost" title="Nahita lotu gabe utzi (jabeak interesik ez): Datu-osasunatik kanpo" onclick="ezizenEzLotu(${r.Ezizen_ID}, 1)">🚫 Ez lotu</button>` : "";
+      esleitu = `<input type="text" class="search-input" placeholder="Bilatu..." style="width:100px;flex:0 0 auto;padding:4px 8px;font-size:12px" oninput="filterPorraSel('porra-sel-${r.Ezizen_ID}',this.value)"/>
         <select id="porra-sel-${r.Ezizen_ID}" data-filled="0" onmousedown="fillPorraSel(this)" onfocus="fillPorraSel(this)" style="flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;outline:none">
           <option value="">— Hautatu —</option>
         </select>
         <button class="btn btn-sm btn-primary" title="Gehitu porralaria (talde-porra egiteko hainbat gehi daitezke)" onclick="ezizenGehitu(${r.Ezizen_ID})">+ Gehitu</button>
         <button class="btn btn-sm btn-ghost" title="Porralari berri bat sortu eta lotu" onclick="ezizenGehituBerria(${r.Ezizen_ID})">+ Berria</button>
-      </div></td>
+        ${ezLotuBtn}`;
+    }
+    return `<tr${ezLotu ? ' style="opacity:.55"' : ''}>
+      <td style="font-weight:600">${esc(r.Ezizena)}</td>
+      <td style="color:var(--muted);font-size:12px">${esc(r.Txapelketa||"")}</td>
+      <td><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">${chips}</div></td>
+      <td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${esleitu}</div></td>
     </tr>`;
   }).join("") || `<tr><td colspan="4" style="color:var(--muted);padding:24px;text-align:center">Ez dago emaitzarik</td></tr>`;
+}
+
+/** Ezizen bat nahita lotu gabe utzi (value=1) edo berreskuratu (value=0). */
+async function ezizenEzLotu(ezizenId, value) {
+  try {
+    await api("api/table-update", { method: "POST", body: JSON.stringify({ table: "PorraEzizenak", pk: { Ezizen_ID: ezizenId }, values: { Ez_Lotu: value } }) });
+    const r = (state.ezizenak||[]).find(x => x.Ezizen_ID === ezizenId);
+    if (r) r.Ez_Lotu = value;
+    showToast(value ? "🚫 Ez lotu markatuta" : "Berreskuratuta ✓");
+    renderEzizenak();
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 function _ezizenCurrentIds(ezizen_id) {

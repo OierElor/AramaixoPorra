@@ -48,7 +48,7 @@ try {
     if ($method === 'GET') {
         switch (true) {
             case $path === 'porralariak':
-                json_out(db_rows('SELECT p.Porralaria_ID, p.Izena, COUNT(ep.Ezizen_ID) AS `Zenbat Porra` FROM `Porralariak` p LEFT JOIN `PorralariTaldeenEzizenak` ep ON p.Porralaria_ID = ep.Porralaria_ID GROUP BY p.Porralaria_ID ORDER BY p.Izena'));
+                json_out(db_rows('SELECT p.*, COUNT(ep.Ezizen_ID) AS `Zenbat Porra` FROM `Porralariak` p LEFT JOIN `PorralariTaldeenEzizenak` ep ON p.Porralaria_ID = ep.Porralaria_ID GROUP BY p.Porralaria_ID ORDER BY p.Izena'));
             case $path === 'txirrindulariak':
                 json_out(db_rows('SELECT * FROM `Txirrindulariak` ORDER BY Izena'));
             case $path === 'txapelketak':
@@ -75,8 +75,10 @@ try {
                 if (!$pid) json_error('porralaria_id parametroa behar da', 400);
                 json_out(porralaria_ezizenak((int)$pid));
             case $path === 'data-quality':
+                // Nahita lotu gabe utzitakoak (Ez_Lotu=1) EZ dira zenbatzen (migrazioa eginda badago).
+                $ezlotu = db_column_exists('PorraEzizenak', 'Ez_Lotu') ? ' AND COALESCE(e.Ez_Lotu,0) = 0' : '';
                 $unlinked = (int)(db_scalar(
-                    'SELECT COUNT(*) FROM PorraEzizenak e WHERE NOT EXISTS (SELECT 1 FROM PorralariTaldeenEzizenak WHERE Ezizen_ID = e.Ezizen_ID)'
+                    'SELECT COUNT(*) FROM PorraEzizenak e WHERE NOT EXISTS (SELECT 1 FROM PorralariTaldeenEzizenak WHERE Ezizen_ID = e.Ezizen_ID)' . $ezlotu
                 ) ?? 0);
                 json_out(['unlinked_ezizenak' => $unlinked]);
             case $path === 'data-health':

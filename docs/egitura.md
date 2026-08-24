@@ -76,6 +76,7 @@ AramaixoPorra/
 │   ├── profil-irudia.sql       # Migrazioa: Karrerak.Profil_Irudia (profil-lotura)
 │   ├── emaitzarik-ez.sql       # Migrazioa: Karrerak.Emaitzarik_Ez
 │   ├── amaituta.sql            # Migrazioa: Txapelketak.Amaituta (txapelketa itxi)
+│   ├── interesa-ez-lotu.sql    # Migrazioa: Porralariak.Interesa + PorraEzizenak.Ez_Lotu
 │   └── ezabatu-motak-desnibela.sql  # Garbiketa eskuzkoa: karrera-motak + desnibela kentzea
 │
 ├── data/                       # Baliabide estatikoak — GIT-EN trackeatuta, MOTAKA antolatuta

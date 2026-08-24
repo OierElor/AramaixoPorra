@@ -623,6 +623,15 @@
           <span id="webgunea-msg" style="font-size:12px"></span>
         </div>
       </div></div>
+
+      <div class="card" style="margin-top:16px"><div class="card-body">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:600">🗺️ Urte-orrien egoera</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadWebguneOrriak()" style="margin-left:auto">🔄 Freskatu</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Txapelketa bakoitza webgune publikoan agertzeko prest dagoen. <strong>Auto-lotura</strong> izenaz egiten da — <strong>id-a EZ da konfiguratu behar</strong>. ⚠ bat agertzen bada, konpontzeko argibideak ematen dira.</div>
+        <div id="webgune-orriak"></div>
+      </div></div>
     </section>
 
     <!-- PORRA EDITATU -->
@@ -932,7 +941,7 @@ function renderCurrentSection() {
     case "zuzenketak":       loadProposals(); break;
     case "aurre-porrak":     loadAurrePorrak(); break;
     case "fitxategiak":      loadKarpetak(); loadFiles(state.fileDir || ""); break;
-    case "webgunea":         loadWebgunea(); break;
+    case "webgunea":         loadWebgunea(); loadWebguneOrriak(); break;
     case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
 }
@@ -3111,6 +3120,30 @@ async function saveWebgunea() {
 function resetWebgunea() {
   document.querySelectorAll('#webgunea-tbody input[id^="webgunea-ikusgai-"]').forEach(chk => chk.checked = true);
   showToast("Denak ikusgai jarrita (gorde behar duzu)");
+}
+
+// Urte-orrien egoera-diagnostikoa: txapelketa bakoitza webgunean ikusgai izango den.
+async function loadWebguneOrriak() {
+  const cont = el("webgune-orriak"); if (!cont) return;
+  cont.innerHTML = `<div style="color:var(--muted);font-size:13px">Kargatzen...</div>`;
+  try {
+    const r = await api("api/webgune-orriak");
+    const kolorea = { ok: "#4ade80", "stub-ez": "var(--accent)", "karrera-ez": "var(--accent2)", "kirola-ez": "var(--accent)" };
+    const marka = { ok: "✓ ikusgai", "stub-ez": "⚠ urte-orria falta", "karrera-ez": "⚠ karrerarik ez", "kirola-ez": "⚠ izena ez dator bat" };
+    cont.innerHTML = `<table style="font-size:12px;border-collapse:collapse;width:100%">
+      <thead><tr>
+        <th style="text-align:left;padding:4px 10px 4px 0;color:var(--muted)">Txapelketa</th>
+        <th style="text-align:left;padding:4px 10px 4px 0;color:var(--muted)">URL</th>
+        <th style="text-align:right;padding:4px 10px 4px 0;color:var(--muted)">Karrerak</th>
+        <th style="text-align:left;padding:4px 0;color:var(--muted)">Egoera</th>
+      </tr></thead>
+      <tbody>${(r.orriak||[]).map(o => `<tr>
+        <td style="padding:4px 10px 4px 0">${esc(o.izena)}</td>
+        <td style="padding:4px 10px 4px 0;color:var(--muted)">${o.url ? `<code>${esc(o.url)}</code>` : "—"}</td>
+        <td style="padding:4px 10px 4px 0;text-align:right">${o.karrerak}</td>
+        <td style="padding:4px 0"><span style="color:${kolorea[o.egoera]||'var(--muted)'};font-weight:600">${marka[o.egoera]||o.egoera}</span>${o.egoera !== 'ok' ? `<br><span style="color:var(--muted);font-size:11px">${esc(o.mezua)}</span>` : ""}</td>
+      </tr>`).join("")}</tbody></table>`;
+  } catch(e) { cont.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
 }
 
 // ── Porra editatu ────────────────────────────────────────────────────────────

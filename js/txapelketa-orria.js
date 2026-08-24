@@ -174,12 +174,28 @@
         window.dbLoader.loadKarrerak(cfg.id, 'karrerak-container', kirola, C.irudiFn(cfg));
     }
 
+    /**
+     * Txapelketa_ID AUTO-LOTURA: `cfg.id` konfiguratu gabe badago, DBan bilatzen da
+     * kirol-izena (`meta.izena`) + urtea bat eginez. Horrela urte berri bat gehitzean
+     * ez da id-a eskuz jarri behar (txapelketak.js); DBan sortu + stub-a kopiatu nahikoa.
+     * `cfg.id` esplizitua badago, hura errespetatzen da. Huts eginez gero, `null` (oharra).
+     */
+    async function ebatziId() {
+        try {
+            const rows = await window.dbLoader.query(
+                'SELECT Txapelketa_ID AS id FROM "Txapelketak" WHERE Urtea = ? AND Izena LIKE ? ORDER BY Txapelketa_ID LIMIT 1',
+                [urtea, meta.izena + '%']);
+            return rows.length ? Number(rows[0].id) : null;
+        } catch (e) { return null; }
+    }
+
     // Karpeta-mapa lehenik: PDF/irudi esteken karpetak hortik datoz. Fetch-ak huts eginez
     // gero, `txapelketak.js`-eko lehenetsiak erabiltzen dira (gunea ez da hausten).
     (async function hasi() {
         await C.karpetakKargatu();
         deskargakMarraztu();
         profilaMarraztu();
+        if (cfg.id == null) cfg.id = await ebatziId();   // auto-lotura izenaz
         bannerMarraztu();
         taulakMarraztu();
     })();

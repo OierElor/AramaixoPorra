@@ -1778,6 +1778,51 @@ function migration_status() {
     return ['migrazioak' => $out];
 }
 
+// ─── Webguneko urte-orrien egoera (diagnostikoa) ─────────────────────────────
+// Txapelketa bakoitza webgune publikoan agertzeko prest dagoen egiaztatzen du.
+// `txapelketa-orria.js`-k id-a AUTO-LOTZEN du kirol-izena + urtea bat eginez, beraz
+// hemengo egiaztapenak logika bera darabil: kirola izenetik antzeman + urte-orriaren
+// stub-a existitzen den + karrerarik baduen.
+function webgune_orriak_egoera() {
+    // Kirol-izen kanonikoak (js/txapelketak.js `kirolak`-ekin BAT ETORRI behar dute).
+    $kirolak = [
+        'tour'     => 'Tour de France',
+        'giro'     => "Giro d'Italia",
+        'vuelta'   => 'Vuelta a España',
+        'klasikak' => 'Klasikak',
+    ];
+    $rows = db_rows(
+        'SELECT t.Txapelketa_ID, t.Izena, t.Urtea,
+                (SELECT COUNT(*) FROM `Karrerak` k WHERE k.Txapelketa_ID = t.Txapelketa_ID) AS karrerak,
+                (SELECT COUNT(*) FROM `KarreraSailkapena` ks JOIN `Karrerak` k ON k.Karrerak_ID = ks.Karrera_ID WHERE k.Txapelketa_ID = t.Txapelketa_ID) AS emaitzak
+         FROM `Txapelketak` t ORDER BY t.Urtea DESC, t.Izena');
+    $out = [];
+    foreach ($rows as $r) {
+        $izena = (string)$r['Izena'];
+        $urtea = (string)$r['Urtea'];
+        // Kirola antzeman: izen kanonikoa aurrizki gisa (case-insensitive).
+        $kirola = null;
+        foreach ($kirolak as $k => $kanon) {
+            if (stripos($izena, $kanon) === 0) { $kirola = $k; break; }
+        }
+        $karrerak = (int)$r['karrerak'];
+        $url = $kirola ? "/$kirola/$urtea/" : null;
+        $stub_bada = $kirola ? is_file(__DIR__ . "/../$kirola/$urtea/index.html") : false;
+        if ($kirola === null) { $egoera = 'kirola-ez'; $mezua = 'Izena ez dator bat kirol-izen kanonikoarekin (Tour de France / Giro d\'Italia / Vuelta a España / Klasikak) → auto-lotura ez da funtzionatuko. Izena zuzendu.'; }
+        elseif (!$stub_bada)  { $egoera = 'stub-ez';  $mezua = "Urte-orria falta: kopiatu $kirola/$urtea/index.html (stub) eta gehitu txapelketak.js sarrera."; }
+        elseif ($karrerak === 0) { $egoera = 'karrera-ez'; $mezua = 'Karrerarik ez oraindik: inportatu karrerak agertzeko.'; }
+        else { $egoera = 'ok'; $mezua = 'Webgunean ikusgai (auto-lotuta).'; }
+        $out[] = [
+            'txapelketa_id' => (int)$r['Txapelketa_ID'],
+            'izena' => $izena, 'urtea' => (int)$urtea,
+            'kirola' => $kirola, 'url' => $url,
+            'karrerak' => $karrerak, 'emaitzak' => (int)$r['emaitzak'],
+            'stub_bada' => $stub_bada, 'egoera' => $egoera, 'mezua' => $mezua,
+        ];
+    }
+    return ['orriak' => $out];
+}
+
 // ─── Zuzenketa-proposamenak (testu-fitxategia, DB gabe) ──────────────────────
 // api/proposal.php-k admin/zuzenketak.log-en eransten ditu; hemen irakurtzen dira.
 function _proposals_file() { return __DIR__ . '/zuzenketak.log'; }

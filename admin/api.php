@@ -105,6 +105,8 @@ try {
                 try { json_out(read_ezarpenak()); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'migrations':
                 try { json_out(migration_status()); } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'webgune-orriak':
+                try { json_out(webgune_orriak_egoera()); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'backup':
                 try {
                     $data = db_full_backup();

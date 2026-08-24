@@ -69,6 +69,13 @@ sistematikoak (`paris roubaix.png`, `Braranconne.png`…), beraz konfigurazioan
 **Urte berri bat gehitzeko:** `js/txapelketak.js`-en sarrera bat gehitu eta `index.html`
 stub-a kopiatu. Ez dago HTML markaketarik bikoiztu beharrik.
 
+**Txapelketa_ID auto-lotura:** `cfg.id` **aukerakoa** da. `txapelketa-orria.js`-k, `id` hutsik
+badago, DBan bilatzen du txapelketa **kirol-izena (`kirolak[*].izena`) + urtea** bat eginez
+(`Izena LIKE 'Vuelta a España%' AND Urtea = 2026`). Beraz urte berri bat gehitzean ez da
+`id`-a eskuz jarri behar: DBan txapelketa sortu (izen kanonikoarekin) + stub-a kopiatu nahikoa.
+`id` esplizitua jarriz gero, hura errespetatzen da (izena bat ez datorrenerako). Admin paneleko
+**Webgunea → Urte-orrien egoera**-k lotura bakoitzaren egoera erakusten du.
+
 Estaldura: `tour/` eta `giro/` → 2023-2026 · `vuelta/` → 2020-2026 · `klasikak/` → 2024-2026.
 
 ## Datuak kargatzeko motorra — `js/db-loader.js`

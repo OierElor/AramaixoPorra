@@ -5,8 +5,10 @@
  * Urte berri bat gehitzeko: sarrera bat gehitu `urteak`-en eta orri-stub bat kopiatu.
  *   { id, arauak, dortsalak, porrak, profilaDir, profilaIrudia, irudiak }
  *
- *  - id            : Txapelketa_ID. `null` bada (edo DBan karrerarik ez badu),
- *                    sailkapen-taulak EZ dira erakusten.
+ *  - id            : Txapelketa_ID. AUKERAKOA: `null`/kendua bada, `txapelketa-orria.js`-k
+ *                    AUTO-LOTZEN du DBan (kirol-izena + urtea bat eginez). Beraz normalean
+ *                    ez da jarri behar; jarri soilik DBko izena kanonikoarekin bat ez badator.
+ *                    (DBan karrerarik ez badu, sailkapen-taulak EZ dira erakusten.)
  *  - arauak/dortsalak/porrak : PDF fitxategi-izena. Ez badago, kendu.
  *  - profilaDir    : karrera-irudien azpikarpeta (`karpetak.profilak`-etik zintzilik).
  *  - profilaIrudia : ibilbide osoaren irudia, orriaren goialdean (itzuliak).

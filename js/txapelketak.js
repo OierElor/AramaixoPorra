@@ -126,7 +126,7 @@
                 dortsalak: 'Txirrindulari Zerrenda Vuelta 2025.pdf',
             },
             'vuelta/2026': {
-                id: null,               // oraindik ez da sortu; sortzean, ID-a jarri
+                id: 18,
                 arauak: 'Arauak vuelta 26.pdf',
                 dortsalak: 'Txirrindulari Zerrenda Vuelta 2026.pdf',
                 profilaDir: 'vuelta26',

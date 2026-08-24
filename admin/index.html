@@ -363,7 +363,7 @@
         <div class="card"><div class="card-head"><div class="card-title">Txapelketa berria</div></div><div class="card-body"><div class="form-grid"><div class="field"><label>Izena</label><input id="m-txap-izena" placeholder="Tour de France" required/></div><div class="field"><label>Urtea</label><input id="m-txap-urtea" type="number" placeholder="2025" min="1990" max="2100" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-txap-btn">Gehitu txapelketa</button></div></div></div>
         <div class="card"><div class="card-head"><div class="card-title">Porralaria berria</div></div><div class="card-body"><div class="form-grid full"><div class="field"><label>Izena</label><input id="m-porra-izena" placeholder="Porralari izena" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-porra-btn">Gehitu porralaria</button></div></div></div>
         <div class="card"><div class="card-head"><div class="card-title">Txirrindularia berria</div></div><div class="card-body"><div class="form-grid full"><div class="field"><label>Izena</label><input id="m-txirri-izena" placeholder="Pogacar Tadej" required/></div></div><div style="margin-top:14px"><button class="btn btn-primary" id="m-txirri-btn">Gehitu txirrindularia</button></div></div></div>
-        <div class="card"><div class="card-head"><div class="card-title">Karrera berria</div></div><div class="card-body"><div class="form-grid"><div class="field" style="grid-column:1/-1"><label>Txapelketa</label><select id="m-karrera-txap" required><option value="">— Aukeratu —</option></select></div><div class="field"><label>Izena</label><input id="m-karrera-izena" placeholder="7. etapa" required/></div><div class="field"><label>Urtea</label><input id="m-karrera-urtea" type="number" placeholder="2025" min="1990" max="2100" required/></div><div class="field"><label>Kategoria</label><select id="m-karrera-kat"><option value="Etapa" selected>Etapa (itzuliak)</option><option value="Monumentua">Monumentua</option><option value="Proseries">Proseries</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="Berezia">Berezia</option></select></div><div class="field"><label>Ordena <span style="font-weight:400;opacity:.6">(hutsik = automatikoa)</span></label><input id="m-karrera-ordena" type="number" min="1" placeholder="auto"/></div></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Kategoria <strong>derrigorrezkoa</strong> da: hutsik geratuz gero, karrera ez litzateke urte-orriko akordeoian agertuko.</div><div style="margin-top:14px"><button class="btn btn-primary" id="m-karrera-btn">Gehitu karrera</button></div></div></div>
+        <div class="card"><div class="card-head"><div class="card-title">Karrera berria</div></div><div class="card-body"><div class="form-grid"><div class="field" style="grid-column:1/-1"><label>Txapelketa</label><select id="m-karrera-txap" required><option value="">— Aukeratu —</option></select></div><div class="field"><label>Izena</label><input id="m-karrera-izena" placeholder="7. etapa" required/></div><div class="field"><label>Urtea</label><input id="m-karrera-urtea" type="number" placeholder="2025" min="1990" max="2100" required/></div><div class="field"><label>Kategoria</label><select id="m-karrera-kat"><option value="Etapa" selected>Etapa (itzuliak)</option><option value="Monumentua">Monumentua</option><option value="Proseries">Proseries</option><option value="4">4</option><option value="5">5</option><option value="Berezia">Berezia</option></select></div><div class="field"><label>Ordena <span style="font-weight:400;opacity:.6">(hutsik = automatikoa)</span></label><input id="m-karrera-ordena" type="number" min="1" placeholder="auto"/></div></div><div style="font-size:12px;color:var(--muted);margin-top:8px">Kategoria <strong>derrigorrezkoa</strong> da: hutsik geratuz gero, karrera ez litzateke urte-orriko akordeoian agertuko.</div><div style="margin-top:14px"><button class="btn btn-primary" id="m-karrera-btn">Gehitu karrera</button></div></div></div>
       </div>
     </section>
 
@@ -1081,8 +1081,11 @@ function renderTxapelketak() {
   el("karrerak-tbody").innerHTML = sortedK.map(k => {
     const txap = state.txapelketak.find(t => t.Txapelketa_ID === k.Txapelketa_ID);
     const katHutsik = !k.Kategoria;   // hutsik → akordeoian/tresnetan ezkuta daiteke
-    const katOpt = KAT_AUKERAK.map(o =>
-      `<option value="${esc(o)}"${String(k.Kategoria || "") === o ? " selected" : ""}>${esc(o || "— hutsik —")}</option>`).join("");
+    // Uneko balioa KAT_AUKERAK-en ez badago (adib. datu zaharra), erantsi galdu ez dadin.
+    const kbal = String(k.Kategoria || "");
+    const katAuk = KAT_AUKERAK.includes(kbal) ? KAT_AUKERAK : [...KAT_AUKERAK, kbal];
+    const katOpt = katAuk.map(o =>
+      `<option value="${esc(o)}"${kbal === o ? " selected" : ""}>${esc(o || "— hutsik —")}</option>`).join("");
     const ezDu = Number(k.Emaitzarik_Ez) === 1;
     const ezCell = ezBada
       ? `<td style="text-align:center"><input type="checkbox" ${ezDu ? "checked" : ""} onchange="saveKarreraEmaitzarikEz(this, ${k.Karrerak_ID})" title="Markatuta: akordeoian ez da agertuko"></td>`
@@ -1111,7 +1114,7 @@ async function saveTxapPorra(inp, tid, zutabea) {
 }
 
 /** Karreren Kategoria posibleak. Hutsa lehena da (lehendik dauden akatsak erakusteko). */
-const KAT_AUKERAK = ["", "Etapa", "Monumentua", "Proseries", "3", "4", "5", "Berezia"];
+const KAT_AUKERAK = ["", "Etapa", "Monumentua", "Proseries", "4", "5", "Berezia"];
 
 /** Kategoria gorde. Hutsik uzteak karrera ezkutatzen du akordeoian eta tresnetan. */
 async function saveKarreraKat(sel, kid) {

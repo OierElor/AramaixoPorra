@@ -175,6 +175,7 @@
     <div class="nav-item" data-section="import"><span class="icon">📥</span> Datuak inportatu</div>
     <div class="nav-item" data-section="finalak"><span class="icon">🥇</span> Puntu finalak</div>
     <div class="nav-item" data-section="fitxategiak"><span class="icon">📁</span> Fitxategiak</div>
+    <div class="nav-item" data-section="baliabideak"><span class="icon">📋</span> Baliabideak</div>
     <div class="nav-item" data-section="webgunea"><span class="icon">🌐</span> Webgunea</div>
     <div class="nav-item" data-section="porra-editatu"><span class="icon">📝</span> Porra editatu</div>
     <div class="nav-item" data-section="kalkulatu"><span class="icon">📊</span> Sailkapenak kalkulatu</div>
@@ -222,6 +223,7 @@
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
           <div><strong>✏️ Eskuz sartu</strong><br><span style="color:var(--muted)">Erregistro bakarrak eskuz gehitu: porralaria, txirrindularia, txapelketa, karrera, emaitzak.</span></div>
           <div><strong>📥 Datuak inportatu</strong><br><span style="color:var(--muted)">Sistema bateratua (Itzuliak + Klasikoak). 5 bloke: karrerak, startlist (dortsalak), apustuak, emaitzak eta sailkapen finalak. Apustuak dortsalez lotzen dira. Berriz inportatzea segurua.</span></div>
+          <div><strong>📋 Baliabideak</strong><br><span style="color:var(--muted)">Txapelketa baten fitxategiak osatu: arauak/startlist/porrak PDFak eta karreren profil-irudiak. Zer dagoen jarrita ikusi (✓/⚠/✗) eta falta dena aukeratu edo igo — dena admin-etik.</span></div>
           <div><strong>📊 Sailkapenak kalkulatu</strong><br><span style="color:var(--muted)">Apustuetatik eta karrera-emaitzetatik porralarien eta txirrindularien puntuak kalkulatu. <strong>Emaitzak sartu ondoren exekutatu.</strong></span></div>
           <div><strong>🔀 Fusionatu</strong><br><span style="color:var(--muted)">Bikoiztutako txirrindulariak edo porralariak batu (bat mantendu, bestea desagertu, loturak berbideratuz).</span></div>
           <div><strong>🏷️ Ezizenak lotu</strong><br><span style="color:var(--muted)">Porra-ezizena bat porralari batekin lotu (nork jokatu duen jakiteko).</span></div>
@@ -526,11 +528,6 @@
           </div>
           <div id="dups-result" style="margin-top:12px"></div>
         </div>
-        <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:8px">📄 PDF-en egoera (irekitako txapelketak)</div>
-          <button class="btn btn-ghost btn-sm" onclick="loadPdfOsasuna()">🔄 Egiaztatu</button>
-          <div id="pdf-osasuna-result" style="margin-top:12px"></div>
-        </div>
       </div></div>
     </section>
 
@@ -632,6 +629,19 @@
         <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px">Txapelketa bakoitza webgune publikoan agertzeko prest dagoen. <strong>Auto-lotura</strong> izenaz egiten da — <strong>id-a EZ da konfiguratu behar</strong>. ⚠ bat agertzen bada, konpontzeko argibideak ematen dira.</div>
         <div id="webgune-orriak"></div>
       </div></div>
+    </section>
+
+    <!-- BALIABIDEAK -->
+    <section class="section" id="sec-baliabideak">
+      <div class="page-header"><div><div class="page-title">📋 Baliabideak</div><div class="page-sub">Txapelketa baten fitxategiak (arauak / startlist / porrak) eta karreren profil-irudiak: zer dagoen jarrita eta erraz osatu</div></div></div>
+      <div id="bal-abisua"></div>
+      <div class="card" style="margin-bottom:16px"><div class="card-body">
+        <div class="field" style="margin:0;max-width:320px"><label>Txapelketa</label>
+          <select id="bal-txap" onchange="loadBaliabideak()" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;width:100%"><option value="">— Aukeratu —</option></select></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px">✓ = jarrita eta fitxategia badago · ⚠ = jarrita baina fitxategia falta · ✗ = jarri gabe. Aldatzeak berehala gordetzen du (webgune publikoak DBtik hartzen ditu).</div>
+      </div></div>
+      <div id="bal-pdf"></div>
+      <div id="bal-profilak"></div>
     </section>
 
     <!-- PORRA EDITATU -->
@@ -941,6 +951,7 @@ function renderCurrentSection() {
     case "zuzenketak":       loadProposals(); break;
     case "aurre-porrak":     loadAurrePorrak(); break;
     case "fitxategiak":      loadKarpetak(); loadFiles(state.fileDir || ""); break;
+    case "baliabideak":      renderBaliabideakSel(); break;
     case "webgunea":         loadWebgunea(); loadWebguneOrriak(); break;
     case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
@@ -2535,54 +2546,154 @@ async function loadDups(kind) {
   } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
 }
 
-// PDF-en egoera (irekitako txapelketak): js/txapelketak.js-eko konfigurazioa (kliente-JS
-// soila, admin-etik `<script src>` bidez kargatua) + api/files bidezko fitxategi-zerrenda
-// gurutzatzen ditu. Backend-berririk ez da behar: dagoeneko dagoen bi iturri hauek nahikoa.
-async function loadPdfOsasuna() {
-  const res = el("pdf-osasuna-result");
-  res.innerHTML = `<div style="color:var(--muted);font-size:13px">Egiaztatzen...</div>`;
+// ── Baliabideak: txapelketa-fitxategiak (arauak/startlist/porrak) + karreren profilak ──
+// PDF izenak DBan (Txapelketak.*_PDF) edo config-en (txapelketak.js, admin-etik <script>-ez
+// kargatua). Profilak Karrerak.Profil_Irudia (edo Etapa{Ordena} konbentzioa). Egoera bezero
+// aldean kalkulatzen da (api/files + state); idazketa table-update; igoera api/files/upload.
+const BAL_KIROL_IZENAK = { tour:'Tour de France', giro:"Giro d'Italia", vuelta:'Vuelta a España', klasikak:'Klasikak' };
+const BAL_PDF = [
+  { mota:'arauak',    zut:'Arauak_PDF',    izen:'Arauak' },
+  { mota:'dortsalak', zut:'Dortsalak_PDF', izen:'Startlist (dortsalak)' },
+  { mota:'porrak',    zut:'Porrak_PDF',    izen:'Porrak' },
+];
+const BAL_SEL_ESTILOA = "background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;outline:none;max-width:230px";
+
+function renderBaliabideakSel() {
+  const sel = el("bal-txap");
+  if (sel) {
+    const prev = sel.value;
+    sel.innerHTML = `<option value="">— Aukeratu —</option>` +
+      state.txapelketak.map(t => `<option value="${t.Txapelketa_ID}">${esc(t.Izena)} ${esc(t.Urtea)}</option>`).join("");
+    if (prev) { sel.value = prev; loadBaliabideak(); }
+  }
+  const abisua = el("bal-abisua"); if (!abisua) return;
+  const bada = state.txapelketak.length > 0 && ("Arauak_PDF" in state.txapelketak[0]);
+  abisua.innerHTML = bada ? "" : `<div style="background:var(--bg);border:1px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--accent);line-height:1.6;margin-bottom:12px">
+    ⚠ <strong>Migrazioa falta da.</strong> <code>Txapelketak.Arauak_PDF/Dortsalak_PDF/Porrak_PDF</code> ez daude.<br>
+    Exekutatu <strong>db/txapelketa-fitxategiak.sql</strong> phpMyAdmin-en. Bien bitartean, PDFak config-etik erakusten dira baina ezin dira hemendik esleitu.</div>`;
+}
+
+function _balCfg(t) {
+  return Object.values((window.TXAPELKETAK && window.TXAPELKETAK.urteak) || {})
+    .find(c => Number(c.id) === Number(t.Txapelketa_ID)) || {};
+}
+function _balProfilaDir(t) {
+  const cfg = _balCfg(t);
+  if (cfg.profilaDir) return cfg.profilaDir;
+  let kirola = null;
+  for (const [k, izen] of Object.entries(BAL_KIROL_IZENAK))
+    if ((t.Izena||"").toLowerCase().startsWith(izen.toLowerCase())) { kirola = k; break; }
+  return kirola ? kirola + String(t.Urtea).slice(-2) : null;
+}
+async function _balFolderFiles(dir) {
+  try { const r = await api("api/files?dir=" + encodeURIComponent(dir)); return r.files || []; }
+  catch (e) { return []; }
+}
+
+async function loadBaliabideak() {
+  const tid = Number(el("bal-txap")?.value || 0);
+  const pdfEl = el("bal-pdf"), profEl = el("bal-profilak");
+  if (!tid) { if (pdfEl) pdfEl.innerHTML = ""; if (profEl) profEl.innerHTML = ""; return; }
+  const t = state.txapelketak.find(x => Number(x.Txapelketa_ID) === tid);
+  if (!t) return;
+  const dbBada = ("Arauak_PDF" in t);
+  const cfg = _balCfg(t);
+
+  // ── A · Txapelketa-fitxategiak (PDFak) ──
+  if (pdfEl) pdfEl.innerHTML = `<div class="card" style="margin-bottom:16px"><div class="card-body"><div style="color:var(--muted);font-size:13px">PDFak kargatzen...</div></div></div>`;
+  const pdfRows = [];
+  for (const p of BAL_PDF) {
+    const karpeta = fmKarpetaMap[p.mota] || p.mota;
+    const izenak = (await _balFolderFiles(karpeta)).map(f => f.name);
+    const balioa = (dbBada && t[p.zut]) ? t[p.zut] : (cfg[p.mota] || "");
+    const iturria = (dbBada && t[p.zut]) ? "DB" : (cfg[p.mota] ? "config" : "");
+    const egoera = !balioa ? `<span style="color:var(--accent)">✗ jarri gabe</span>`
+      : izenak.includes(balioa) ? `<span style="color:#4ade80">✓ ${esc(balioa)}</span>`
+      : `<span style="color:var(--accent)">⚠ jarrita baina fitxategia falta: ${esc(balioa)}</span>`;
+    const opts = `<option value="">— Aukeratu fitxategia —</option>` +
+      izenak.map(n => `<option value="${esc(n)}"${n === balioa ? " selected" : ""}>${esc(n)}</option>`).join("");
+    const kontrola = dbBada
+      ? `<select onchange="balSavePdf(${tid}, '${p.zut}', this.value)" style="${BAL_SEL_ESTILOA}">${opts}</select>
+         <label class="btn btn-sm btn-ghost" style="cursor:pointer">⬆ Igo<input type="file" accept="application/pdf" style="display:none" onchange="balUploadPdf(${tid}, '${p.zut}', '${esc(karpeta)}', this)"></label>`
+      : `<span style="color:var(--muted);font-size:12px">migrazioa behar da esleitzeko</span>`;
+    pdfRows.push(`<tr><td style="font-weight:600">${esc(p.izen)}</td><td>${egoera}${iturria ? ` <span style="color:var(--muted);font-size:11px">(${iturria})</span>` : ""}</td><td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${kontrola}</div></td></tr>`);
+  }
+  if (pdfEl) pdfEl.innerHTML = `<div class="card" style="margin-bottom:16px"><div class="card-body">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">📄 Txapelketa-fitxategiak</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Mota</th><th>Egoera</th><th>Esleitu / igo</th></tr></thead><tbody>${pdfRows.join("")}</tbody></table></div>
+  </div></div>`;
+
+  // ── B · Karreren profilak ──
+  const profilaDir = _balProfilaDir(t);
+  if (profEl) profEl.innerHTML = `<div class="card"><div class="card-body"><div style="color:var(--muted);font-size:13px">Profilak kargatzen...</div></div></div>`;
+  const _ord = k => (k.Ordena == null ? 1e9 : Number(k.Ordena));
+  const karrerak = state.karrerak.filter(k => Number(k.Txapelketa_ID) === tid)
+    .sort((a, b) => _ord(a) - _ord(b) || a.Karrerak_ID - b.Karrerak_ID);
+  const profBada = state.karrerak.length > 0 && ("Profil_Irudia" in state.karrerak[0]);
+  let irudiIzenak = [];
+  if (profilaDir) irudiIzenak = (await _balFolderFiles("profilak/" + profilaDir)).map(f => f.name).filter(n => /\.(jpe?g|png|gif|webp)$/i.test(n));
+  const irSet = new Set(irudiIzenak.map(n => n.toLowerCase()));
+  const duProfila = k => {
+    if (k.Profil_Irudia) return true;
+    if (k.Ordena == null) return false;
+    return irSet.has(`etapa${k.Ordena}.jpg`) || irSet.has(`etapa${k.Ordena}.png`);
+  };
+  const zenbat = karrerak.filter(duProfila).length;
+  const irudiOpts = sel => `<option value="">— irudia —</option>` +
+    irudiIzenak.map(n => `<option value="${esc(n)}"${sel && sel.endsWith("/" + n) ? " selected" : ""}>${esc(n)}</option>`).join("");
+  const profRows = karrerak.map(k => {
+    const du = duProfila(k);
+    const kontrola = (profBada && profilaDir)
+      ? `<select onchange="balSaveProfila(${k.Karrerak_ID}, '${esc(profilaDir)}', this.value)" style="${BAL_SEL_ESTILOA}">${irudiOpts(k.Profil_Irudia || "")}</select>
+         <label class="btn btn-sm btn-ghost" style="cursor:pointer">⬆ Igo<input type="file" accept="image/*" style="display:none" onchange="balUploadProfila(${k.Karrerak_ID}, '${esc(profilaDir)}', this)"></label>`
+      : `<span style="color:var(--muted);font-size:12px">${profilaDir ? "migrazioa behar da" : "profil-karpetarik ez"}</span>`;
+    return `<tr${du ? "" : ' style="background:rgba(230,57,70,.05)"'}><td>${k.Ordena ?? "—"}</td><td>${esc(k.Izena)}</td><td style="text-align:center">${du ? `<span style="color:#4ade80">✓</span>` : `<span style="color:var(--accent)">✗</span>`}</td><td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${kontrola}</div></td></tr>`;
+  }).join("");
+  if (profEl) profEl.innerHTML = `<div class="card"><div class="card-body">
+    <div style="font-size:13px;font-weight:600;margin-bottom:4px">🏔️ Karreren profil-irudiak <span style="font-weight:400;color:var(--muted)">(${zenbat}/${karrerak.length} osatuta${profilaDir ? ` · karpeta: <code>${esc(profilaDir)}</code>` : ""})</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">✓ = <code>Profil_Irudia</code> lotuta EDO <code>Etapa{Ordena}</code> konbentzioa. Aldatzeko: irudia aukeratu edo igo.</div>
+    ${karrerak.length ? `<div class="tbl-wrap"><table><thead><tr><th>Ordena</th><th>Izena</th><th>Profila</th><th>Esleitu / igo</th></tr></thead><tbody>${profRows}</tbody></table></div>` : `<div style="color:var(--muted);font-size:13px">Karrerarik ez.</div>`}
+  </div></div>`;
+}
+
+async function balSavePdf(tid, zut, filename) {
   try {
-    const badaPorraZut = state.txapelketak.some(t => "Porra_Irekita" in t);
-    if (!badaPorraZut) {
-      res.innerHTML = `<div style="color:var(--muted);font-size:12px">— migrazioa falta da (db/aurre-porrak.sql) —</div>`;
-      return;
-    }
-    const irekiak = state.txapelketak.filter(t => Number(t.Porra_Irekita) === 1);
-    if (!irekiak.length) {
-      res.innerHTML = `<div style="color:var(--muted);font-size:12px">Ez dago txapelketa irekirik.</div>`;
-      return;
-    }
-
-    const MOTAK = [["arauak", "Arauak"], ["dortsalak", "Dortsalak"], ["porrak", "Porrak"]];
-    const zerrendak = {};
-    for (const [mota] of MOTAK) {
-      const karpeta = fmKarpetaMap[mota] || mota;
-      try {
-        const r = await api("api/files?dir=" + encodeURIComponent(karpeta));
-        zerrendak[mota] = new Map((r.files || []).map(f => [f.name, f.mtime]));
-      } catch (e) { zerrendak[mota] = new Map(); }
-    }
-
-    const urteak = (window.TXAPELKETAK && window.TXAPELKETAK.urteak) || {};
-    const dataStr = mtime => new Date(mtime * 1000).toISOString().slice(0, 10);
-
-    const errenkadak = irekiak.map(t => {
-      const sarrera = Object.values(urteak).find(cfg => Number(cfg.id) === Number(t.Txapelketa_ID));
-      const zutabeak = MOTAK.map(([mota]) => {
-        const izena = sarrera && sarrera[mota];
-        const mtime = izena ? zerrendak[mota].get(izena) : undefined;
-        return mtime === undefined
-          ? `<td style="color:var(--accent)">⚠ ez dago</td>`
-          : `<td style="color:#4ade80">✓ ${dataStr(mtime)}</td>`;
-      }).join("");
-      return `<tr><td>${esc(t.Izena)} ${esc(t.Urtea)}</td>${zutabeak}</tr>`;
-    }).join("");
-
-    res.innerHTML = `<div class="tbl-wrap"><table>
-      <thead><tr><th>Txapelketa</th>${MOTAK.map(([, izena]) => `<th>${izena}</th>`).join("")}</tr></thead>
-      <tbody>${errenkadak}</tbody>
-    </table></div>`;
-  } catch(e) { res.innerHTML = `<div style="color:var(--accent);font-size:13px">${esc(e.message)}</div>`; }
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Txapelketak", pk:{ Txapelketa_ID: tid }, values:{ [zut]: filename || null } }) });
+    const t = state.txapelketak.find(x => Number(x.Txapelketa_ID) === tid); if (t) t[zut] = filename || null;
+    showToast(filename ? "Fitxategia esleituta ✓" : "Kenduta ✓");
+    loadBaliabideak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+async function balUploadPdf(tid, zut, karpeta, input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  showToast("⏳ Igotzen...");
+  try {
+    const fd = new FormData(); fd.append("file", f);
+    const r = await fetch("api/files/upload?dir=" + encodeURIComponent(karpeta) + "&overwrite=1", { method:"POST", body: fd });
+    if (!r.ok) throw new Error("Igoerak huts egin du (HTTP " + r.status + ")");
+    await balSavePdf(tid, zut, f.name);
+  } catch(e) { showToast(e.message, "err"); }
+}
+async function balSaveProfila(kid, profilaDir, filename) {
+  const bidea = filename ? profilaDir + "/" + filename : null;
+  try {
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Karrerak", pk:{ Karrerak_ID: kid }, values:{ Profil_Irudia: bidea } }) });
+    const k = state.karrerak.find(x => Number(x.Karrerak_ID) === kid); if (k) k.Profil_Irudia = bidea;
+    showToast(bidea ? "Profila lotuta ✓" : "Kenduta ✓");
+    loadBaliabideak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+async function balUploadProfila(kid, profilaDir, input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  showToast("⏳ Igotzen...");
+  try {
+    // Karpeta ez badago, sortu (existitzen bada, errorea ignoratu).
+    try { await api("api/files/mkdir", { method:"POST", body: JSON.stringify({ dir:"profilak", name: profilaDir }) }); } catch (e) { /* jada existitzen da */ }
+    const fd = new FormData(); fd.append("file", f);
+    const r = await fetch("api/files/upload?dir=" + encodeURIComponent("profilak/" + profilaDir) + "&overwrite=1", { method:"POST", body: fd });
+    if (!r.ok) throw new Error("Igoerak huts egin du (HTTP " + r.status + ")");
+    await balSaveProfila(kid, profilaDir, f.name);
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 // Egoera-tira (kontrol-panela): txapelketaren urteroko fluxuaren argazkia.

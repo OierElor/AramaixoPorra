@@ -175,27 +175,40 @@
     }
 
     /**
-     * Txapelketa_ID AUTO-LOTURA: `cfg.id` konfiguratu gabe badago, DBan bilatzen da
-     * kirol-izena (`meta.izena`) + urtea bat eginez. Horrela urte berri bat gehitzean
-     * ez da id-a eskuz jarri behar (txapelketak.js); DBan sortu + stub-a kopiatu nahikoa.
-     * `cfg.id` esplizitua badago, hura errespetatzen da. Huts eginez gero, `null` (oharra).
+     * Txapelketa DBtik kargatu eta `cfg` osatu:
+     *  - AUTO-LOTURA: `cfg.id` konfiguratu gabe badago, DBan bilatzen da kirol-izena
+     *    (`meta.izena`) + urtea bat eginez → urte berri batean ez da id-a eskuz jarri behar.
+     *  - PDF GAINIDAZKETAK: `Txapelketak.Arauak_PDF/Dortsalak_PDF/Porrak_PDF` DBan jarrita
+     *    badaude, `cfg`-koak gainidazten dituzte (admin → Baliabideak). NULL → config-ekoa.
+     * `SELECT *` migrazio-segurua da (zutaberik ez → undefined → config-ek balio du).
+     * Huts eginez gero, config estatikoa erabiltzen da (gunea ez da hausten).
      */
-    async function ebatziId() {
+    async function txapelketaKargatu() {
         try {
-            const rows = await window.dbLoader.query(
-                'SELECT Txapelketa_ID AS id FROM "Txapelketak" WHERE Urtea = ? AND Izena LIKE ? ORDER BY Txapelketa_ID LIMIT 1',
-                [urtea, meta.izena + '%']);
-            return rows.length ? Number(rows[0].id) : null;
-        } catch (e) { return null; }
+            let row;
+            if (cfg.id != null) {
+                row = (await window.dbLoader.query('SELECT * FROM "Txapelketak" WHERE Txapelketa_ID = ?', [cfg.id]))[0];
+            } else {
+                row = (await window.dbLoader.query(
+                    'SELECT * FROM "Txapelketak" WHERE Urtea = ? AND Izena LIKE ? ORDER BY Txapelketa_ID LIMIT 1',
+                    [urtea, meta.izena + '%']))[0];
+                if (row) cfg.id = Number(row.Txapelketa_ID);
+            }
+            if (row) {
+                if (row.Arauak_PDF)    cfg.arauak    = row.Arauak_PDF;
+                if (row.Dortsalak_PDF) cfg.dortsalak = row.Dortsalak_PDF;
+                if (row.Porrak_PDF)    cfg.porrak    = row.Porrak_PDF;
+            }
+        } catch (e) { /* fallback: config estatikoa */ }
     }
 
     // Karpeta-mapa lehenik: PDF/irudi esteken karpetak hortik datoz. Fetch-ak huts eginez
     // gero, `txapelketak.js`-eko lehenetsiak erabiltzen dira (gunea ez da hausten).
     (async function hasi() {
         await C.karpetakKargatu();
+        await txapelketaKargatu();   // id auto-lotura + PDF gainidazketak (DBtik), deskargak baino lehen
         deskargakMarraztu();
         profilaMarraztu();
-        if (cfg.id == null) cfg.id = await ebatziId();   // auto-lotura izenaz
         bannerMarraztu();
         taulakMarraztu();
     })();

@@ -76,6 +76,11 @@ badago, DBan bilatzen du txapelketa **kirol-izena (`kirolak[*].izena`) + urtea**
 `id` esplizitua jarriz gero, hura errespetatzen da (izena bat ez datorrenerako). Admin paneleko
 **Webgunea → Urte-orrien egoera**-k lotura bakoitzaren egoera erakusten du.
 
+**PDFak (arauak / dortsalak / porrak):** `txapelketa-orria.js`-k txapelketaren errenkada
+kargatzean, `Txapelketak.Arauak_PDF`/`Dortsalak_PDF`/`Porrak_PDF` jarrita badaude, `cfg`-koak
+**gainidazten** ditu (admin → **Baliabideak**-etik kudeatuak). NULL bada, `txapelketak.js`-eko
+balioa. Beraz PDFak admin-etik esleitu daitezke, fitxategia editatu gabe.
+
 Estaldura: `tour/` eta `giro/` → 2023-2026 · `vuelta/` → 2020-2026 · `klasikak/` → 2024-2026.
 
 ## Datuak kargatzeko motorra — `js/db-loader.js`

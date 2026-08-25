@@ -185,6 +185,7 @@ try {
                 elseif ($kind==='porralariak') json_out(merge_porralariak((int)$k,(int)$d));
                 else json_error("Mota ezezaguna: $kind");
             case $path === 'recalculate-zenbat-porra': json_out(recalculate_zenbat_porra());
+            case $path === 'porra-zenbakiak/recompute': json_out(recompute_porra_zenbakiak($body['txapelketa_id'] ?? null));
             case $path === 'calculate/txirri-sailkapena':
                 $tid=$body['txapelketa_id']??null; if (!$tid) json_error('txapelketa_id behar da');
                 json_out(calculate_txirri_sailkapena((int)$tid));

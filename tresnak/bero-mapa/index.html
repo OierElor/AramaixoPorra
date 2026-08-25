@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aramaixo Porra - Aukeren bero-mapa</title>
-    <link rel="stylesheet" href="/css/styles.css?v=20260902">
+    <link rel="stylesheet" href="/css/styles.css?v=20260903">
     <link rel="icon" type="image/png" href="/data/portadak/favicon.png">
-    <script src="/js/db-loader.js?v=20260902"></script>
-    <script src="/js/tresna-komuna.js?v=20260902"></script>
+    <script src="/js/db-loader.js?v=20260903"></script>
+    <script src="/js/tresna-komuna.js?v=20260903"></script>
     <script>
         if (window.location.pathname.endsWith('.html')) {
             history.replaceState(null, '', window.location.pathname.slice(0, -5));
         }
     </script>
-    <script src="/js/layout.js?v=20260902" defer></script>
+    <script src="/js/layout.js?v=20260903" defer></script>
 </head>
 
 <body>
@@ -25,7 +25,7 @@
                 <h2 class="grafikoak" style="text-align:center;">Aukeren bero-mapa</h2>
                 <p style="text-align:center; opacity:.7; margin-top:-6px;">
                     Porra bakoitzak zein txirrindulari aukeratu zituen. Lerroak = txirrindulariak
-                    (ospearen arabera), zutabeak = porrak (postuaren arabera).
+                    (ospearen arabera), zutabeak = porrak (zenbakiaren arabera).
                 </p>
 
                 <div class="grafiko-kontrolak">
@@ -176,6 +176,14 @@
             const tid = state.txapId;
 
             const porrakAll = await Tresna.porrak(tid);
+            // Porra-zenbakia (PorraEzizenak.Zenbakia): migrazio-segurua (try/catch → mapa hutsa).
+            let zenbMap = {};
+            try {
+                const zr = await Tresna.q(
+                    'SELECT Ezizen_ID AS id, Zenbakia AS z FROM PorraEzizenak WHERE Txapelketa_ID = ?', [tid]);
+                zr.forEach(r => { if (r.z != null) zenbMap[String(r.id)] = Number(r.z); });
+            } catch (e) { zenbMap = {}; }
+            porrakAll.forEach(p => { p.zenbakia = zenbMap[String(p.id)] ?? null; });
             const cyc = await Tresna.q(
                 "SELECT t.Txirrindularia_ID AS id, t.Izena AS izena, COUNT(*) AS n " +
                 "FROM PorraApustuak pa JOIN Txirrindulariak t ON t.Txirrindularia_ID = pa.Txirrindularia_ID " +
@@ -197,6 +205,9 @@
             if (state.topN) {
                 porrak = porrak.slice(0, state.topN);
             }
+            // Porra-zenbakiaren arabera ordenatu (nuluak azken; berdinketa id-z).
+            porrak = porrak.slice().sort((a, b) =>
+                (a.zenbakia ?? 1e9) - (b.zenbakia ?? 1e9) || Number(a.id) - Number(b.id));
 
             const np = porrak.length;
             const hlId = state.porraHighlight != null ? String(state.porraHighlight) : null;
@@ -205,7 +216,8 @@
                 '<th class="bm-izena">Txirrindularia</th><th class="bm-n">#</th>' +
                 porrak.map(p => {
                     const hl = hlId && String(p.id) === hlId ? ' highlighted' : '';
-                    return `<th class="bm-zut${hl}" title="${p.pos}. ${p.izena} (${p.total})">${p.pos}</th>`;
+                    const zbk = p.zenbakia ?? p.pos;
+                    return `<th class="bm-zut${hl}" title="${zbk}. ${p.izena} (${p.total})">${zbk}</th>`;
                 }).join('') +
                 '</tr></thead><tbody>';
 

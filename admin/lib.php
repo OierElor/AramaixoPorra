@@ -1218,6 +1218,28 @@ function api_ezizenak() {
     return $ez_rows;
 }
 
+/** Porra-zenbakiak ID ordenatik birkalkulatu (txapelketaz txapelketa 1..N). Eskuzko
+ *  aldaketak gainidazten ditu. `$txap_id` null bada, txapelketa guztiak. */
+function recompute_porra_zenbakiak($txap_id = null) {
+    if (!db_column_exists('PorraEzizenak', 'Zenbakia')) {
+        return ['ok'=>false, 'reason'=>'Zenbakia zutabea falta da (db/porra-zenbakia.sql exekutatu)'];
+    }
+    if ($txap_id !== null && $txap_id !== '') {
+        db_exec(
+            'UPDATE `PorraEzizenak` pe JOIN (
+                SELECT Ezizen_ID, ROW_NUMBER() OVER (ORDER BY Ezizen_ID) AS rn
+                FROM `PorraEzizenak` WHERE Txapelketa_ID = ?
+             ) t ON t.Ezizen_ID = pe.Ezizen_ID SET pe.Zenbakia = t.rn', [(int)$txap_id]);
+    } else {
+        db_exec(
+            'UPDATE `PorraEzizenak` pe JOIN (
+                SELECT Ezizen_ID, ROW_NUMBER() OVER (PARTITION BY Txapelketa_ID ORDER BY Ezizen_ID) AS rn
+                FROM `PorraEzizenak`
+             ) t ON t.Ezizen_ID = pe.Ezizen_ID SET pe.Zenbakia = t.rn');
+    }
+    return ['ok'=>true];
+}
+
 function recompute_zenbat_porra($porralaria_ids) {
     foreach (array_unique(array_filter($porralaria_ids)) as $pid) {
         $n = (int)db_scalar('SELECT COUNT(*) FROM `PorralariTaldeenEzizenak` WHERE Porralaria_ID = ?', [$pid]);

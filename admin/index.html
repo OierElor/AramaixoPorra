@@ -713,9 +713,10 @@
             <option value="ez-lotu">🚫 Ez lotu (nahita)</option>
           </select>
           <span style="color:var(--muted);font-size:12px" id="ezizen-count"></span>
+          <button class="btn btn-ghost btn-sm" onclick="birkalkulatuZenbakiak()" title="Porra-zenbakiak ID ordenatik birkalkulatu (eskuzko aldaketak gainidazten ditu)" style="margin-left:auto">🔢 Zenbakiak birkalkulatu</button>
         </div>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>Ezizena</th><th>Txapelketa</th><th>Porralaria(k)</th><th style="width:260px">Esleitu</th></tr></thead>
+          <thead><tr><th title="Porra-zenbakia">#</th><th>Ezizena</th><th>Txapelketa</th><th>Porralaria(k)</th><th style="width:260px">Esleitu</th></tr></thead>
           <tbody id="ezizen-tbody"></tbody>
         </table></div>
       </div>
@@ -3424,8 +3425,9 @@ function renderEzizenak() {
   const data = state.ezizenak || [];
   const q      = (el("ezizen-search")?.value || "").toLowerCase();
   const filter = el("ezizen-filter")?.value || "";
-  // Ez_Lotu zutabea db/interesa-ez-lotu.sql exekutatuta badago bakarrik.
+  // Ez_Lotu / Zenbakia zutabeak migrazioa exekutatuta badago bakarrik.
   const badaEzLotu = data.length > 0 && ("Ez_Lotu" in data[0]);
+  const badaZenb = data.length > 0 && ("Zenbakia" in data[0]);
   let filtered = data.filter(r => {
     const lotuta = (r.Porralariak||[]).length > 0;
     const ezLotu = Number(r.Ez_Lotu) === 1;
@@ -3461,13 +3463,17 @@ function renderEzizenak() {
         <button class="btn btn-sm btn-ghost" title="Porralari berri bat sortu eta lotu" onclick="ezizenGehituBerria(${r.Ezizen_ID})">+ Berria</button>
         ${ezLotuBtn}`;
     }
+    const zenbCell = badaZenb
+      ? `<td><input type="number" value="${r.Zenbakia ?? ""}" onchange="saveEzizenZenbakia(this, ${r.Ezizen_ID})" title="Porra-zenbakia" style="width:52px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center"></td>`
+      : `<td style="color:var(--muted);font-size:11px" title="db/porra-zenbakia.sql exekutatu">—</td>`;
     return `<tr${ezLotu ? ' style="opacity:.55"' : ''}>
+      ${zenbCell}
       <td style="font-weight:600">${esc(r.Ezizena)}</td>
       <td style="color:var(--muted);font-size:12px">${esc(r.Txapelketa||"")}</td>
       <td><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">${chips}</div></td>
       <td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${esleitu}</div></td>
     </tr>`;
-  }).join("") || `<tr><td colspan="4" style="color:var(--muted);padding:24px;text-align:center">Ez dago emaitzarik</td></tr>`;
+  }).join("") || `<tr><td colspan="5" style="color:var(--muted);padding:24px;text-align:center">Ez dago emaitzarik</td></tr>`;
 }
 
 /** Ezizen bat nahita lotu gabe utzi (value=1) edo berreskuratu (value=0). */
@@ -3478,6 +3484,29 @@ async function ezizenEzLotu(ezizenId, value) {
     if (r) r.Ez_Lotu = value;
     showToast(value ? "🚫 Ez lotu markatuta" : "Berreskuratuta ✓");
     renderEzizenak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+/** Porra-zenbakia gorde (PorraEzizenak.Zenbakia). */
+async function saveEzizenZenbakia(inp, ezizenId) {
+  const v = inp.value.trim() === "" ? null : Number(inp.value);
+  try {
+    await api("api/table-update", { method: "POST", body: JSON.stringify({ table: "PorraEzizenak", pk: { Ezizen_ID: ezizenId }, values: { Zenbakia: v } }) });
+    const r = (state.ezizenak||[]).find(x => x.Ezizen_ID === ezizenId);
+    if (r) r.Zenbakia = v;
+    showToast("Zenbakia gordeta ✓");
+  } catch(e) { showToast(e.message, "err"); await reloadEzizenakOnly(); }
+}
+
+/** Porra-zenbakiak ID ordenatik birkalkulatu (txapelketa guztiak; eskuzko aldaketak gainidazten ditu). */
+async function birkalkulatuZenbakiak() {
+  if (!(await confirmDialog("Porra-zenbakiak ID ordenatik birkalkulatuko dira txapelketa guztietan. Eskuz jarritako zenbakiak GAINIDATZIKO dira. Jarraitu?"))) return;
+  showToast("⏳ Birkalkulatzen...");
+  try {
+    const r = await api("api/porra-zenbakiak/recompute", { method: "POST", body: JSON.stringify({}) });
+    if (r && r.ok === false) return showToast(r.reason || "Errorea", "err");
+    showToast("✅ Zenbakiak birkalkulatuta");
+    await reloadEzizenakOnly();
   } catch(e) { showToast(e.message, "err"); }
 }
 

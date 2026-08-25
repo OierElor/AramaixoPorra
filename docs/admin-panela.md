@@ -56,7 +56,7 @@ Nabigazio-menuak bi multzo ditu: **Ikus** (begiratu/editatu) eta **Sartu** (datu
 | **Sariak** | Txapelketa bakoitzeko sariak (posizioa → saria) |
 | **Sailkapenak kalkulatu** | Apustuetatik + karrera-emaitzetatik porralarien/txirrindularien puntuak kalkulatu |
 | **Fusionatu** | Bikoiztutako txirrindulari edo porralariak batu (bat mantendu, bestea desagertu) |
-| **Ezizenak lotu** | Porra-ezizena bat porralari batekin lotu. **🚫 Ez lotu** botoia: ezizen bat **nahita lotu gabe** utzi (jabeak interesik ez) → Datu-osasunatik eta pendiente-zerrendatik kanpo; **↩ Berreskuratu**-rekin desmarkatu. «Ez lotu (nahita)» iragazkia haiek ikusteko |
+| **Ezizenak lotu** | Porra-ezizena bat porralari batekin lotu. **# (Zenbakia)**: porra-zenbakia editatu (errenkadako input); **🔢 Zenbakiak birkalkulatu** botoiak ID ordenatik birzenbakitzen ditu (eskuzko aldaketak gainidatziz). Bero-mapak zenbaki honekin ordenatzen ditu zutabeak. **🚫 Ez lotu** botoia: ezizen bat **nahita lotu gabe** utzi (jabeak interesik ez) → Datu-osasunatik eta pendiente-zerrendatik kanpo; **↩ Berreskuratu**-rekin desmarkatu. «Ez lotu (nahita)» iragazkia haiek ikusteko |
 | **Banatu porralaria** | Porralari batean nahastutako bi pertsona bereizi |
 | **Nola erabili** | Laguntza-atala: lan-fluxua eta atalen azalpena |
 

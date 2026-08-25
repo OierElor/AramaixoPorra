@@ -76,6 +76,7 @@ AramaixoPorra/
 │   ├── profil-irudia.sql       # Migrazioa: Karrerak.Profil_Irudia (profil-lotura)
 │   ├── emaitzarik-ez.sql       # Migrazioa: Karrerak.Emaitzarik_Ez
 │   ├── amaituta.sql            # Migrazioa: Txapelketak.Amaituta (txapelketa itxi)
+│   ├── porra-zenbakia.sql      # Migrazioa: PorraEzizenak.Zenbakia (porra-zenbakia)
 │   ├── interesa-ez-lotu.sql    # Migrazioa: Porralariak.Interesa + PorraEzizenak.Ez_Lotu
 │   ├── txapelketa-fitxategiak.sql  # Migrazioa: Txapelketak.Arauak/Dortsalak/Porrak_PDF
 │   ├── kategoria-konponketa.sql    # Datu-fixa: kategoria baliogabeak (389/390/391)

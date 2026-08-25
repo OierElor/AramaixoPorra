@@ -31,7 +31,7 @@ erreferentzia gisa dago (git-en). Kredentzialak EZ daude dokumentu honetan (ikus
 |---|---|---|
 | **TxirrindulariakTxapleketanParteHartzea** | `TxapelketaID`→, `TxirrindulariaID`→, `Dortsala` | Txirrindulari batek txapelketa batean duen **dortsala** (startlist). Apustuak dortsalez lotzeko funtsezkoa |
 | **KarreraSailkapena** | `Karrera_ID`→, `Txirrindularia_ID`→, `Sailkapena`, `Puntuak` | Karrera baten **emaitza**: txirrindulari bakoitzaren postua eta puntuak |
-| **PorraEzizenak** | `Ezizen_ID` (PK), `Txapelketa_ID`→, `Ezizena`, `Ez_Lotu` | Porralari baten **ezizena/taldea** txapelketa batean (adib. "Keops"). `Ez_Lotu` = 1 bada, **nahita lotu gabe utzita** (jabeak interesik ez): Datu-osasunak eta Dashboard-eko kontaketak **ez dute salatzen**, eta «Ezizenak lotu» pendiente-zerrendatik kanpo. Migrazioa: `db/interesa-ez-lotu.sql` |
+| **PorraEzizenak** | `Ezizen_ID` (PK), `Txapelketa_ID`→, `Ezizena`, `Ez_Lotu`, `Zenbakia` | Porralari baten **ezizena/taldea** txapelketa batean (adib. "Keops"). `Zenbakia` = **porra-zenbakia** (erregistro-zerrendakoa; oro har Ezizen_ID ordena, editagarria — admin → Ezizenak lotu; bero-mapak hortik ordenatzen ditu zutabeak). Migrazioa: `db/porra-zenbakia.sql`. `Ez_Lotu` = 1 bada, **nahita lotu gabe utzita** (jabeak interesik ez): Datu-osasunak eta Dashboard-eko kontaketak **ez dute salatzen**, eta «Ezizenak lotu» pendiente-zerrendatik kanpo. Migrazioa: `db/interesa-ez-lotu.sql` |
 | **PorralariTaldeenEzizenak** | `Ezizen_ID`→, `Porralaria_ID`→ | Ezizena ↔ porralaria lotura (nor dagoen ezizen baten atzean) |
 | **PorraApustuak** | `Txapelketa_ID`→, `Ezizen_ID`→, `Txirrindularia_ID`→ | **Apustuak**: ezizen batek aukeratutako txirrindulariak (15 itzulietan, 25 klasikoetan) |
 

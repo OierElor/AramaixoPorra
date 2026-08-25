@@ -2147,9 +2147,30 @@ const EZARPEN_MOTAK = ['arauak' => 'arauak', 'dortsalak' => 'dortsalak',
                        'porrak' => 'porrak', 'profilak' => 'profilak'];
 
 // Puntu-eskalak kategoriaka (admin → inportazioa). KAT_AUKERAK-ekin bat (hutsa kenduta).
-// Etapa-k lehenetsi bat du (itzuli-etapak); besteak admin-etik bete behar dira.
-const KATEGORIA_ZERRENDA = ['Etapa', 'Monumentua', 'Proseries', '4', '5', 'Berezia'];
+// «Monumentua» = arauetako «3» kategoria. «6» arauetan (2024/2025); 2026an kendua baina
+// erabilgarri mantentzen da.
+const KATEGORIA_ZERRENDA = ['Etapa', 'Monumentua', 'Proseries', '4', '5', '6', 'Berezia'];
 const ESKALA_LEHENETSIA_ETAPA = [31, 23, 17, 13, 9, 7];
+
+// GLOBAL lehenetsiak = UNEKO araudia (klasikoak 2026 + Etapa itzuliak). Admin-etik gainidatz
+// daitezke; JSON-en balioa lehenetsia baino lehenago doa.
+const KATEGORIA_ESKALA_LEHENETSIAK = [
+    'Etapa'      => [31, 23, 17, 13, 9, 7],
+    'Monumentua' => [800, 640, 520, 440, 360, 280, 240, 200, 160, 135, 110, 95, 85, 65, 55],
+    '4'          => [500, 400, 325, 275, 225, 175, 150, 125, 100, 85, 70, 60, 50, 40, 35],
+    '5'          => [400, 320, 260, 220, 180, 140, 120, 100, 80, 68, 56, 48, 40, 32, 28],
+    '6'          => [300, 250, 215, 175, 120, 115, 95, 75, 60, 50, 40, 35, 30, 25, 20],
+    'Berezia'    => [900, 715, 600, 490, 410, 340, 265, 225, 190, 150, 130, 105, 90, 75, 60],
+    'Proseries'  => [250, 170, 140, 120, 100, 80, 70, 60, 50, 40, 30, 20, 10, 10, 10],
+];
+
+// LEGACY lehenetsiak: global-arekiko aldaketak dituzten urteak (kategoria diferentea soilik).
+//  · 2024: Berezia txikiagoa; Proseries-ik ez zen (irrelebantea, kat-6 300,250… global bezala).
+//  · 2025: Proseries diferentea (2026an 250,170… bihurtu zen).
+const KATEGORIA_ESKALA_ZAHARRAK = [
+    '2024' => ['Berezia'   => [600, 475, 400, 325, 275, 225, 175, 150, 125, 100, 85, 70, 60, 50, 40]],
+    '2025' => ['Proseries' => [200, 150, 125, 100, 85, 70, 60, 50, 40, 35, 30, 25, 20, 15, 10]],
+];
 
 function _ezarpenak_file() { return __DIR__ . '/ezarpenak.json'; }
 
@@ -2196,39 +2217,77 @@ function read_ezarpenak() {
         ];
     }, TRESNA_KATALOGOA);
 
-    // Kategoriako puntu-eskalak (kategoria → int array). JSON-etik; Etapa lehenetsiarekin.
+    // Kategoriako puntu-eskala GLOBALAK (kategoria → int array). JSON-en balioa badago hura,
+    // bestela KATEGORIA_ESKALA_LEHENETSIAK (uneko araudia, kodean).
     $eskalaRaw = is_array($data['kategoria_eskalak'] ?? null) ? $data['kategoria_eskalak'] : [];
     $eskalak = [];
     foreach (KATEGORIA_ZERRENDA as $kat) {
         $s = $eskalaRaw[$kat] ?? null;
         if (is_string($s) && trim($s) !== '') {
-            $eskalak[$kat] = array_map('intval', array_filter(array_map('trim', explode(',', $s)), fn($x) => $x !== ''));
+            $eskalak[$kat] = _eskala_parse($s);
         } else {
-            $eskalak[$kat] = ($kat === 'Etapa') ? ESKALA_LEHENETSIA_ETAPA : [];
+            $eskalak[$kat] = KATEGORIA_ESKALA_LEHENETSIAK[$kat] ?? [];
         }
     }
 
+    // Eskala ZAHARRAK (legacy): urteka override-ak. Kode-lehenetsiak (KATEGORIA_ESKALA_ZAHARRAK)
+    // + JSON-eko override-ak (JSON-ek irabazten du kategoria bakoitzeko). Global-a gainidazten
+    // dute urte HORRETAKO karreretan; iraganeko emaitza gordeak EZ dira aldatzen.
+    $zaharRaw = is_array($data['kategoria_eskalak_zaharrak'] ?? null) ? $data['kategoria_eskalak_zaharrak'] : [];
+    $eskalakZaharrak = [];
+    $urteGuztiak = array_unique(array_merge(array_keys(KATEGORIA_ESKALA_ZAHARRAK), array_keys($zaharRaw)));
+    foreach ($urteGuztiak as $urte) {
+        if (!preg_match('/^\d{4}$/', (string)$urte)) continue;
+        $m = [];
+        foreach ((KATEGORIA_ESKALA_ZAHARRAK[$urte] ?? []) as $kat => $arr) {
+            if (in_array($kat, KATEGORIA_ZERRENDA, true)) $m[$kat] = $arr;   // kode-lehenetsiak
+        }
+        $jk = $zaharRaw[$urte] ?? [];
+        if (is_array($jk)) foreach (KATEGORIA_ZERRENDA as $kat) {            // JSON-ek gainidazten du
+            $s = $jk[$kat] ?? null;
+            if (is_string($s) && trim($s) !== '') $m[$kat] = _eskala_parse($s);
+        }
+        if ($m) $eskalakZaharrak[(string)$urte] = $m;
+    }
+
     return ['karpetak' => $map, 'lehenetsiak' => EZARPEN_MOTAK, 'badaude' => $egoera,
-            'tresnak' => $tresnak, 'eskalak' => $eskalak];
+            'tresnak' => $tresnak, 'eskalak' => $eskalak, 'eskalak_zaharrak' => $eskalakZaharrak];
 }
 
-/** Kategoriako puntu-eskalak gorde (kategoria → "31,23,17,…"). Zenbakiak/komak soilik. */
-function save_eskala_ezarpenak($payload) {
-    $in = $payload['eskalak'] ?? [];
-    if (!is_array($in)) throw new Exception('Datu baliogabeak');
+/** "31,23,17" → [31,23,17]. Zenbaki osoak, hutsak baztertuta. */
+function _eskala_parse($s) {
+    return array_map('intval', array_filter(array_map('trim', explode(',', (string)$s)), fn($x) => $x !== '' && is_numeric($x)));
+}
+/** Eskala-map bat garbitu (kategoria → "31,23,…" string), KATEGORIA_ZERRENDA-koak soilik. */
+function _eskala_map_garbitu($in) {
     $map = [];
+    if (!is_array($in)) return $map;
     foreach (KATEGORIA_ZERRENDA as $kat) {
         $v = $in[$kat] ?? null;
         if (is_array($v)) $v = implode(',', array_map('intval', $v));
         $v = trim((string)$v);
-        if ($v !== '') {
-            $nums = array_filter(array_map('trim', explode(',', $v)), fn($x) => $x !== '' && is_numeric($x));
-            $v = implode(',', array_map('intval', $nums));
-        }
+        if ($v !== '') { $v = implode(',', _eskala_parse($v)); }
         if ($v !== '') $map[$kat] = $v;
     }
+    return $map;
+}
+
+/** Kategoriako puntu-eskalak gorde: globalak + legacy (urteka). */
+function save_eskala_ezarpenak($payload) {
+    if (!is_array($payload['eskalak'] ?? null)) throw new Exception('Datu baliogabeak');
+    $map = _eskala_map_garbitu($payload['eskalak']);
+
+    $zmap = [];
+    $zin = $payload['eskalak_zaharrak'] ?? [];
+    if (is_array($zin)) foreach ($zin as $urte => $kats) {
+        if (!preg_match('/^\d{4}$/', (string)$urte)) continue;
+        $km = _eskala_map_garbitu($kats);
+        if ($km) $zmap[(string)$urte] = $km;
+    }
+
     $data = _ezarpenak_raw();
     $data['kategoria_eskalak'] = $map;
+    $data['kategoria_eskalak_zaharrak'] = $zmap;
     _ezarpenak_gorde($data);
     return read_ezarpenak();
 }

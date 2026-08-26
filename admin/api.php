@@ -66,7 +66,7 @@ try {
                 if (!$kid) json_error('karrera_id parametroa behar da', 400);
                 $karrera = db_one('SELECT k.*, tx.Izena AS Txapelketa FROM `Karrerak` k JOIN `Txapelketak` tx ON k.Txapelketa_ID = tx.Txapelketa_ID WHERE k.Karrerak_ID = ?', [(int)$kid]);
                 if (!$karrera) json_error('Karrera ez da aurkitu', 404);
-                $sail = db_rows('SELECT ks.Sailkapena, t.Izena AS Txirrindularia, ks.Puntuak FROM `KarreraSailkapena` ks JOIN `Txirrindulariak` t ON ks.Txirrindularia_ID = t.Txirrindularia_ID WHERE ks.Karrera_ID = ? ORDER BY ks.Sailkapena', [(int)$kid]);
+                $sail = db_rows('SELECT ks.Sailkapena, ks.Txirrindularia_ID, t.Izena AS Txirrindularia, ks.Puntuak FROM `KarreraSailkapena` ks JOIN `Txirrindulariak` t ON ks.Txirrindularia_ID = t.Txirrindularia_ID WHERE ks.Karrera_ID = ? ORDER BY ks.Sailkapena', [(int)$kid]);
                 json_out(['karrera'=>$karrera,'sailkapena'=>$sail]);
             case $path === 'ezizenak':
                 json_out(api_ezizenak());
@@ -147,6 +147,7 @@ try {
             case $path === 'import/apustuak': json_out(import_apustuak($body));
             case $path === 'import/emaitzak-preview': json_out(import_emaitzak_preview($body));
             case $path === 'import/emaitzak': json_out(import_emaitzak($body));
+            case $path === 'karrera-emaitza/clear': json_out(clear_karrera_emaitzak($body['karrera_id'] ?? null));
             case $path === 'import/etapak-preview': json_out(import_etapak_preview($body));
             case $path === 'import/etapak': json_out(import_etapak($body));
             case $path === 'finalize/preview': json_out(finalize_txapelketa_preview($body));

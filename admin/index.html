@@ -331,10 +331,11 @@
               <span class="kat-badge" id="race-results-kat" style="display:none"></span>
             </div>
             <span style="color:var(--muted);font-size:12px" id="race-results-txap"></span>
+            <button class="btn btn-ghost btn-sm" id="race-results-clear" onclick="clearKarreraEmaitzak()" style="display:none;margin-left:auto" title="Karrera honen emaitza guztiak ezabatu">🗑 Emaitza guztiak ezabatu</button>
           </div>
           <div class="tbl-wrap">
             <table>
-              <thead><tr><th style="width:60px">#</th><th>Txirrindularia</th><th style="text-align:right;width:100px">Puntuak</th></tr></thead>
+              <thead><tr><th style="width:60px">#</th><th>Txirrindularia</th><th style="text-align:right;width:90px">Puntuak</th><th style="width:44px"></th></tr></thead>
               <tbody id="race-results-tbody">
                 <tr><td colspan="3" style="color:var(--muted);padding:32px;text-align:center">Ezkerreko zerrendatik karrera bat aukeratu</td></tr>
               </tbody>
@@ -783,7 +784,7 @@ const state = {
   txirrindulariak: [], porralariak: [], txapelketak: [], karrerak: [],
   txirriEmaitzak: [], porraEmaitzak: [], karreraSailkapena: [],
   ezizenak: [],
-  currentTable: null, currentTableData: null, tableList: null, eskalak: {}, eskalakZaharrak: {},
+  currentTable: null, currentTableData: null, tableList: null, eskalak: {}, eskalakZaharrak: {}, currentKarrera: null,
   sailTab: "porralariak",
   fileDir: "",
 };
@@ -3853,10 +3854,11 @@ function renderKarreraList() {
 }
 
 async function loadKarreraEmaitza(karreraId, itemEl) {
+  state.currentKarrera = Number(karreraId);
   document.querySelectorAll('.karrera-item').forEach(el2 => el2.classList.remove('active'));
   if (itemEl) itemEl.classList.add('active');
   const tbody = el('race-results-tbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted);padding:24px;text-align:center">Kargatzen...</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:24px;text-align:center">Kargatzen...</td></tr>';
   try {
     const data = await api('api/karrera-emaitza?karrera_id=' + karreraId);
     const k = data.karrera;
@@ -3864,6 +3866,7 @@ async function loadKarreraEmaitza(karreraId, itemEl) {
     const nameEl = el('race-results-name');
     const katEl  = el('race-results-kat');
     const txapEl = el('race-results-txap');
+    const clearBtn = el('race-results-clear');
     if (nameEl) nameEl.textContent = k.Izena;
     if (nameEl) nameEl.style.color = 'var(--text)';
     if (katEl) {
@@ -3872,22 +3875,58 @@ async function loadKarreraEmaitza(karreraId, itemEl) {
       katEl.style.display = kat ? '' : 'none';
     }
     if (txapEl) txapEl.textContent = (k.Txapelketa || '') + ' · ' + k.Urtea;
+    const inputEstiloa = "width:56px;font-size:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--text);text-align:center";
+    if (clearBtn) clearBtn.style.display = data.sailkapena.length ? '' : 'none';
     if (tbody) {
       if (!data.sailkapena.length) {
-        tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted);padding:24px;text-align:center">Ez dago emaitzarik</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:24px;text-align:center">Ez dago emaitzarik</td></tr>';
         return;
       }
+      const kid = Number(karreraId);
       tbody.innerHTML = data.sailkapena.map(r => {
-        const pos = r.Sailkapena;
-        const posClass = pos === 1 ? 'pos-medal-1' : pos === 2 ? 'pos-medal-2' : pos === 3 ? 'pos-medal-3' : '';
+        const tid = r.Txirrindularia_ID;
         return `<tr>
-          <td><span class="${posClass || 'badge'}">${esc(pos)}</span></td>
+          <td><input type="number" min="1" value="${esc(r.Sailkapena)}" onchange="saveKarreraSail(this, ${kid}, ${tid}, 'Sailkapena')" style="${inputEstiloa}"></td>
           <td>${esc(r.Txirrindularia)}</td>
-          <td style="text-align:right;font-weight:600;color:var(--accent2)">${esc(r.Puntuak)}</td>
+          <td style="text-align:right"><input type="number" value="${esc(r.Puntuak)}" onchange="saveKarreraSail(this, ${kid}, ${tid}, 'Puntuak')" style="${inputEstiloa};text-align:right;font-weight:600;color:var(--accent2)"></td>
+          <td class="row-actions"><button class="btn btn-sm btn-ghost" title="Emaitza hau ezabatu" onclick="deleteKarreraSail(${kid}, ${tid}, this.closest('tr'))">🗑</button></td>
         </tr>`;
       }).join('');
     }
   } catch(e) { showToast(e.message, 'err'); }
+}
+
+/** KarreraSailkapena errenkada baten Sailkapena/Puntuak gorde (PK: Karrera_ID + Txirrindularia_ID). */
+async function saveKarreraSail(inp, kid, tid, eremua) {
+  const v = inp.value.trim() === "" ? null : Number(inp.value);
+  try {
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"KarreraSailkapena", pk:{ Karrera_ID: kid, Txirrindularia_ID: tid }, values:{ [eremua]: v } }) });
+    showToast(eremua === "Sailkapena" ? "Postua gordeta ✓" : "Puntuak gordeta ✓");
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+/** KarreraSailkapena errenkada bat ezabatu. */
+async function deleteKarreraSail(kid, tid, tr) {
+  if (!(await confirmDialog("Emaitza hau ezabatu (txirrindulari honen postua/puntuak karrera honetan)?"))) return;
+  try {
+    await api("api/table-delete", { method:"POST", body: JSON.stringify({ table:"KarreraSailkapena", pk:{ Karrera_ID: kid, Txirrindularia_ID: tid } }) });
+    if (tr) tr.remove();
+    showToast("Emaitza ezabatuta ✓");
+    const tbody = el("race-results-tbody");
+    if (tbody && !tbody.querySelector("tr")) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:24px;text-align:center">Ez dago emaitzarik</td></tr>'; const cb = el("race-results-clear"); if (cb) cb.style.display = "none"; }
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+/** Karrera baten emaitza GUZTIAK ezabatu. */
+async function clearKarreraEmaitzak() {
+  const kid = state.currentKarrera;
+  if (!kid) return;
+  if (!(await confirmDialog("Karrera honen emaitza GUZTIAK ezabatuko dira (KarreraSailkapena). Jarraitu?"))) return;
+  try {
+    const r = await api("api/karrera-emaitza/clear", { method:"POST", body: JSON.stringify({ karrera_id: kid }) });
+    showToast(`✅ ${r.ezabatuta} emaitza ezabatuta`);
+    loadKarreraEmaitza(kid);
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

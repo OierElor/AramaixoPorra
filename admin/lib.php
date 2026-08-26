@@ -772,6 +772,14 @@ function import_emaitzak($payload) {
     return ['sartuta'=>$ins, 'dortsal_ezezagunak'=>$unknown, 'errors'=>$errors];
 }
 
+/** Karrera baten emaitza GUZTIAK ezabatu (KarreraSailkapena). */
+function clear_karrera_emaitzak($karrera_id) {
+    $kid = (int)$karrera_id;
+    if (!$kid) throw new Exception('Karrera bat hautatu behar da');
+    $r = db_exec('DELETE FROM `KarreraSailkapena` WHERE Karrera_ID = ?', [$kid]);
+    return ['ok'=>true, 'ezabatuta'=>$r['affected']];
+}
+
 // ── D2 · Etapak (itzuli-emaitzak batera, "Etapak" orria) ────────────────────
 // Etapa bakoitza dortsalez eta postuz; puntuak eskalatik (postuaren arabera).
 // Karrera izenez lotzen da (Helmuga = Karreraren izena).

@@ -400,13 +400,23 @@ class DBLoader {
         return ` <span class="kat-badge" style="background-color:${kolorea};">${this._esc(kat)}</span>`;
     }
 
-    /** Podiumeko hiru lehenak nabarmendu (akordeoiko emaitza-taulan). */
-    _podiumEstiloa(pos) {
+    /** Postuaren araberako klase-izena (urrea/zilarra/brontzea + 4-6/7), edo '' bestela.
+     *  Txirrindulari-sailkapen guztietan partekatzen da: karrera-akordeoian ETA
+     *  txapelketaren TXIRRINDULARIAK laburpen-taulan (`css/styles.css` .podium-*). */
+    _podiumClassName(pos) {
         const p = Number(pos);
-        if (p === 1) return ' style="background-color:#fff4cc;font-weight:bold;"';
-        if (p === 2) return ' style="background-color:#f0f0f0;"';
-        if (p === 3) return ' style="background-color:#fde8d0;"';
+        if (p === 1) return 'podium-1';
+        if (p === 2) return 'podium-2';
+        if (p === 3) return 'podium-3';
+        if (p >= 4 && p <= 6) return 'podium-mid';
+        if (p === 7) return 'podium-7';
         return '';
+    }
+
+    /** Podiuma nabarmendu (akordeoiko emaitza-taulan, txantiloi-katean txertatzeko). */
+    _podiumEstiloa(pos) {
+        const cls = this._podiumClassName(pos);
+        return cls ? ` class="${cls}"` : '';
     }
 
     /**
@@ -471,6 +481,8 @@ class DBLoader {
 
         rows.forEach(row => {
             const tr = document.createElement('tr');
+            const podiumCls = this._podiumClassName(row.Posizioa);
+            if (podiumCls) tr.className = podiumCls;
             tr.appendChild(this._td(row.Posizioa, 'pos-col'));
             if (hasDortsala) tr.appendChild(this._td(row.Dortsala ?? '—'));
             tr.appendChild(this._td(row.Txirrindularia, 'name-col'));

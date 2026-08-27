@@ -2163,6 +2163,163 @@ function files_mkdir($dir, $name) {
     return ['ok' => true, 'name' => $name];
 }
 
+// ─── Baliabideak: fitxategi-izenak estandarizatu ─────────────────────────────
+// Txapelketa baten fitxategiak izen kanoniko batera berrizendatzen ditu (diskoan)
+// ETA DB erreferentzia eguneratzen du (Karrerak.Profil_Irudia / Txapelketak.*_PDF),
+// hala webgune publikoak (DBk config gainidazten baitu) config ukitu gabe funtziona dezan.
+//   · PDFak:    "{Mota} {Kirola} {Urtea4}.pdf"  (adib. "Arauak Giro 2023.pdf")
+//   · Profilak: etapa-lasterketak → "Etapa{Ordena}.{ext}"; klasikak → "{Izena}.{ext}".
+// `$apply=false` → aurrebista (diskoa EZ da ukitzen). `$apply=true` → berrizendatu + DB.
+// Frontend-ak `profila_dir`, `kirola` eta PDF karpetak pasatzen ditu (config JS-an dago).
+
+/** Diskoko izen erlatiboa data/ azpian ba ote dagoen (throw gabe). */
+function _std_is_file($rel) {
+    $base = _data_base();
+    $rel = str_replace('\\', '/', (string)$rel);
+    $abs = @realpath($base . '/' . $rel);
+    return $abs !== false && is_file($abs) && _within_base($abs, $base);
+}
+
+/** DB erreferentzia eguneratu (update_table_row berrerabiliz). */
+function _std_write_ref($table, $col, $pk, $val) {
+    update_table_row($table, ['pk' => $pk, 'values' => [$col => $val]]);
+}
+
+/** Item bakar bat prozesatu: egoera kalkulatu eta, `$apply` bada, berrizendatu + DB idatzi. */
+function _std_process($dir, $from, $to, $refTable, $refCol, $pk, $refVal, $kind, $apply) {
+    $item = ['kind' => $kind, 'dir' => $dir, 'from' => $from, 'to' => $to,
+             'refTable' => $refTable, 'refColumn' => $refCol, 'pk' => $pk,
+             'status' => '', 'reason' => ''];
+    if (!_std_is_file($dir . '/' . $from)) {
+        $item['status'] = 'missing'; $item['reason'] = 'Fitxategia ez dago diskoan';
+        return $item;
+    }
+    if ($from === $to) {
+        // Izena zuzena da jada; DB erreferentzia esplizitu bihurtu (klasikak/konbentzioa).
+        $item['status'] = 'already';
+        if ($apply) { try { _std_write_ref($refTable, $refCol, $pk, $refVal); }
+                      catch (Exception $e) { $item['status'] = 'error'; $item['reason'] = $e->getMessage(); } }
+        return $item;
+    }
+    $base = _data_base();
+    if (file_exists($base . '/' . $dir . '/' . $to)) {
+        $item['status'] = 'conflict'; $item['reason'] = 'Helburuko izena lehendik dago';
+        return $item;
+    }
+    $item['status'] = 'rename';
+    if ($apply) {
+        try {
+            files_rename($dir . '/' . $from, $to);
+            _std_write_ref($refTable, $refCol, $pk, $refVal);
+        } catch (Exception $e) {
+            $item['status'] = 'error'; $item['reason'] = $e->getMessage();
+        }
+    }
+    return $item;
+}
+
+function standardize_baliabideak($txap_id, $profila_dir, $kirola, $pdf_karpetak = [], $apply = false) {
+    $txap_id = (int)$txap_id;
+    $tx = db_one('SELECT * FROM `Txapelketak` WHERE Txapelketa_ID = ?', [$txap_id]);
+    if (!$tx) throw new Exception('Txapelketa ez da aurkitu');
+
+    $items = [];
+    $summary = ['rename' => 0, 'already' => 0, 'conflict' => 0,
+                'unmapped' => 0, 'missing' => 0, 'skip-column' => 0, 'error' => 0];
+    $pdfColumnsMissing = false;
+    $push = function ($it) use (&$items, &$summary) {
+        $items[] = $it;
+        if (isset($summary[$it['status']])) $summary[$it['status']]++;
+    };
+
+    // Urtea (4 digitu) eta kirolaren izen irakurgarria.
+    $urtea = preg_match('/\d{4}/', (string)($tx['Urtea'] ?? ''), $m) ? $m[0] : (string)($tx['Urtea'] ?? '');
+    $kirolMap = ['tour' => 'Tour', 'giro' => 'Giro', 'vuelta' => 'Vuelta', 'klasikak' => 'Klasikak'];
+    $kirolIzen = $kirolMap[$kirola] ?? ucfirst((string)$kirola);
+
+    // ── A · Txapelketa-PDFak → "{Mota} {Kirola} {Urtea4}.pdf" ──
+    $pdfDefs = [
+        ['mota' => 'arauak',    'zut' => 'Arauak_PDF',    'izen' => 'Arauak'],
+        ['mota' => 'dortsalak', 'zut' => 'Dortsalak_PDF', 'izen' => 'Dortsalak'],
+        ['mota' => 'porrak',    'zut' => 'Porrak_PDF',    'izen' => 'Porrak'],
+    ];
+    foreach ($pdfDefs as $d) {
+        if (!db_column_exists('Txapelketak', $d['zut'])) {
+            $pdfColumnsMissing = true;
+            $push(['kind' => 'pdf', 'dir' => $d['mota'], 'from' => '', 'to' => '',
+                   'refTable' => 'Txapelketak', 'refColumn' => $d['zut'],
+                   'pk' => ['Txapelketa_ID' => $txap_id],
+                   'status' => 'skip-column', 'reason' => $d['zut'] . ' zutabea falta']);
+            continue;
+        }
+        $cur = trim((string)($tx[$d['zut']] ?? ''));
+        if ($cur === '') continue;                     // ezer esleitu gabe → estandarizatzeke
+        $dir = (is_array($pdf_karpetak) && !empty($pdf_karpetak[$d['mota']])) ? $pdf_karpetak[$d['mota']] : $d['mota'];
+        $ext = _files_ext($cur) ?: 'pdf';
+        $to  = preg_replace('/\s+/u', ' ', trim($d['izen'] . ' ' . $kirolIzen . ' ' . $urtea)) . '.' . strtolower($ext);
+        $push(_std_process($dir, $cur, $to, 'Txapelketak', $d['zut'],
+                           ['Txapelketa_ID' => $txap_id], $to, 'pdf', $apply));
+    }
+
+    // ── B · Karreren profil-irudiak ──
+    if ($profila_dir) {
+        $profDir = 'profilak/' . $profila_dir;
+        $onDisk = [];                                  // minuskula → benetako izena
+        try {
+            foreach (files_list($profDir)['files'] as $f) $onDisk[strtolower($f['name'])] = $f['name'];
+        } catch (Exception $e) { $onDisk = []; }
+        $isKlasika = ($kirola === 'klasikak');
+        $imgExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $karrerak = db_rows(
+            'SELECT Karrerak_ID, Ordena, Izena, Profil_Irudia FROM `Karrerak`
+             WHERE Txapelketa_ID = ? ORDER BY (Ordena IS NULL), Ordena, Karrerak_ID', [$txap_id]);
+        $claimed = [];                                 // minuskula iturri-izenak (birritan ez erabiltzeko)
+        foreach ($karrerak as $k) {
+            $pk = ['Karrerak_ID' => (int)$k['Karrerak_ID']];
+            $mk = function ($from, $to, $status, $reason) use ($profDir, $pk) {
+                return ['kind' => 'profila', 'dir' => $profDir, 'from' => $from, 'to' => $to,
+                        'refTable' => 'Karrerak', 'refColumn' => 'Profil_Irudia', 'pk' => $pk,
+                        'status' => $status, 'reason' => $reason];
+            };
+            // 1) Iturri-fitxategia zehaztu.
+            $src = null;
+            $pi  = trim((string)($k['Profil_Irudia'] ?? ''));
+            if ($pi !== '') {
+                $piDir = (strpos($pi, '/') !== false) ? substr($pi, 0, strrpos($pi, '/')) : '';
+                if ($piDir !== '' && $piDir !== $profila_dir) {
+                    $push($mk(basename($pi), '', 'unmapped', 'Profil_Irudia beste karpeta batean: ' . $piDir));
+                    continue;
+                }
+                $bn = basename(str_replace('\\', '/', $pi));
+                $src = $onDisk[strtolower($bn)] ?? $bn;
+            } else {
+                $ord = $k['Ordena'];
+                if ($ord === null || $ord === '') continue;   // irudirik ez → saltatu isilik
+                foreach ($imgExt as $e) if (isset($onDisk['etapa' . $ord . '.' . $e])) { $src = $onDisk['etapa' . $ord . '.' . $e]; break; }
+                if ($src === null) continue;                  // irudirik ez → saltatu isilik
+            }
+            if (!isset($onDisk[strtolower($src)])) { $push($mk($src, '', 'missing', 'Fitxategia ez dago diskoan')); continue; }
+            if (isset($claimed[strtolower($src)]))  { $push($mk($src, '', 'conflict', 'Fitxategi bera beste karrera batek darabil')); continue; }
+            $claimed[strtolower($src)] = true;
+            // 2) Helburuko izena.
+            $ext = strtolower(_files_ext($src)) ?: 'jpg';
+            if ($isKlasika) {
+                $stem = str_replace(['/', '\\'], '-', preg_replace('/\s+/u', ' ', trim((string)$k['Izena'])));
+                if ($stem === '') { $push($mk($src, '', 'unmapped', 'Karrerak izenik ez')); continue; }
+                $to = _sanitize_filename($stem . '.' . $ext);
+            } else {
+                $ord = $k['Ordena'];
+                if ($ord === null || $ord === '') { $push($mk($src, '', 'unmapped', 'Ordenarik ez (Etapa{N} ezin eratu)')); continue; }
+                $to = 'Etapa' . $ord . '.' . $ext;
+            }
+            $push(_std_process($profDir, $src, $to, 'Karrerak', 'Profil_Irudia', $pk,
+                               $profila_dir . '/' . $to, 'profila', $apply));
+        }
+    }
+
+    return ['items' => $items, 'summary' => $summary, 'pdfColumnsMissing' => $pdfColumnsMissing];
+}
+
 // ─── Ezarpenak: fitxategi-moten karpeta-mapa + tresna publikoen ikusgaitasuna ──
 // admin/ezarpenak.json (git-etik kanpo). Webgune publikoak api/ezarpenak.php bidez
 // irakurtzen du: aldaketa bat gordetzean, gunea berehala moldatzen da.

@@ -647,6 +647,7 @@
           <select id="bal-txap" onchange="loadBaliabideak()" style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;width:100%"><option value="">— Aukeratu —</option></select></div>
         <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px">✓ = jarrita eta fitxategia badago · ⚠ = jarrita baina fitxategia falta · ✗ = jarri gabe. Aldatzeak berehala gordetzen du (webgune publikoak DBtik hartzen ditu).</div>
       </div></div>
+      <div id="bal-ekintzak"></div>
       <div id="bal-pdf"></div>
       <div id="bal-profilak"></div>
     </section>
@@ -2656,11 +2657,18 @@ async function _balFolderFiles(dir) {
 async function loadBaliabideak() {
   const tid = Number(el("bal-txap")?.value || 0);
   const pdfEl = el("bal-pdf"), profEl = el("bal-profilak");
-  if (!tid) { if (pdfEl) pdfEl.innerHTML = ""; if (profEl) profEl.innerHTML = ""; return; }
+  if (!tid) { const e0 = el("bal-ekintzak"); if (e0) e0.innerHTML = ""; if (pdfEl) pdfEl.innerHTML = ""; if (profEl) profEl.innerHTML = ""; return; }
   const t = state.txapelketak.find(x => Number(x.Txapelketa_ID) === tid);
   if (!t) return;
   const dbBada = ("Arauak_PDF" in t);
   const cfg = _balCfg(t);
+
+  // ── Ekintzak: izenak estandarizatu ──
+  const ekEl = el("bal-ekintzak");
+  if (ekEl) ekEl.innerHTML = `<div class="card" style="margin-bottom:16px"><div class="card-body" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <button class="btn btn-sm btn-primary" onclick="balStandardize(${tid})">🔤 Estandarizatu izenak</button>
+    <span style="font-size:12px;color:var(--muted);line-height:1.5">Fitxategiak izen kanonikora berrizendatu (PDFak: <code>Mota Kirola Urtea.pdf</code> · profilak: etapak <code>Etapa{Ordena}</code>, klasikak karreraren izena) eta DB erreferentziak eguneratu. Aurrebista erakusten da lehenik.</span>
+  </div></div>`;
 
   // ── A · Txapelketa-fitxategiak (PDFak) ──
   if (pdfEl) pdfEl.innerHTML = `<div class="card" style="margin-bottom:16px"><div class="card-body"><div style="color:var(--muted);font-size:13px">PDFak kargatzen...</div></div></div>`;
@@ -2757,6 +2765,88 @@ async function balUploadProfila(kid, profilaDir, input) {
     if (!r.ok) throw new Error("Igoerak huts egin du (HTTP " + r.status + ")");
     await balSaveProfila(kid, profilaDir, f.name);
   } catch(e) { showToast(e.message, "err"); }
+}
+
+// ── Izenak estandarizatu (aurrebista + aplikatu) ──
+const BAL_STD_EGOERA = {
+  rename:        { t:"Berrizendatu",    c:"#4ade80" },
+  already:       { t:"Jada ondo",       c:"var(--muted)" },
+  conflict:      { t:"Gatazka",         c:"var(--accent)" },
+  unmapped:      { t:"Ezin egotzi",     c:"#f59e0b" },
+  missing:       { t:"Diskoan falta",   c:"#f59e0b" },
+  "skip-column": { t:"Migrazioa behar", c:"var(--muted)" },
+  error:         { t:"Errorea",         c:"var(--accent)" },
+};
+
+/** Txapelketaren kirola (tour/giro/vuelta/klasikak) Izenatik ondorioztatu. */
+function _balKirola(t) {
+  for (const [k, izen] of Object.entries(BAL_KIROL_IZENAK))
+    if ((t.Izena || "").toLowerCase().startsWith(izen.toLowerCase())) return k;
+  return null;
+}
+
+async function balStandardize(tid) {
+  const t = state.txapelketak.find(x => Number(x.Txapelketa_ID) === tid);
+  if (!t) return;
+  const params = {
+    profilaDir: _balProfilaDir(t),
+    kirola: _balKirola(t),
+    pdfKarpetak: { arauak: fmKarpetaMap.arauak, dortsalak: fmKarpetaMap.dortsalak, porrak: fmKarpetaMap.porrak },
+  };
+  try {
+    const r = await api("api/baliabideak/standardize", { method:"POST", body: JSON.stringify({ txapId: tid, ...params, apply:false }) });
+    _balStdModal(tid, params, r);
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+function _balStdModal(tid, params, r) {
+  const items = r.items || [], s = r.summary || {};
+  const nRename = s.rename || 0;
+  const saltatu = (s.conflict||0) + (s.missing||0) + (s.unmapped||0);
+  const filak = items.map(it => {
+    const eg = BAL_STD_EGOERA[it.status] || { t: it.status, c:"var(--muted)" };
+    const nondik = it.from ? `<code>${esc(it.from)}</code>` : `<span style="color:var(--muted)">—</span>`;
+    const nora = it.to ? `<code>${esc(it.to)}</code>` : `<span style="color:var(--muted)">—</span>`;
+    return `<tr>
+      <td style="white-space:nowrap">${it.kind === "pdf" ? "📄 PDF" : "🏔️ Profila"}</td>
+      <td style="color:var(--muted);font-size:11px">${esc(it.dir || "")}</td>
+      <td>${nondik} <span style="color:var(--muted)">→</span> ${nora}</td>
+      <td style="white-space:nowrap;color:${eg.c}">${eg.t}${it.reason ? ` <span style="color:var(--muted);font-size:11px">(${esc(it.reason)})</span>` : ""}</td>
+    </tr>`;
+  }).join("");
+  const kont = `${nRename} berrizendatzeko · ${s.already||0} jada ondo${saltatu ? ` · ${saltatu} saltatu` : ""}`;
+
+  const ov = document.createElement("div");
+  ov.className = "confirm-overlay"; ov.style.display = "flex";
+  const box = document.createElement("div"); box.className = "confirm-box";
+  box.style.cssText = "max-width:720px;width:92vw";
+  box.innerHTML = `
+    <div class="confirm-msg" style="margin-bottom:8px">🔤 Izenak estandarizatu — aurrebista</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${kont}</div>
+    ${r.pdfColumnsMissing ? `<div style="font-size:12px;color:var(--accent);margin-bottom:10px">⚠ PDF zutabeak falta dira (migrazioa). PDFak ezin dira estandarizatu; profilak bai.</div>` : ""}
+    ${items.length
+      ? `<div class="tbl-wrap" style="max-height:50vh;overflow:auto;margin-bottom:16px"><table><thead><tr><th>Mota</th><th>Karpeta</th><th>Nondik → Nora</th><th>Egoera</th></tr></thead><tbody>${filak}</tbody></table></div>`
+      : `<div style="color:var(--muted);font-size:13px;margin-bottom:16px">Ez dago estandarizatzeko fitxategirik.</div>`}
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" id="std-utzi">Itxi</button>
+      <button class="btn btn-primary" id="std-aplikatu"${nRename ? "" : " disabled style=\"opacity:.5;cursor:not-allowed\""}>Aplikatu (${nRename})</button>
+    </div>`;
+  ov.append(box); document.body.append(ov);
+  const itxi = () => ov.remove();
+  box.querySelector("#std-utzi").onclick = itxi;
+  ov.onclick = e => { if (e.target === ov) itxi(); };
+  const aplBtn = box.querySelector("#std-aplikatu");
+  aplBtn.onclick = async () => {
+    if (!nRename) return;
+    aplBtn.disabled = true; aplBtn.textContent = "Aplikatzen...";
+    try {
+      const rr = await api("api/baliabideak/standardize", { method:"POST", body: JSON.stringify({ txapId: tid, ...params, apply:true }) });
+      itxi();
+      const done = (rr.summary && rr.summary.rename) || 0, errs = (rr.summary && rr.summary.error) || 0;
+      showToast(errs ? `${done} berrizendatuta, ${errs} errore` : `${done} berrizendatuta ✓`, errs ? "err" : "ok");
+      loadBaliabideak();
+    } catch(e) { showToast(e.message, "err"); aplBtn.disabled = false; aplBtn.textContent = `Aplikatu (${nRename})`; }
+  };
 }
 
 // Egoera-tira (kontrol-panela): txapelketaren urteroko fluxuaren argazkia.

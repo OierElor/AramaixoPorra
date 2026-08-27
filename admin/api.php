@@ -194,6 +194,18 @@ try {
                 $tid=$body['txapelketa_id']??null; if (!$tid) json_error('txapelketa_id behar da');
                 json_out(calculate_porralari_sailkapena((int)$tid));
             case $path === 'normalize-izenak': json_out(normalize_izenak());
+            case $path === 'baliabideak/standardize':
+                $tid = $body['txapId'] ?? null;
+                if ($tid === null || $tid === '') json_error('txapId behar da');
+                try {
+                    json_out(standardize_baliabideak(
+                        (int)$tid,
+                        $body['profilaDir'] ?? null,
+                        $body['kirola'] ?? null,
+                        $body['pdfKarpetak'] ?? [],
+                        !empty($body['apply'])
+                    ));
+                } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'izen-ordenak/get': json_out(get_izen_ordenak());
             case $path === 'izen-ordenak/apply': json_out(apply_izen_ordenak($body['aldaketak'] ?? []));
             case $path === 'txirrindulari-ordenak': json_out(get_txirrindulari_ordenak());

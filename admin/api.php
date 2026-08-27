@@ -87,6 +87,8 @@ try {
                 json_out(data_health((int)$tid));
             case $path === 'possible-dups':
                 json_out(possible_dups($_GET['kind'] ?? 'txirrindulariak'));
+            case $path === 'lasterketak':
+                try { json_out(lasterketak_egoera()); } catch (Exception $e) { json_error($e->getMessage()); }
             case $path === 'porra-picks':
                 $eid = $_GET['ezizen_id'] ?? null; $tid = $_GET['txapelketa_id'] ?? null;
                 if (!$eid || !$tid) json_error('ezizen_id eta txapelketa_id behar dira', 400);
@@ -206,6 +208,16 @@ try {
                         !empty($body['apply'])
                     ));
                 } catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'lasterketak/lotu':
+                try { json_out(lasterketa_lotu($body['karrera_ids'] ?? [], $body['lasterketa_id'] ?? null)); }
+                catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'lasterketak/askatu':
+                try { json_out(lasterketa_askatu($body['karrera_id'] ?? null)); }
+                catch (Exception $e) { json_error($e->getMessage()); }
+            case $path === 'lasterketak/bateratu':
+                $k = $body['keep_id'] ?? null; $d = $body['drop_id'] ?? null;
+                if (!$k || !$d) json_error('keep_id eta drop_id behar dira');
+                json_out(lasterketa_bateratu((int)$k, (int)$d));
             case $path === 'izen-ordenak/get': json_out(get_izen_ordenak());
             case $path === 'izen-ordenak/apply': json_out(apply_izen_ordenak($body['aldaketak'] ?? []));
             case $path === 'txirrindulari-ordenak': json_out(get_txirrindulari_ordenak());

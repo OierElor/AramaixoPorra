@@ -249,6 +249,19 @@ class DBLoader {
             }
             if (karrerak === null) throw new Error('Ezin izan dira karrerak kargatu');
 
+            // Webgune ofiziala (klasikak): Karrerak.Lasterketa_ID -> Lasterketak.Web_Ofiziala.
+            // Kontsulta bereizian (ez `karreraSQL` eskaileran) migrazio-segurua izateko: taula
+            // falta bada, mapa hutsa itzultzen da eta botoirik ez da erakusten (akordeoia ez da hausten).
+            let webMap = new Map();
+            try {
+                const w = await this._query(`
+                    SELECT k.Karrerak_ID AS kid, l.Web_Ofiziala AS web
+                    FROM "Karrerak" k JOIN "Lasterketak" l ON l.Lasterketa_ID = k.Lasterketa_ID
+                    WHERE k.Txapelketa_ID = ? AND l.Web_Ofiziala IS NOT NULL AND l.Web_Ofiziala <> ''
+                `, [txapelketaId]);
+                webMap = new Map(w.map(r => [r.kid, r.web]));
+            } catch (e) { /* migrazioa egin gabe: db/lasterketak.sql */ }
+
             if (!karrerak.length) {
                 container.innerHTML = `
                     <div style="text-align:center;padding:24px;">
@@ -328,6 +341,10 @@ class DBLoader {
                 // Profil-irudia: karrera batek `Profil_Irudia` esplizitua badu, hura;
                 // bestela izen-konbentzioa (Etapa{Ordena}) edo klasikoen mapa (irudiFn barruan).
                 const irudia = this._profilaHtml(irudiFn ? irudiFn(k.kid, etapaZbk, k.profila) : null, `${k.izena} profila`);
+                const webUrl = webMap.get(k.kid);
+                const webBotoia = webUrl && /^https?:\/\//i.test(webUrl)
+                    ? `<a href="${this._esc(webUrl)}" class="download-button${cls}" target="_blank" rel="noopener noreferrer" style="display:block;margin:8px 0;">WEBGUNE OFIZIALA ↗</a>`
+                    : '';
 
                 html += `
                     <div class="etapa-item">
@@ -335,7 +352,7 @@ class DBLoader {
                             <span class="etapa-izena">${this._esc(this._karreraLabel(k.izena))}${this._katBadge(k.kat)}</span>
                             <span class="etapa-chevron">▾</span>
                         </button>
-                        <div class="etapa-panel" hidden>${irudia}
+                        <div class="etapa-panel" hidden>${irudia}${webBotoia}
                             <table class="sailkapena-table${cls}" style="margin:0;">
                                 <thead>${goiburua}</thead>
                                 <tbody>${lerroakHtml ||

@@ -1206,6 +1206,104 @@ function merge_preview($kind, $keep_id, $drop_id) {
     return $result;
 }
 
+// ─── Lasterketak: klasika kanonikoak (urte arteko identitatea) ──────────────
+// Klasikak urtez urte errepikatzen dira baina `Karrerak` errenkada bakoitza urte
+// bakoitzekoa da, eta izenak ez dira egonkorrak urte artean (ikus db/lasterketak.sql).
+// `Lasterketak` = identitate kanonikoa (Izena + Web_Ofiziala); `Karrerak.Lasterketa_ID`
+// urteko errenkada bakoitzari lotzen zaio. URLa kanonikoan dagoenez, urte berri bat
+// lotzean automatikoki heredatzen da.
+
+/** Lasterketa kanonikoen zerrenda, urteko karrerak lotuta (txip-etarako). */
+function lasterketak_egoera() {
+    $lasterketak = db_rows('SELECT * FROM `Lasterketak` ORDER BY Izena');
+    $karrerak = db_rows(
+        'SELECT k.Karrerak_ID, k.Izena, k.Urtea, k.Lasterketa_ID, t.Izena AS Txapelketa
+         FROM `Karrerak` k JOIN `Txapelketak` t ON t.Txapelketa_ID = k.Txapelketa_ID
+         WHERE t.Izena LIKE ?
+         ORDER BY k.Urtea, k.Izena', ['Klasikak%']);
+    $byLasterketa = [];
+    $lotuGabe = [];
+    foreach ($karrerak as $k) {
+        if ($k['Lasterketa_ID'] !== null) {
+            $byLasterketa[(int)$k['Lasterketa_ID']][] = $k;
+        } else {
+            $lotuGabe[] = $k;
+        }
+    }
+    foreach ($lasterketak as &$l) {
+        $l['karrerak'] = $byLasterketa[(int)$l['Lasterketa_ID']] ?? [];
+    }
+    unset($l);
+
+    // Iradokizunak: lotu gabeko karrera bakoitzeko, kanoniko guztien aurka `fuzzy_name_score`
+    // puntuatu (admin/lib.php:70-96), >=60 iragazi, goiko 5ak proposatu.
+    foreach ($lotuGabe as &$k) {
+        $puntuak = [];
+        foreach ($lasterketak as $l) {
+            $s = fuzzy_name_score($k['Izena'], $l['Izena']);
+            if ($s >= 60) $puntuak[] = ['lasterketa_id' => (int)$l['Lasterketa_ID'], 'izena' => $l['Izena'], 'score' => $s];
+        }
+        usort($puntuak, fn($a, $b) => $b['score'] <=> $a['score']);
+        $k['iradokizunak'] = array_slice($puntuak, 0, 5);
+    }
+    unset($k);
+
+    return ['lasterketak' => $lasterketak, 'lotu_gabe' => $lotuGabe];
+}
+
+/** Urteko karrerak (`$karrera_ids`) lasterketa kanoniko bati lotu. Kanonikorik ez
+ *  badago (`$lasterketa_id` null), sortu izen berriarekin (lehen karreraren izena). */
+function lasterketa_lotu($karrera_ids, $lasterketa_id) {
+    if (!is_array($karrera_ids) || !$karrera_ids) throw new Exception('karrera_ids behar da');
+    $karrera_ids = array_map('intval', $karrera_ids);
+    if ($lasterketa_id === null || $lasterketa_id === '') {
+        $lehena = db_one('SELECT Izena FROM `Karrerak` WHERE Karrerak_ID = ?', [$karrera_ids[0]]);
+        if (!$lehena) throw new Exception('Karrera ez da aurkitu');
+        $r = db_exec('INSERT INTO `Lasterketak` (Izena) VALUES (?)', [$lehena['Izena']]);
+        $lasterketa_id = $r['insert_id'];
+    } else {
+        $lasterketa_id = (int)$lasterketa_id;
+        if (!db_one('SELECT 1 AS x FROM `Lasterketak` WHERE Lasterketa_ID = ?', [$lasterketa_id]))
+            throw new Exception('Lasterketa ez da aurkitu');
+    }
+    $ph = implode(',', array_fill(0, count($karrera_ids), '?'));
+    db_exec("UPDATE `Karrerak` SET Lasterketa_ID = ? WHERE Karrerak_ID IN ($ph)",
+            array_merge([$lasterketa_id], $karrera_ids));
+    return ['ok' => true, 'lasterketa_id' => (int)$lasterketa_id];
+}
+
+/** Karrera baten lotura kendu (izen-aldaera oker bati lotu bazaio, adib.). */
+function lasterketa_askatu($karrera_id) {
+    if (!$karrera_id) throw new Exception('karrera_id behar da');
+    db_exec('UPDATE `Karrerak` SET Lasterketa_ID = NULL WHERE Karrerak_ID = ?', [(int)$karrera_id]);
+    return ['ok' => true];
+}
+
+/** Bi lasterketa kanoniko bateratu: KEEP-en urte guztiak mantendu, DROP-eko karrerak
+ *  KEEP-era birbideratu eta DROP ezabatu. `merge_txirrindulariak()`-en eredu bera
+ *  (admin/lib.php:1142-1156): transakzioan, huts eginez gero rollback. Undo-rik ez. */
+function lasterketa_bateratu($keep_id, $drop_id) {
+    $keep_id = (int)$keep_id; $drop_id = (int)$drop_id;
+    if (!$keep_id || !$drop_id || $keep_id === $drop_id) throw new Exception('keep_id eta drop_id ezberdinak behar dira');
+    $keep = db_one('SELECT * FROM `Lasterketak` WHERE Lasterketa_ID = ?', [$keep_id]);
+    $drop = db_one('SELECT * FROM `Lasterketak` WHERE Lasterketa_ID = ?', [$drop_id]);
+    if (!$keep || !$drop) throw new Exception('ID bat ez da existitzen');
+    try {
+        db_begin();
+        // KEEP-ek URLik ez badu eta DROP-ek bai, DROP-ena mantendu (galera saihesteko).
+        if ((!$keep['Web_Ofiziala'] || trim((string)$keep['Web_Ofiziala']) === '') && $drop['Web_Ofiziala']) {
+            db_exec('UPDATE `Lasterketak` SET Web_Ofiziala = ? WHERE Lasterketa_ID = ?', [$drop['Web_Ofiziala'], $keep_id]);
+        }
+        db_exec('UPDATE `Karrerak` SET Lasterketa_ID = ? WHERE Lasterketa_ID = ?', [$keep_id, $drop_id]);
+        db_exec('DELETE FROM `Lasterketak` WHERE Lasterketa_ID = ?', [$drop_id]);
+        db_commit();
+        return ['ok' => true, 'keep_id' => $keep_id, 'dropped_id' => $drop_id];
+    } catch (Exception $e) {
+        db_rollback();
+        return ['ok' => false, 'reason' => $e->getMessage()];
+    }
+}
+
 // ─── Ezizenak lotu / split / recompute ───────────────────────────────────────
 function api_ezizenak() {
     $ez_rows = db_rows(
@@ -1723,6 +1821,7 @@ function migration_status() {
         ['profil-irudia.sql','Karrerak.Profil_Irudia (profil-lotura)',  ['Karrerak.Profil_Irudia']],
         ['emaitzarik-ez.sql', 'Karrerak.Emaitzarik_Ez («emaitzarik ez» marka)', ['Karrerak.Emaitzarik_Ez']],
         ['amaituta.sql',     'Txapelketak.Amaituta (txapelketa itxi)',  ['Txapelketak.Amaituta']],
+        ['lasterketak.sql',  'Lasterketak (klasika kanonikoak) + webguneak', ['Lasterketak', 'Karrerak.Lasterketa_ID', 'Txapelketak.Web_Ofiziala']],
     ];
     $out = [];
     foreach ($defs as [$fitx, $azalpena, $checks]) {

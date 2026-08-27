@@ -56,6 +56,11 @@ bere **profil/ibilbide irudia** (baldin badago) eta emaitza-taula erakusten dira
   (eskuz sortua, adib.) isilean gal ez dadin. `js/tresna-komuna.js`-k iragazki bera
   darabil, tresnetako puntuak akordeoiarekin eta sailkapenarekin bat etor daitezen.
 - PDFak eta ibilbide-irudia konfigurazioan daudenean bakarrik agertzen dira.
+- **Webgune ofiziala**: klasikoetan, panel zabalduaren barruan (profil-irudiaren ondoren,
+  taularen aurretik) «WEBGUNE OFIZIALA ↗» botoia agertzen da lasterketak webgune ofiziala
+  badu (`Karrerak.Lasterketa_ID` → `Lasterketak.Web_Ofiziala`; admin → **Lasterketak** /
+  **Baliabideak**). Ez badago, botoirik ez. Itzuli handietan (Tour/Giro/Vuelta) txapelketa-
+  mailakoa da: deskarga-botoien ilaran (`Txapelketak.Web_Ofiziala`).
 
 **Karrera-irudiak.** Itzulietan izena sistematikoa da (`Etapa{N}.jpg`, `.png`
 ordezko gisa). **Lehentasuna:** (1) karreraren **`Profil_Irudia`** lotura esplizitua

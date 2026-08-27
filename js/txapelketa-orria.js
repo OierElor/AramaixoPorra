@@ -50,10 +50,14 @@
             const href = C.pdf(mota, izena);
             return href ? `<a href="${href}" class="download-button ${kirola}" target="_blank">${testua}</a>` : '';
         };
+        const webBotoia = (cfg.webOfiziala && /^https?:\/\//i.test(cfg.webOfiziala))
+            ? `<a href="${esc(cfg.webOfiziala)}" class="download-button ${kirola}" target="_blank" rel="noopener noreferrer">WEBGUNE OFIZIALA ↗</a>`
+            : '';
         const pdfak = [
             botoia('porrak', cfg.porrak, 'PORRALARIEN LISTA (PDF)'),
             botoia('arauak', cfg.arauak, 'ARAUAK (PDF)'),
             botoia('dortsalak', cfg.dortsalak, 'DORTSALAK (PDF)'),
+            webBotoia,
         ].filter(Boolean).join('\n');
         const el = document.getElementById('itz-deskargak');
         if (el && pdfak) el.innerHTML = `<div class="download-section">${pdfak}</div>`;
@@ -198,6 +202,7 @@
                 if (row.Arauak_PDF)    cfg.arauak    = row.Arauak_PDF;
                 if (row.Dortsalak_PDF) cfg.dortsalak = row.Dortsalak_PDF;
                 if (row.Porrak_PDF)    cfg.porrak    = row.Porrak_PDF;
+                if (row.Web_Ofiziala)  cfg.webOfiziala = row.Web_Ofiziala;
             }
         } catch (e) { /* fallback: config estatikoa */ }
     }

@@ -176,6 +176,7 @@
     <div class="nav-item" data-section="finalak"><span class="icon">🥇</span> Puntu finalak</div>
     <div class="nav-item" data-section="fitxategiak"><span class="icon">📁</span> Fitxategiak</div>
     <div class="nav-item" data-section="baliabideak"><span class="icon">📋</span> Baliabideak</div>
+    <div class="nav-item" data-section="lasterketak"><span class="icon">🏁</span> Lasterketak</div>
     <div class="nav-item" data-section="webgunea"><span class="icon">🌐</span> Webgunea</div>
     <div class="nav-item" data-section="porra-editatu"><span class="icon">📝</span> Porra editatu</div>
     <div class="nav-item" data-section="kalkulatu"><span class="icon">📊</span> Sailkapenak kalkulatu</div>
@@ -652,6 +653,13 @@
       <div id="bal-profilak"></div>
     </section>
 
+    <!-- LASTERKETAK -->
+    <section class="section" id="sec-lasterketak">
+      <div class="page-header"><div><div class="page-title">🏁 Lasterketak</div><div class="page-sub">Klasikak urte artean bateratu (izen kanoniko bat lasterketa bakoitzeko) eta webgune ofiziala gorde: behin sartuta, urte guztietan balio du</div></div></div>
+      <div id="las-abisua"></div>
+      <div id="las-edukia"></div>
+    </section>
+
     <!-- PORRA EDITATU -->
     <section class="section" id="sec-porra-editatu">
       <div class="page-header"><div><div class="page-title">📝 Porra editatu</div><div class="page-sub">Porralari baten apustuak (15 txirrindulariak) ikusi eta zuzendu</div></div></div>
@@ -961,6 +969,7 @@ function renderCurrentSection() {
     case "aurre-porrak":     loadAurrePorrak(); break;
     case "fitxategiak":      loadKarpetak(); loadFiles(state.fileDir || ""); break;
     case "baliabideak":      renderBaliabideakSel(); break;
+    case "lasterketak":      loadLasterketak(); break;
     case "webgunea":         loadWebgunea(); loadWebguneOrriak(); break;
     case "porra-editatu":    renderPorraEditatuSelectors(); break;
   }
@@ -2689,6 +2698,12 @@ async function loadBaliabideak() {
       : `<span style="color:var(--muted);font-size:12px">migrazioa behar da esleitzeko</span>`;
     pdfRows.push(`<tr><td style="font-weight:600">${esc(p.izen)}</td><td>${egoera}${iturria ? ` <span style="color:var(--muted);font-size:11px">(${iturria})</span>` : ""}</td><td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${kontrola}</div></td></tr>`);
   }
+  // Webgune ofiziala (Txapelketak.Web_Ofiziala — itzuli handiak eta klasikak biak).
+  const webBada = ("Web_Ofiziala" in t);
+  const webKontrola = webBada
+    ? `<input type="url" placeholder="https://..." value="${esc(t.Web_Ofiziala || "")}" style="${BAL_SEL_ESTILOA};min-width:280px" onchange="balSaveWeb(${tid}, this.value)">`
+    : `<span style="color:var(--muted);font-size:12px">migrazioa behar da (db/lasterketak.sql)</span>`;
+  pdfRows.push(`<tr><td style="font-weight:600">Webgune ofiziala</td><td>${t.Web_Ofiziala ? `<span style="color:#4ade80">✓</span>` : `<span style="color:var(--accent)">✗ jarri gabe</span>`}</td><td>${webKontrola}</td></tr>`);
   if (pdfEl) pdfEl.innerHTML = `<div class="card" style="margin-bottom:16px"><div class="card-body">
     <div style="font-size:13px;font-weight:600;margin-bottom:10px">📄 Txapelketa-fitxategiak</div>
     <div class="tbl-wrap"><table><thead><tr><th>Mota</th><th>Egoera</th><th>Esleitu / igo</th></tr></thead><tbody>${pdfRows.join("")}</tbody></table></div>
@@ -2712,18 +2727,28 @@ async function loadBaliabideak() {
   const zenbat = karrerak.filter(duProfila).length;
   const irudiOpts = sel => `<option value="">— irudia —</option>` +
     irudiIzenak.map(n => `<option value="${esc(n)}"${sel && sel.endsWith("/" + n) ? " selected" : ""}>${esc(n)}</option>`).join("");
+  // Klasiketan bakarrik: karrera bakoitzari lotutako lasterketa kanonikoaren webgunea (Lasterketak atalarekin partekatua).
+  const isKlasika = _balKirola(t) === "klasikak";
+  let lasMap = {};
+  if (isKlasika) {
+    try { const lr = await api("api/lasterketak"); (lr.lasterketak || []).forEach(l => { lasMap[l.Lasterketa_ID] = l.Web_Ofiziala || ""; }); }
+    catch (e) { /* migrazioa egin gabe */ }
+  }
   const profRows = karrerak.map(k => {
     const du = duProfila(k);
     const kontrola = (profBada && profilaDir)
       ? `<select onchange="balSaveProfila(${k.Karrerak_ID}, '${esc(profilaDir)}', this.value)" style="${BAL_SEL_ESTILOA}">${irudiOpts(k.Profil_Irudia || "")}</select>
          <label class="btn btn-sm btn-ghost" style="cursor:pointer">⬆ Igo<input type="file" accept="image/*" style="display:none" onchange="balUploadProfila(${k.Karrerak_ID}, '${esc(profilaDir)}', this)"></label>`
       : `<span style="color:var(--muted);font-size:12px">${profilaDir ? "migrazioa behar da" : "profil-karpetarik ez"}</span>`;
-    return `<tr${du ? "" : ' style="background:rgba(230,57,70,.05)"'}><td>${k.Ordena ?? "—"}</td><td>${esc(k.Izena)}</td><td style="text-align:center">${du ? `<span style="color:#4ade80">✓</span>` : `<span style="color:var(--accent)">✗</span>`}</td><td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${kontrola}</div></td></tr>`;
+    const webCell = !isKlasika ? "" : (k.Lasterketa_ID == null
+      ? `<td><span style="color:var(--muted);font-size:12px">lotu gabe — <a href="#" onclick="setSection('lasterketak');return false;" style="color:var(--accent)">Lasterketak</a></span></td>`
+      : `<td><input type="url" placeholder="https://..." value="${esc(lasMap[k.Lasterketa_ID] || "")}" style="${BAL_SEL_ESTILOA};min-width:220px" onchange="lasSaveField(${k.Lasterketa_ID}, 'Web_Ofiziala', this.value)"></td>`);
+    return `<tr${du ? "" : ' style="background:rgba(230,57,70,.05)"'}><td>${k.Ordena ?? "—"}</td><td>${esc(k.Izena)}</td><td style="text-align:center">${du ? `<span style="color:#4ade80">✓</span>` : `<span style="color:var(--accent)">✗</span>`}</td><td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${kontrola}</div></td>${webCell}</tr>`;
   }).join("");
   if (profEl) profEl.innerHTML = `<div class="card"><div class="card-body">
     <div style="font-size:13px;font-weight:600;margin-bottom:4px">🏔️ Karreren profil-irudiak <span style="font-weight:400;color:var(--muted)">(${zenbat}/${karrerak.length} osatuta${profilaDir ? ` · karpeta: <code>${esc(profilaDir)}</code>` : ""})</span></div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px">✓ = <code>Profil_Irudia</code> lotuta EDO <code>Etapa{Ordena}</code> konbentzioa. Aldatzeko: irudia aukeratu edo igo.</div>
-    ${karrerak.length ? `<div class="tbl-wrap"><table><thead><tr><th>Ordena</th><th>Izena</th><th>Profila</th><th>Esleitu / igo</th></tr></thead><tbody>${profRows}</tbody></table></div>` : `<div style="color:var(--muted);font-size:13px">Karrerarik ez.</div>`}
+    ${karrerak.length ? `<div class="tbl-wrap"><table><thead><tr><th>Ordena</th><th>Izena</th><th>Profila</th><th>Esleitu / igo</th>${isKlasika ? "<th>Webgunea</th>" : ""}</tr></thead><tbody>${profRows}</tbody></table></div>` : `<div style="color:var(--muted);font-size:13px">Karrerarik ez.</div>`}
   </div></div>`;
 }
 
@@ -2743,6 +2768,13 @@ async function balUploadPdf(tid, zut, karpeta, input) {
     const r = await fetch("api/files/upload?dir=" + encodeURIComponent(karpeta) + "&overwrite=1", { method:"POST", body: fd });
     if (!r.ok) throw new Error("Igoerak huts egin du (HTTP " + r.status + ")");
     await balSavePdf(tid, zut, f.name);
+  } catch(e) { showToast(e.message, "err"); }
+}
+async function balSaveWeb(tid, url) {
+  try {
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Txapelketak", pk:{ Txapelketa_ID: tid }, values:{ Web_Ofiziala: url || null } }) });
+    const t = state.txapelketak.find(x => Number(x.Txapelketa_ID) === tid); if (t) t.Web_Ofiziala = url || null;
+    showToast(url ? "Webgunea gordeta ✓" : "Kenduta ✓");
   } catch(e) { showToast(e.message, "err"); }
 }
 async function balSaveProfila(kid, profilaDir, filename) {
@@ -2847,6 +2879,96 @@ function _balStdModal(tid, params, r) {
       loadBaliabideak();
     } catch(e) { showToast(e.message, "err"); aplBtn.disabled = false; aplBtn.textContent = `Aplikatu (${nRename})`; }
   };
+}
+
+// ── Lasterketak: klasika kanonikoak urte artean bateratu + webgune ofizialak ──
+async function loadLasterketak() {
+  const ab = el("las-abisua"), ed = el("las-edukia");
+  if (!ab || !ed) return;
+  ed.innerHTML = `<div class="card"><div class="card-body"><div style="color:var(--muted);font-size:13px">Kargatzen...</div></div></div>`;
+  let r;
+  try { r = await api("api/lasterketak"); }
+  catch (e) {
+    ab.innerHTML = `<div style="background:var(--bg);border:1px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--accent);line-height:1.6;margin-bottom:12px">
+      ⚠ <strong>Migrazioa falta da.</strong> <code>Lasterketak</code> taula ez dago.<br>
+      Exekutatu <strong>db/lasterketak.sql</strong> phpMyAdmin-en.</div>`;
+    ed.innerHTML = "";
+    return;
+  }
+  ab.innerHTML = "";
+  _lasRender(r);
+}
+
+function _lasRender(r) {
+  const ed = el("las-edukia");
+  const lasterketak = r.lasterketak || [], lotuGabe = r.lotu_gabe || [];
+
+  const kanonikoRows = lasterketak.map(l => {
+    const urteak = (l.karrerak || []).slice().sort((a,b) => a.Urtea - b.Urtea)
+      .map(k => `<span title="${esc(k.Izena)}" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:2px 8px;font-size:11px">${esc(k.Urtea)}</span>`).join(" ");
+    return `<tr>
+      <td><input type="text" value="${esc(l.Izena)}" style="${BAL_SEL_ESTILOA};min-width:220px" onchange="lasSaveField(${l.Lasterketa_ID}, 'Izena', this.value)"></td>
+      <td><input type="url" placeholder="https://..." value="${esc(l.Web_Ofiziala || "")}" style="${BAL_SEL_ESTILOA};min-width:260px" onchange="lasSaveField(${l.Lasterketa_ID}, 'Web_Ofiziala', this.value)"></td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">${urteak || '<span style="color:var(--muted);font-size:12px">—</span>'}</td>
+      <td><select style="${BAL_SEL_ESTILOA}" onchange="if(this.value){lasBateratu(${l.Lasterketa_ID}, Number(this.value)); this.value='';}">
+        <option value="">🔀 Bateratu honekin...</option>
+        ${lasterketak.filter(x => x.Lasterketa_ID !== l.Lasterketa_ID).map(x => `<option value="${x.Lasterketa_ID}">${esc(x.Izena)}</option>`).join("")}
+      </select></td>
+    </tr>`;
+  }).join("");
+
+  const lotuGabeRows = lotuGabe.map(k => {
+    const iradokizunak = (k.iradokizunak || []).map(s =>
+      `<button class="btn btn-sm btn-ghost" onclick="lasLotu(${k.Karrerak_ID}, ${s.lasterketa_id})" title="antzekotasuna: ${s.score}">→ ${esc(s.izena)}</button>`
+    ).join(" ");
+    return `<tr style="background:rgba(230,57,70,.05)">
+      <td>${esc(k.Urtea)}</td>
+      <td>${esc(k.Izena)}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        ${iradokizunak}
+        <button class="btn btn-sm btn-primary" onclick="lasLotu(${k.Karrerak_ID}, null)">+ Kanoniko berria</button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  ed.innerHTML = `
+    <div class="card" style="margin-bottom:16px"><div class="card-body">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">🏁 Lasterketa kanonikoak <span style="font-weight:400;color:var(--muted)">(${lasterketak.length})</span></div>
+      ${lasterketak.length ? `<div class="tbl-wrap"><table><thead><tr><th>Izena</th><th>Webgune ofiziala</th><th>Urteak</th><th>Bateratu</th></tr></thead><tbody>${kanonikoRows}</tbody></table></div>`
+        : `<div style="color:var(--muted);font-size:13px">Lasterketa kanonikorik ez.</div>`}
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">⚠️ Lotu gabeko klasikak <span style="font-weight:400;color:var(--muted)">(${lotuGabe.length})</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Iradokizunak antzekotasunaren arabera (izen berdinak automatikoki lotuta daude jada). Sakatu iradokizun bat lotzeko, edo sortu kanoniko berria.</div>
+      ${lotuGabe.length ? `<div class="tbl-wrap"><table><thead><tr><th>Urtea</th><th>Izena</th><th>Ekintza</th></tr></thead><tbody>${lotuGabeRows}</tbody></table></div>`
+        : `<div style="color:var(--muted);font-size:13px">Klasika guztiak lotuta daude ✓</div>`}
+    </div></div>`;
+}
+
+async function lasSaveField(id, col, val) {
+  try {
+    await api("api/table-update", { method:"POST", body: JSON.stringify({ table:"Lasterketak", pk:{ Lasterketa_ID: id }, values:{ [col]: val || null } }) });
+    showToast("Gordeta ✓");
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function lasLotu(karreraId, lasterketaId) {
+  try {
+    await api("api/lasterketak/lotu", { method:"POST", body: JSON.stringify({ karrera_ids:[karreraId], lasterketa_id: lasterketaId }) });
+    showToast("Lotuta ✓");
+    loadLasterketak();
+  } catch(e) { showToast(e.message, "err"); }
+}
+
+async function lasBateratu(keepId, dropId) {
+  const ok = await confirmDialog("Bi lasterketa kanoniko bateratu? Bigarrenaren urteak lehenengora pasatuko dira eta bigarrena ezabatuko da. Ezin da desegin.");
+  if (!ok) return;
+  try {
+    const r = await api("api/lasterketak/bateratu", { method:"POST", body: JSON.stringify({ keep_id: keepId, drop_id: dropId }) });
+    if (!r.ok) { showToast(r.reason || "Errore ezezaguna", "err"); return; }
+    showToast("Bateratuta ✓");
+    loadLasterketak();
+  } catch(e) { showToast(e.message, "err"); }
 }
 
 // Egoera-tira (kontrol-panela): txapelketaren urteroko fluxuaren argazkia.

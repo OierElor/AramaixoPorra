@@ -79,6 +79,7 @@ AramaixoPorra/
 │   ├── porra-zenbakia.sql      # Migrazioa: PorraEzizenak.Zenbakia (porra-zenbakia)
 │   ├── interesa-ez-lotu.sql    # Migrazioa: Porralariak.Interesa + PorraEzizenak.Ez_Lotu
 │   ├── txapelketa-fitxategiak.sql  # Migrazioa: Txapelketak.Arauak/Dortsalak/Porrak_PDF
+│   ├── lasterketak.sql         # Migrazioa: Lasterketak (klasika kanonikoak) + webgune ofizialak
 │   ├── kategoria-konponketa.sql    # Datu-fixa: kategoria baliogabeak (389/390/391)
 │   └── ezabatu-motak-desnibela.sql  # Garbiketa eskuzkoa: karrera-motak + desnibela kentzea
 │

@@ -40,13 +40,58 @@ Eredua: `admin/config.example.php`. Behar diren balioak: MySQL host/user/pass/na
 - `intl` (Normalizer) **aukerakoa** — gabe ere badabil (azentu-mapa propioa `lib.php`-n).
 - `mail()` funtzioa (zuzenketen jakinarazpenetarako).
 
-## Probak lokalean
+## Probak lokalean — `./proba.sh` ⭐
 
-MySQL-era **ezin da lokaletik konektatu** (urruneko sarbidea mugatua). Beraz:
+**Webgune osoa zure ordenagailuan, DATU ERREALEKIN, ezer publiko egin gabe.**
+
+```bash
+./proba.sh          # http://127.0.0.1:8777
+./proba.sh 8080     # beste ataka bat
+```
+
+Nabigatzailean ireki eta aldaketak **ikusi** `git push` egin AURRETIK. Ctrl+C gelditzeko.
+
+### Nola dabilen
+
+MySQL-era **ezin da lokaletik konektatu** (urruneko sarbidea mugatua). Baina `api/q.php`
+**endpoint publikoa** da eta SELECT soilik onartzen du. Beraz `dev/router.php`-k
+datu-kontsultak **zuzeneko API publikora birbidaltzen ditu**: kodea lokala, datuak errealak.
+
+| Bidea | Zer gertatzen den |
+|---|---|
+| `/api/q.php`, `/api/ezarpenak.php` | **Proxy** zuzenera (irakurketa hutsa) |
+| `/admin/api/*` | **Proxy**, **GET soilik**; auth `admin/config.php`-tik |
+| `/api/porra.php`, `/api/proposal.php` | **BLOKEATUTA** — emaila + log erreala idatziko lukete |
+| Admin `POST`/`PUT`/`DELETE` | **BLOKEATUTA** (403 + toast argia) |
+| HTML/JS/CSS | Zure fitxategi lokalak, **cache gabe** (`?v=` ukitu beharrik ez) |
+
+Orri guztietan **🔧 PROBA** bereizgarri bat agertzen da behe-eskuinean: lokala eta produkzioa
+ezin dira nahastu.
+
+### Zer EZIN da lokalean probatu
+
+- **Idazketa-fluxuak**: aurre-porra bidaltzea, zuzenketak, eta **admin idazketa guztiak**
+  (sortu/editatu/ezabatu/inportatu/kalkulatu). Horiek zerbitzarian probatu behar dira, lehen bezala.
+- **`api/q.php`-ren beraren logika** (zuzenekoa erabiltzen da) eta **migrazioak** (phpMyAdmin).
+- Grafikoek eta admin letra-tipoek **internet** behar dute (Chart.js / Google Fonts CDNtik).
+
+### Segurtasuna
+
+`127.0.0.1`-era lotuta soilik (ez sarera). `dev/router.php`-k `cli-server` SAPI-a bakarrik
+onartzen du eta `dev/.htaccess`-ek webetik sarbidea ukatzen du → zerbitzarira igoz gero **inerte**.
+Kredentzialak lehendik dagoen `admin/config.php`-tik irakurtzen dira; ez dira inoiz logeatzen.
+
+### Lan-fluxua (aldaketak publiko egin gabe)
+
+```
+git switch -c aldaketa-berria   →   editatu   →   ./proba.sh (ikusi)
+      →   gustura?   →   main-era merge   →   push   →   Plesk pull
+```
+
+### Beste egiaztapenak
 
 - **PHP sintaxia:** `php -l api/q.php`, `php -l admin/lib.php`, `php -l admin/api.php`.
-- **JS:** giltza-balantzea egiaztatu (node ez badago instalatuta) edo nabigatzailean probatu.
-- **Funtzio osoak:** zerbitzarian probatu (Plesk pull ondoren) edo staging batean.
+- **JS:** giltza-balantzea egiaztatu (node ez badago instalatuta) edo `./proba.sh`-rekin probatu.
 - **Inportazio-parser-ak:** benetako Excel-datuen aurka baliozkotu daitezke (adib. Python-era eramanda).
 
 ## Nabigatzailearen cachea (⚠ garrantzitsua)

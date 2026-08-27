@@ -6,6 +6,11 @@ Proiektuaren erroa `aramaixoporra.eus`-en `httpdocs/` bihurtzen da (Plesk pull b
 AramaixoPorra/
 ├── index.html                  # Hasiera-orria (azalak / karrusela)
 ├── bump-version.sh             # Cache-bertsioa (?v=) orri publiko guztietan eguneratu
+├── proba.sh                    # ⭐ PROBA LOKALA: webgunea localhost-en, datu errealekin
+│
+├── dev/                        # Garapen-tresnak (zerbitzarian INERTE; .htaccess-ek ukatzen du)
+│   ├── router.php              # php -S router-a: irakurketak zuzenera proxy, idazketak blokeatu
+│   └── .htaccess               # Require all denied (sakoneko defentsa)
 ├── robots.txt                  # Bilatzaileentzako arauak
 ├── sitemap.xml                 # Guneko mapa (SEO)
 │

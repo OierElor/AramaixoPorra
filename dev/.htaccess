@@ -1,0 +1,10 @@
+# Garapen-tresnak (proba lokala). Zerbitzarian EZ dute zentzurik eta ez dira
+# webetik eskuragarri egon behar. `dev/router.php`-k berak ere `cli-server`
+# SAPI-a bakarrik onartzen du (sakoneko defentsa bikoitza).
+#
+# ⚠️ EZ erabili `php_flag` hemen: zerbitzaria PHP-FPM da eta `php_flag`
+# `.htaccess`-ean HTTP 500 eragiten du karpeta osorako (ikus data/.htaccess-en
+# ikasgaia, docs/garapena.md).
+
+Options -Indexes
+Require all denied

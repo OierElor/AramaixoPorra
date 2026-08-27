@@ -215,7 +215,7 @@ const Tresna = {
             ofRows = await this.q(
                 "SELECT Ezizen_ID AS id, Puntuak AS ofiziala " +
                 "FROM TxapelketaEmaitzaPorralariak WHERE Txapelketa_ID = ?", [tid]);
-            N_ref = 5;
+            N_ref = 7;
             refLabel = `${N_ref}. porra (erreferentzia)`;
         }
 

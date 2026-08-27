@@ -801,9 +801,9 @@ p {
     background: #e8f4f8;
 }
 
-/* Txirrindulari-sailkapenen podiuma: urrea/zilarra/brontzea (1-3), berdea (4-6),
-   urdin argia (7). Karrera-akordeoian ETA TXIRRINDULARIAK laburpen-taulan erabiltzen da
-   (`js/db-loader.js` `_podiumClassName`). `:hover` baino ONDOREN dago nahita, kolorea
+/* PORRA SAILKAPENAren postu-koloreak: urrea/zilarra/brontzea (1-3), berdea (4-6) eta
+   urdin argia (7 — porralarien ERREFERENTZIA postua). `js/db-loader.js`
+   `_podiumClassName`-k esleitzen ditu. `:hover` baino ONDOREN dago nahita, kolorea
    hover-ean ere manten dadin. */
 .sailkapena-table tbody tr.podium-1 {
     background: linear-gradient(135deg, #fff9e6 0%, #ffe49a 100%);

@@ -400,9 +400,9 @@ class DBLoader {
         return ` <span class="kat-badge" style="background-color:${kolorea};">${this._esc(kat)}</span>`;
     }
 
-    /** Postuaren araberako klase-izena (urrea/zilarra/brontzea + 4-6/7), edo '' bestela.
-     *  Txirrindulari-sailkapen guztietan partekatzen da: karrera-akordeoian ETA
-     *  txapelketaren TXIRRINDULARIAK laburpen-taulan (`css/styles.css` .podium-*). */
+    /** PORRA SAILKAPENAren postu-koloreak (`css/styles.css` .podium-*):
+     *  1-3 podiuma (urrea/zilarra/brontzea), 4-6 berdea eta **7. postua** urdin argia
+     *  — 7.a porralarien ERREFERENTZIA postua da (ikus `js/tresna-komuna.js` `N_ref`). */
     _podiumClassName(pos) {
         const p = Number(pos);
         if (p === 1) return 'podium-1';
@@ -413,10 +413,13 @@ class DBLoader {
         return '';
     }
 
-    /** Podiuma nabarmendu (akordeoiko emaitza-taulan, txantiloi-katean txertatzeko). */
+    /** Podiumeko hiru lehenak nabarmendu (akordeoiko emaitza-taulan). */
     _podiumEstiloa(pos) {
-        const cls = this._podiumClassName(pos);
-        return cls ? ` class="${cls}"` : '';
+        const p = Number(pos);
+        if (p === 1) return ' style="background-color:#fff4cc;font-weight:bold;"';
+        if (p === 2) return ' style="background-color:#f0f0f0;"';
+        if (p === 3) return ' style="background-color:#fde8d0;"';
+        return '';
     }
 
     /**
@@ -458,6 +461,8 @@ class DBLoader {
 
         rows.forEach(row => {
             const tr = document.createElement('tr');
+            const podiumCls = this._podiumClassName(row.Posizioa);
+            if (podiumCls) tr.className = podiumCls;
             tr.appendChild(this._td(row.Posizioa, 'pos-col'));
             tr.appendChild(this._td(row.Ezizena, 'name-col'));
             tr.appendChild(this._td(row.Puntuak, 'points-col'));
@@ -481,8 +486,6 @@ class DBLoader {
 
         rows.forEach(row => {
             const tr = document.createElement('tr');
-            const podiumCls = this._podiumClassName(row.Posizioa);
-            if (podiumCls) tr.className = podiumCls;
             tr.appendChild(this._td(row.Posizioa, 'pos-col'));
             if (hasDortsala) tr.appendChild(this._td(row.Dortsala ?? '—'));
             tr.appendChild(this._td(row.Txirrindularia, 'name-col'));
